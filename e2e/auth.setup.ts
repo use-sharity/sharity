@@ -1,32 +1,56 @@
+import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
 
 const USER_A_STATE = "playwright/.auth/user-a.json";
 const USER_B_STATE = "playwright/.auth/user-b.json";
 
-async function loginAndSaveState(statePath: string, label: string) {
-	setup(`authenticate ${label}`, async ({ page, context }) => {
-		await page.goto("/");
+/**
+ * Create a Clerk sign-in token via the Backend API.
+ * Returns the raw ticket (JWT) to use with __clerk_ticket param.
+ */
+async function createSignInTicket(userId: string): Promise<string> {
+	const secretKey = process.env.CLERK_SECRET_KEY;
+	if (!secretKey) throw new Error("CLERK_SECRET_KEY is not set");
 
-		// Wait for user to manually log in via Clerk
-		console.log(`\n--- Log in as ${label} in the browser window ---`);
-		console.log("Then click 'Resume' in the Playwright Inspector.\n");
+	const res = await fetch("https://api.clerk.com/v1/sign_in_tokens", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${secretKey}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ user_id: userId }),
+	});
 
-		// Pause lets you log in manually, then resume
-		await page.pause();
+	if (!res.ok) {
+		const body = await res.text();
+		throw new Error(`Failed to create sign-in token: ${res.status} ${body}`);
+	}
 
-		// Verify we're logged in by checking for a user-specific element
-		await page.waitForSelector(
-			'[data-testid="user-button"], .cl-userButtonTrigger',
-			{
-				timeout: 30_000,
-			},
-		);
+	const data = await res.json();
+	return data.token as string;
+}
 
-		// Save signed-in state
+function loginAndSaveState(userId: string, statePath: string, label: string) {
+	setup(`authenticate ${label}`, async ({ page, context, baseURL }) => {
+		await setupClerkTestingToken({ page });
+
+		// Create sign-in ticket and navigate to OUR app with it
+		const ticket = await createSignInTicket(userId);
+		await page.goto(`${baseURL}/?__clerk_ticket=${ticket}`);
+
+		// Wait for Clerk to process the ticket and show logged-in state
+		await page.waitForSelector(".cl-userButtonTrigger", {
+			timeout: 30_000,
+		});
+
+		// Save session cookies + localStorage
 		await context.storageState({ path: statePath });
-		console.log(`Saved auth state for ${label} to ${statePath}`);
+		console.log(`Saved auth state for ${label} → ${statePath}`);
 	});
 }
 
-loginAndSaveState(USER_A_STATE, "USER_A");
-loginAndSaveState(USER_B_STATE, "USER_B");
+const USER_A_ID = process.env.E2E_USER_A_ID!;
+const USER_B_ID = process.env.E2E_USER_B_ID!;
+
+loginAndSaveState(USER_A_ID, USER_A_STATE, "USER_A");
+loginAndSaveState(USER_B_ID, USER_B_STATE, "USER_B");
