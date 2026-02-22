@@ -1971,8 +1971,10 @@ export const setupJourneyTestScenarios = mutation({
 			events: EventDef[];
 		};
 
-		// Base timestamp: 20 days ago, each step +2 days
-		const t = (step: number) => now - (20 - step * 2) * ONE_DAY_MS;
+		// Base timestamp: all steps in the future to avoid cron auto-expiry.
+		// step 0 = +1 day, step 9 = +19 days. Events use past-looking offsets
+		// but actual timestamps are future so resolveOverdueProposals won't touch them.
+		const t = (step: number) => now + (1 + step * 2) * ONE_DAY_MS;
 
 		const pickupProposalId = crypto.randomUUID();
 		const returnProposalId = crypto.randomUUID();
@@ -2404,12 +2406,14 @@ export const setupJourneyTestScenarios = mutation({
 			});
 
 			// Create claim (claimer = USER_B)
+			// Lease period uses future dates to avoid "Past due" state on pending claims.
+			// Event timestamps (createdAt) use t() which can be in the past — that's fine.
 			const claimId = await ctx.db.insert("claims", {
 				itemId,
 				claimerId: USER_B,
 				status: scenario.claimStatus,
-				startDate: t(0),
-				endDate: t(9),
+				startDate: now + 5 * ONE_DAY_MS,
+				endDate: now + 15 * ONE_DAY_MS,
 				...scenario.claimExtra,
 			});
 
@@ -2427,6 +2431,38 @@ export const setupJourneyTestScenarios = mutation({
 						: {}),
 					...(event.windowEndAt ? { windowEndAt: event.windowEndAt } : {}),
 				});
+
+				// Mirror relevant lease events into item_activity
+				if (event.type === "lease_approved") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "loan_started",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+						startDate: now + 5 * ONE_DAY_MS,
+						endDate: now + 15 * ONE_DAY_MS,
+					});
+				} else if (event.type === "lease_picked_up") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "item_picked_up",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+					});
+				} else if (event.type === "lease_returned") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "item_returned",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+					});
+				}
 			}
 
 			created.push(scenario.name);
