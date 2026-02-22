@@ -15,9 +15,11 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 import type { LeaseActivityEvent } from "./lease-activity-timeline";
-import { LeaseActivitySection } from "./lease-activity-section";
 import { LeaseActionDialog } from "./lease-action-dialog";
 import { LeaseClaimHeader } from "./lease-claim-header";
+import { LeaseJourneyStepper } from "./lease-journey-stepper";
+import { LeaseJourneyTimeline } from "./lease-journey-timeline";
+import { getFlowType } from "./lease-journey-utils";
 import { LeaseProposeWindowDialog } from "./lease-propose-window-dialog";
 import type {
 	ApproveClaimArgs,
@@ -175,7 +177,7 @@ export function LeaseClaimCard(props: {
 			}
 		}
 		return {
-			requestedAt: byType.get("lease_requested"),
+			requestedAt: byType.get("lease_requested") ?? claim._creationTime,
 			approvedAt: byType.get("lease_approved"),
 			rejectedAt: byType.get("lease_rejected"),
 			expiredAt: byType.get("lease_expired"),
@@ -184,7 +186,7 @@ export function LeaseClaimCard(props: {
 			returnedAt: byType.get("lease_returned"),
 			transferredAt: byType.get("lease_transferred") ?? claim.transferredAt,
 		};
-	}, [leaseEvents, claim.transferredAt]);
+	}, [leaseEvents, claim._creationTime, claim.transferredAt]);
 
 	const derivedState = useMemo(() => {
 		if (eventTimes.rejectedAt) return "rejected";
@@ -342,6 +344,7 @@ export function LeaseClaimCard(props: {
 		isOwner &&
 		isApproved &&
 		!!eventTimes.pickedUpAt &&
+		!!returnProposal &&
 		!eventTimes.returnedAt &&
 		!eventTimes.transferredAt &&
 		!eventTimes.missingAt &&
@@ -377,6 +380,11 @@ export function LeaseClaimCard(props: {
 	const toErrorMessage = (error: unknown): string =>
 		error instanceof Error ? error.message : String(error);
 
+	const flowType = useMemo(
+		() => getFlowType(isGiveaway, isIntradayLease),
+		[isGiveaway, isIntradayLease],
+	);
+
 	const inner = (
 		<>
 			<CardHeader>
@@ -389,6 +397,16 @@ export function LeaseClaimCard(props: {
 					viewerRole={viewerRole}
 					ownerId={ownerId}
 				/>
+
+				<div className="pt-2">
+					<LeaseJourneyStepper
+						flowType={flowType}
+						derivedState={derivedState}
+						eventTimes={eventTimes}
+						viewerRole={viewerRole}
+						events={leaseEvents ?? []}
+					/>
+				</div>
 			</CardHeader>
 
 			<CardContent>
@@ -881,10 +899,21 @@ export function LeaseClaimCard(props: {
 						</div>
 					)}
 
-				<LeaseActivitySection events={leaseEvents} />
+				<LeaseJourneyTimeline
+					flowType={flowType}
+					derivedState={derivedState}
+					eventTimes={eventTimes}
+					events={leaseEvents}
+					viewerRole={viewerRole}
+					claimerId={claim.claimerId}
+				/>
 			</CardContent>
 		</>
 	);
 
-	return layout === "embedded" ? inner : <Card>{inner}</Card>;
+	return layout === "embedded" ? (
+		inner
+	) : (
+		<Card data-testid="claim-card">{inner}</Card>
+	);
 }
