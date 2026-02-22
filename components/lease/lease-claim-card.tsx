@@ -911,5 +911,9 @@ export function LeaseClaimCard(props: {
 		</>
 	);
 
-	return layout === "embedded" ? inner : <Card>{inner}</Card>;
+	return layout === "embedded" ? (
+		inner
+	) : (
+		<Card data-testid="claim-card">{inner}</Card>
+	);
 }
