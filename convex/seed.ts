@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
@@ -1551,6 +1552,1044 @@ export const fullResetAndSeed = mutation({
 				"Login as User A: rate User B as borrower (for your items) + as lender (for borrowed items)",
 				"Login as User B: rate User A as borrower (for your items) + as lender (for borrowed items)",
 			],
+		};
+	},
+});
+
+/**
+ * Update item images with Cloudinary URLs.
+ * Run after uploading images via scripts/upload-stock-images.ts
+ *
+ * Usage: npx convex run seed:updateItemImages '{"images": [{"itemName": "...", "publicId": "...", "secureUrl": "..."}]}'
+ */
+export const updateItemImages = mutation({
+	args: {
+		images: v.array(
+			v.object({
+				itemName: v.string(),
+				publicId: v.string(),
+				secureUrl: v.string(),
+			}),
+		),
+	},
+	handler: async (ctx, args) => {
+		const results: { itemName: string; updated: boolean; error?: string }[] =
+			[];
+
+		for (const img of args.images) {
+			const item = await ctx.db
+				.query("items")
+				.filter((q) => q.eq(q.field("name"), img.itemName))
+				.first();
+
+			if (!item) {
+				results.push({
+					itemName: img.itemName,
+					updated: false,
+					error: "Item not found",
+				});
+				continue;
+			}
+
+			await ctx.db.patch(item._id, {
+				imageCloudinary: [{ publicId: img.publicId, secureUrl: img.secureUrl }],
+			});
+			results.push({ itemName: img.itemName, updated: true });
+		}
+
+		return results;
+	},
+});
+
+/**
+ * COMPREHENSIVE TEST DATA SETUP for Features 1, 2, 3
+ *
+ * Creates test data for:
+ * - Feature #1 (Time slots): Approved claim with FUTURE startDate, no pickedUpAt yet
+ * - Feature #2 (Contact details): Pending claim to approve (generates notification)
+ * - Feature #3 (Borrowed items): Claims with pickedUpAt set and various due dates
+ *
+ * Run with: npx convex run seed:setupFeatureTestData '{}'
+ */
+export const setupFeatureTestData = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const now = Date.now();
+		const results = {
+			feature1: { created: false, itemName: "", claimId: "" },
+			feature2: { created: false, itemName: "", claimId: "" },
+			feature3: [] as { itemName: string; dueIn: string; claimId: string }[],
+		};
+
+		// Get existing items
+		const items = await ctx.db.query("items").collect();
+		const itemsFromA = items.filter((i) => i.ownerId === USER_A);
+		const itemsFromB = items.filter((i) => i.ownerId === USER_B);
+
+		if (itemsFromA.length < 4 || itemsFromB.length < 2) {
+			return {
+				error:
+					"Not enough items. Need at least 4 items from USER_A and 2 from USER_B",
+				itemsFromA: itemsFromA.length,
+				itemsFromB: itemsFromB.length,
+			};
+		}
+
+		// ===== FEATURE #1: Time slots (approved, future dates, NO pickedUpAt) =====
+		// USER_B wants to borrow from USER_A, needs to propose pickup time
+		const feature1Item = itemsFromA[0];
+		const existingF1Claim = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q) => q.eq("itemId", feature1Item._id))
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("claimerId"), USER_B),
+					q.eq(q.field("status"), "approved"),
+				),
+			)
+			.first();
+
+		if (existingF1Claim && !existingF1Claim.pickedUpAt) {
+			// Update existing claim to have future dates
+			await ctx.db.patch(existingF1Claim._id, {
+				startDate: now + 1 * ONE_DAY_MS, // Tomorrow
+				endDate: now + 8 * ONE_DAY_MS, // 8 days from now
+			});
+			results.feature1 = {
+				created: false,
+				itemName: feature1Item.name,
+				claimId: existingF1Claim._id,
+			};
+		} else if (!existingF1Claim) {
+			const claimId = await ctx.db.insert("claims", {
+				itemId: feature1Item._id,
+				claimerId: USER_B,
+				status: "approved",
+				startDate: now + 1 * ONE_DAY_MS, // Tomorrow (FUTURE!)
+				endDate: now + 8 * ONE_DAY_MS,
+				requestedAt: now - 1 * ONE_DAY_MS,
+				approvedAt: now,
+				// NO pickedUpAt - borrower needs to propose time!
+			});
+			await ctx.db.insert("lease_activity", {
+				itemId: feature1Item._id,
+				claimId,
+				type: "lease_approved",
+				actorId: USER_A,
+				createdAt: now,
+			});
+			results.feature1 = {
+				created: true,
+				itemName: feature1Item.name,
+				claimId,
+			};
+		}
+
+		// ===== FEATURE #2: Contact details notification (pending -> approve) =====
+		// Create a pending claim that USER_A can approve
+		const feature2Item = itemsFromA[1];
+		const existingF2Claim = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q) => q.eq("itemId", feature2Item._id))
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("claimerId"), USER_B),
+					q.eq(q.field("status"), "pending"),
+				),
+			)
+			.first();
+
+		if (!existingF2Claim) {
+			const claimId = await ctx.db.insert("claims", {
+				itemId: feature2Item._id,
+				claimerId: USER_B,
+				status: "pending",
+				startDate: now + 2 * ONE_DAY_MS,
+				endDate: now + 9 * ONE_DAY_MS,
+				requestedAt: now,
+			});
+			await ctx.db.insert("lease_activity", {
+				itemId: feature2Item._id,
+				claimId,
+				type: "lease_requested",
+				actorId: USER_B,
+				createdAt: now,
+			});
+			// Create notification for owner
+			await ctx.db.insert("notifications", {
+				recipientId: USER_A,
+				type: "new_request",
+				itemId: feature2Item._id,
+				requestId: claimId,
+				isRead: false,
+				createdAt: now,
+			});
+			results.feature2 = {
+				created: true,
+				itemName: feature2Item.name,
+				claimId,
+			};
+		} else {
+			results.feature2 = {
+				created: false,
+				itemName: feature2Item.name,
+				claimId: existingF2Claim._id,
+			};
+		}
+
+		// ===== FEATURE #3: Borrowed items with various due dates =====
+		const dueConfigs = [
+			{ daysUntilDue: 7, label: "7 days (green)" },
+			{ daysUntilDue: 2, label: "2 days (amber)" },
+			{ daysUntilDue: 0, label: "today (amber)" },
+			{ daysUntilDue: -3, label: "overdue 3 days (red)" },
+		];
+
+		for (
+			let i = 0;
+			i < Math.min(dueConfigs.length, itemsFromA.length - 2);
+			i++
+		) {
+			const config = dueConfigs[i];
+			const item = itemsFromA[i + 2]; // Skip first 2 items used for F1/F2
+
+			// Check for existing borrowed claim
+			const existingClaim = await ctx.db
+				.query("claims")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.filter((q) =>
+					q.and(
+						q.eq(q.field("claimerId"), USER_B),
+						q.eq(q.field("status"), "approved"),
+						q.neq(q.field("pickedUpAt"), undefined),
+					),
+				)
+				.first();
+
+			if (existingClaim) {
+				// Update endDate to match config
+				const newEndDate = now + config.daysUntilDue * ONE_DAY_MS;
+				await ctx.db.patch(existingClaim._id, { endDate: newEndDate });
+				results.feature3.push({
+					itemName: item.name,
+					dueIn: config.label,
+					claimId: existingClaim._id,
+				});
+			} else {
+				const claimId = await ctx.db.insert("claims", {
+					itemId: item._id,
+					claimerId: USER_B,
+					status: "approved",
+					startDate: now - 5 * ONE_DAY_MS, // Started 5 days ago
+					endDate: now + config.daysUntilDue * ONE_DAY_MS,
+					requestedAt: now - 7 * ONE_DAY_MS,
+					approvedAt: now - 6 * ONE_DAY_MS,
+					pickedUpAt: now - 5 * ONE_DAY_MS, // Already picked up!
+				});
+				await ctx.db.insert("lease_activity", {
+					itemId: item._id,
+					claimId,
+					type: "lease_picked_up",
+					actorId: USER_A,
+					createdAt: now - 5 * ONE_DAY_MS,
+				});
+				results.feature3.push({
+					itemName: item.name,
+					dueIn: config.label,
+					claimId,
+				});
+			}
+		}
+
+		return {
+			success: true,
+			results,
+			howToTest: {
+				feature1:
+					"Login as USER_B → Go to item detail → Click 'Propose Pickup Time' → Select future time",
+				feature2:
+					"Login as USER_A → Go to notifications → Approve the pending request → USER_B gets notification with 'View Profile'",
+				feature3:
+					"Login as USER_B → Go to 'My Items' tab → See 'Items I'm Borrowing' section with different due badges",
+			},
+		};
+	},
+});
+
+/**
+ * Setup a borrowed item for testing the "Items I'm Borrowing" section.
+ * Creates an approved claim with pickedUpAt set, so it shows as actively borrowed.
+ * Use futureDays parameter to set how many days until due date.
+ */
+export const setupBorrowedItemForTesting = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const now = Date.now();
+
+		// Find an item owned by USER_A that USER_B can borrow
+		const items = await ctx.db.query("items").collect();
+		const itemFromA = items.find((i) => i.ownerId === USER_A);
+
+		if (!itemFromA) {
+			return { error: "No items found owned by USER_A" };
+		}
+
+		// Check for existing borrowed claim on this item
+		const existingClaim = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q) => q.eq("itemId", itemFromA._id))
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("claimerId"), USER_B),
+					q.eq(q.field("status"), "approved"),
+					q.neq(q.field("pickedUpAt"), undefined),
+				),
+			)
+			.first();
+
+		if (existingClaim && !existingClaim.returnedAt) {
+			return {
+				alreadyExists: true,
+				claimId: existingClaim._id,
+				itemName: itemFromA.name,
+				message: "Borrowed item already exists for testing",
+			};
+		}
+
+		// Create new claim with FUTURE dates
+		const startDate = now; // Today
+		const endDate = now + 5 * ONE_DAY_MS; // 5 days from now
+
+		const claimId = await ctx.db.insert("claims", {
+			itemId: itemFromA._id,
+			claimerId: USER_B,
+			status: "approved",
+			startDate,
+			endDate,
+			requestedAt: now - 2 * ONE_DAY_MS,
+			approvedAt: now - 1 * ONE_DAY_MS,
+			pickedUpAt: now, // Already picked up!
+		});
+
+		// Add lease activity for pickup
+		await ctx.db.insert("lease_activity", {
+			itemId: itemFromA._id,
+			claimId,
+			type: "lease_picked_up",
+			actorId: USER_A,
+			createdAt: now,
+		});
+
+		return {
+			success: true,
+			claimId,
+			itemId: itemFromA._id,
+			itemName: itemFromA.name,
+			borrower: USER_B,
+			owner: USER_A,
+			startDate: new Date(startDate).toISOString(),
+			endDate: new Date(endDate).toISOString(),
+			message:
+				"Login as USER_B to see this item in 'Items I'm Borrowing' section",
+		};
+	},
+});
+
+/**
+ * Setup journey test scenarios: 11 items at different lifecycle stages.
+ * Each item has a claim with the exact set of events to visualize that stage.
+ * Idempotent: deletes all items with "[TEST] Journey:" prefix first.
+ *
+ * Run with: npx convex run seed:setupJourneyTestScenarios
+ */
+export const setupJourneyTestScenarios = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const now = Date.now();
+		const TWO_DAYS = 2 * ONE_DAY_MS;
+		const ONE_HOUR = 60 * 60 * 1000;
+		const TEST_PREFIX = "[TEST] Journey:";
+
+		// ===== CLEANUP: delete existing test items, their claims and activities =====
+		const allItems = await ctx.db.query("items").collect();
+		const testItems = allItems.filter((i) => i.name.startsWith(TEST_PREFIX));
+		const testItemIds = new Set(testItems.map((i) => i._id));
+
+		for (const item of testItems) {
+			// Delete claims for this item
+			const claims = await ctx.db
+				.query("claims")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.collect();
+			for (const claim of claims) {
+				// Delete lease_activity for this claim
+				const activities = await ctx.db
+					.query("lease_activity")
+					.withIndex("by_claim_createdAt", (q) => q.eq("claimId", claim._id))
+					.collect();
+				for (const a of activities) {
+					await ctx.db.delete(a._id);
+				}
+				await ctx.db.delete(claim._id);
+			}
+			// Delete item_activity for this item
+			const itemActivities = await ctx.db
+				.query("item_activity")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.collect();
+			for (const a of itemActivities) {
+				await ctx.db.delete(a._id);
+			}
+			await ctx.db.delete(item._id);
+		}
+
+		// ===== HELPER: create item + claim + events =====
+		type EventDef = {
+			type:
+				| "lease_requested"
+				| "lease_approved"
+				| "lease_rejected"
+				| "lease_expired"
+				| "lease_missing"
+				| "lease_pickup_proposed"
+				| "lease_pickup_approved"
+				| "lease_return_proposed"
+				| "lease_return_approved"
+				| "lease_picked_up"
+				| "lease_returned"
+				| "lease_transferred";
+			actorId: string;
+			createdAt: number;
+			proposalId?: string;
+			windowStartAt?: number;
+			windowEndAt?: number;
+		};
+
+		type ScenarioDef = {
+			name: string;
+			claimStatus: "pending" | "approved" | "rejected";
+			claimExtra: Record<string, number>;
+			events: EventDef[];
+		};
+
+		// Base timestamp: all steps in the future to avoid cron auto-expiry.
+		// step 0 = +1 day, step 9 = +19 days. Events use past-looking offsets
+		// but actual timestamps are future so resolveOverdueProposals won't touch them.
+		const t = (step: number) => now + (1 + step * 2) * ONE_DAY_MS;
+
+		const pickupProposalId = crypto.randomUUID();
+		const returnProposalId = crypto.randomUUID();
+
+		const scenarios: ScenarioDef[] = [
+			// 1. Requested
+			{
+				name: `${TEST_PREFIX} Requested`,
+				claimStatus: "pending",
+				claimExtra: { requestedAt: t(0) },
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+				],
+			},
+			// 2. Approved
+			{
+				name: `${TEST_PREFIX} Approved`,
+				claimStatus: "approved",
+				claimExtra: { requestedAt: t(0), approvedAt: t(1) },
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+				],
+			},
+			// 3. Pickup Proposed
+			{
+				name: `${TEST_PREFIX} Pickup Proposed`,
+				claimStatus: "approved",
+				claimExtra: { requestedAt: t(0), approvedAt: t(1) },
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+				],
+			},
+			// 4. Pickup Confirmed
+			{
+				name: `${TEST_PREFIX} Pickup Confirmed`,
+				claimStatus: "approved",
+				claimExtra: { requestedAt: t(0), approvedAt: t(1) },
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+				],
+			},
+			// 5. Picked Up
+			{
+				name: `${TEST_PREFIX} Picked Up`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					pickedUpAt: t(4),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_picked_up",
+						actorId: USER_B,
+						createdAt: t(4),
+					},
+				],
+			},
+			// 6. Return Proposed
+			{
+				name: `${TEST_PREFIX} Return Proposed`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					pickedUpAt: t(4),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_picked_up",
+						actorId: USER_B,
+						createdAt: t(4),
+					},
+					{
+						type: "lease_return_proposed",
+						actorId: USER_B,
+						createdAt: t(5),
+						proposalId: returnProposalId,
+						windowStartAt: t(6),
+						windowEndAt: t(6) + ONE_HOUR,
+					},
+				],
+			},
+			// 7. Return Confirmed
+			{
+				name: `${TEST_PREFIX} Return Confirmed`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					pickedUpAt: t(4),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_picked_up",
+						actorId: USER_B,
+						createdAt: t(4),
+					},
+					{
+						type: "lease_return_proposed",
+						actorId: USER_B,
+						createdAt: t(5),
+						proposalId: returnProposalId,
+						windowStartAt: t(6),
+						windowEndAt: t(6) + ONE_HOUR,
+					},
+					{
+						type: "lease_return_approved",
+						actorId: USER_A,
+						createdAt: t(6),
+						proposalId: returnProposalId,
+						windowStartAt: t(6),
+						windowEndAt: t(6) + ONE_HOUR,
+					},
+				],
+			},
+			// 8. Returned
+			{
+				name: `${TEST_PREFIX} Returned`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					pickedUpAt: t(4),
+					returnedAt: t(7),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_picked_up",
+						actorId: USER_B,
+						createdAt: t(4),
+					},
+					{
+						type: "lease_return_proposed",
+						actorId: USER_B,
+						createdAt: t(5),
+						proposalId: returnProposalId,
+						windowStartAt: t(6),
+						windowEndAt: t(6) + ONE_HOUR,
+					},
+					{
+						type: "lease_return_approved",
+						actorId: USER_A,
+						createdAt: t(6),
+						proposalId: returnProposalId,
+						windowStartAt: t(6),
+						windowEndAt: t(6) + ONE_HOUR,
+					},
+					{
+						type: "lease_returned",
+						actorId: USER_B,
+						createdAt: t(7),
+					},
+				],
+			},
+			// 9. Rejected
+			{
+				name: `${TEST_PREFIX} Rejected`,
+				claimStatus: "rejected",
+				claimExtra: { requestedAt: t(0), rejectedAt: t(1) },
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_rejected",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+				],
+			},
+			// 10. Expired
+			{
+				name: `${TEST_PREFIX} Expired`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					expiredAt: t(2),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_expired",
+						actorId: "system",
+						createdAt: t(2),
+					},
+				],
+			},
+			// 11. Missing
+			{
+				name: `${TEST_PREFIX} Missing`,
+				claimStatus: "approved",
+				claimExtra: {
+					requestedAt: t(0),
+					approvedAt: t(1),
+					pickedUpAt: t(4),
+					missingAt: t(5),
+				},
+				events: [
+					{
+						type: "lease_requested",
+						actorId: USER_B,
+						createdAt: t(0),
+					},
+					{
+						type: "lease_approved",
+						actorId: USER_A,
+						createdAt: t(1),
+					},
+					{
+						type: "lease_pickup_proposed",
+						actorId: USER_B,
+						createdAt: t(2),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_pickup_approved",
+						actorId: USER_A,
+						createdAt: t(3),
+						proposalId: pickupProposalId,
+						windowStartAt: t(3),
+						windowEndAt: t(3) + ONE_HOUR,
+					},
+					{
+						type: "lease_picked_up",
+						actorId: USER_B,
+						createdAt: t(4),
+					},
+					{
+						type: "lease_missing",
+						actorId: USER_A,
+						createdAt: t(5),
+					},
+				],
+			},
+		];
+
+		// ===== CREATE ALL SCENARIOS =====
+		const created: string[] = [];
+		const itemIds: Record<string, string> = {};
+
+		for (const scenario of scenarios) {
+			// Create item (owned by USER_A)
+			const itemId = await ctx.db.insert("items", {
+				name: scenario.name,
+				description: `Test scenario for journey visualization: ${scenario.name.replace(TEST_PREFIX, "").trim()}`,
+				ownerId: USER_A,
+				category: "other",
+			});
+
+			await ctx.db.insert("item_activity", {
+				itemId,
+				type: "item_created",
+				actorId: USER_A,
+				createdAt: t(0) - ONE_DAY_MS,
+			});
+
+			// Create claim (claimer = USER_B)
+			// Lease period uses future dates to avoid "Past due" state on pending claims.
+			// Event timestamps (createdAt) use t() which can be in the past — that's fine.
+			const claimId = await ctx.db.insert("claims", {
+				itemId,
+				claimerId: USER_B,
+				status: scenario.claimStatus,
+				startDate: now + 5 * ONE_DAY_MS,
+				endDate: now + 15 * ONE_DAY_MS,
+				...scenario.claimExtra,
+			});
+
+			// Create events
+			for (const event of scenario.events) {
+				await ctx.db.insert("lease_activity", {
+					itemId,
+					claimId,
+					type: event.type,
+					actorId: event.actorId,
+					createdAt: event.createdAt,
+					...(event.proposalId ? { proposalId: event.proposalId } : {}),
+					...(event.windowStartAt
+						? { windowStartAt: event.windowStartAt }
+						: {}),
+					...(event.windowEndAt ? { windowEndAt: event.windowEndAt } : {}),
+				});
+
+				// Mirror relevant lease events into item_activity
+				if (event.type === "lease_approved") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "loan_started",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+						startDate: now + 5 * ONE_DAY_MS,
+						endDate: now + 15 * ONE_DAY_MS,
+					});
+				} else if (event.type === "lease_picked_up") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "item_picked_up",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+					});
+				} else if (event.type === "lease_returned") {
+					await ctx.db.insert("item_activity", {
+						itemId,
+						type: "item_returned",
+						actorId: event.actorId,
+						createdAt: event.createdAt,
+						claimId,
+						borrowerId: USER_B,
+					});
+				}
+			}
+
+			created.push(scenario.name);
+			// Store short key → item ID mapping for tests
+			const shortKey = scenario.name
+				.replace(TEST_PREFIX, "")
+				.trim()
+				.toLowerCase()
+				.replace(/\s+/g, "_");
+			itemIds[shortKey] = itemId;
+		}
+
+		return {
+			success: true,
+			deleted: testItems.length,
+			created,
+			itemIds,
+			users: { owner: USER_A, borrower: USER_B },
+			howToTest: [
+				"Login as USER_B → /en/item/{id} → see journey stepper + timeline",
+				"Login as USER_A → My Items → see claims on owned items",
+				"npx playwright test e2e/journey-timeline.spec.ts --headed",
+			],
+		};
+	},
+});
+
+/**
+ * Shift ALL timestamps forward so test data has current dates.
+ * Finds the latest endDate across all claims and shifts everything
+ * so that claim ends 2 days from now.
+ *
+ * Run with: npx convex run seed:refreshTestData
+ */
+export const refreshTestData = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const now = Date.now();
+
+		// 1. Find the latest endDate among all claims
+		const claims = await ctx.db.query("claims").collect();
+		if (claims.length === 0) {
+			return { error: "No claims found. Run nuclearReset first." };
+		}
+
+		let latestEndDate = -Infinity;
+		for (const claim of claims) {
+			if (claim.endDate > latestEndDate) {
+				latestEndDate = claim.endDate;
+			}
+		}
+
+		// 2. Calculate shift so latest claim ends 2 days from now
+		const shiftMs = now - latestEndDate + 2 * ONE_DAY_MS;
+
+		// 3. Patch all claims — shift all timestamp fields
+		const claimTimestampFields = [
+			"startDate",
+			"endDate",
+			"requestedAt",
+			"approvedAt",
+			"rejectedAt",
+			"pickedUpAt",
+			"returnedAt",
+			"transferredAt",
+			"expiredAt",
+			"missingAt",
+		] as const;
+
+		let claimsUpdated = 0;
+		for (const claim of claims) {
+			const patch: Record<string, number> = {};
+			for (const field of claimTimestampFields) {
+				const value = claim[field];
+				if (value !== undefined) {
+					patch[field] = value + shiftMs;
+				}
+			}
+			await ctx.db.patch(claim._id, patch);
+			claimsUpdated++;
+		}
+
+		// 4. Patch all lease_activity — shift createdAt, windowStartAt, windowEndAt
+		const leaseActivity = await ctx.db.query("lease_activity").collect();
+		let leaseActivityUpdated = 0;
+		for (const activity of leaseActivity) {
+			const patch: Record<string, number> = {
+				createdAt: activity.createdAt + shiftMs,
+			};
+			if (activity.windowStartAt !== undefined) {
+				patch.windowStartAt = activity.windowStartAt + shiftMs;
+			}
+			if (activity.windowEndAt !== undefined) {
+				patch.windowEndAt = activity.windowEndAt + shiftMs;
+			}
+			await ctx.db.patch(activity._id, patch);
+			leaseActivityUpdated++;
+		}
+
+		// 5. Patch all notifications — shift createdAt, windowStartAt, windowEndAt
+		const notifications = await ctx.db.query("notifications").collect();
+		let notificationsUpdated = 0;
+		for (const notification of notifications) {
+			const patch: Record<string, number> = {
+				createdAt: notification.createdAt + shiftMs,
+			};
+			if (notification.windowStartAt !== undefined) {
+				patch.windowStartAt = notification.windowStartAt + shiftMs;
+			}
+			if (notification.windowEndAt !== undefined) {
+				patch.windowEndAt = notification.windowEndAt + shiftMs;
+			}
+			await ctx.db.patch(notification._id, patch);
+			notificationsUpdated++;
+		}
+
+		return {
+			success: true,
+			shiftDays: Math.round((shiftMs / ONE_DAY_MS) * 10) / 10,
+			latestEndDateBefore: new Date(latestEndDate).toISOString(),
+			latestEndDateAfter: new Date(latestEndDate + shiftMs).toISOString(),
+			updated: {
+				claims: claimsUpdated,
+				leaseActivity: leaseActivityUpdated,
+				notifications: notificationsUpdated,
+			},
 		};
 	},
 });

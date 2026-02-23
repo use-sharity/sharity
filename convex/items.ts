@@ -1487,6 +1487,15 @@ export const markPickedUp = mutation({
 			windowEndAt: latestProposal.windowEndAt,
 		});
 
+		await ctx.db.insert("item_activity", {
+			itemId: args.itemId,
+			type: "item_picked_up",
+			actorId: userId,
+			createdAt,
+			claimId: args.claimId,
+			borrowerId: claim.claimerId,
+		});
+
 		await ctx.db.patch(args.claimId, { pickedUpAt: createdAt });
 
 		if (item.giveaway) {
@@ -1656,6 +1665,15 @@ export const markReturned = mutation({
 			proposalId: latestProposal.proposalId,
 			windowStartAt: latestProposal.windowStartAt,
 			windowEndAt: latestProposal.windowEndAt,
+		});
+
+		await ctx.db.insert("item_activity", {
+			itemId: args.itemId,
+			type: "item_returned",
+			actorId: userId,
+			createdAt,
+			claimId: args.claimId,
+			borrowerId: claim.claimerId,
 		});
 
 		await ctx.db.patch(args.claimId, { returnedAt: createdAt });
