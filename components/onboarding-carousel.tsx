@@ -124,7 +124,11 @@ export function OnboardingCarousel({ open, onClose }: OnboardingCarouselProps) {
 		<Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
 			<DialogContent className="max-w-md gap-0 p-0 overflow-hidden">
 				{/* Each slide includes its own hero so nothing escapes the carousel */}
-				<Carousel setApi={setApi} opts={{ loop: false }} className="overflow-hidden">
+				<Carousel
+					setApi={setApi}
+					opts={{ loop: false }}
+					className="overflow-hidden"
+				>
 					<CarouselContent>
 						{slides.map((slide) => (
 							<CarouselItem key={slide.id}>
