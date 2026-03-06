@@ -2,6 +2,7 @@
 
 import { AddItemForm } from "@/components/add-item-form";
 import { ItemList } from "@/components/item-list";
+import { OnboardingCarousel } from "@/components/onboarding-carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WishlistDraftCard } from "@/components/wishlist/wishlist-draft-card";
 import { WishlistItem } from "@/components/wishlist/wishlist-item";
@@ -20,8 +21,11 @@ import { useQuery } from "convex/react";
 import { Gift, ListChecks, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+
+const ONBOARDING_STORAGE_KEY = "sharity.onboarding.v1.seen";
 
 export default function Home() {
 	const [desktopLeftTab, setDesktopLeftTab] = useState<"share" | "request">(
@@ -36,10 +40,25 @@ export default function Home() {
 	const [wishlistSortBy, setWishlistSortBy] = useState<"recent" | "upvoted">(
 		"recent",
 	);
+	const [hasSeenOnboarding, setHasSeenOnboarding] = useLocalStorage<boolean>(
+		ONBOARDING_STORAGE_KEY,
+		false,
+	);
+	const [isClient, setIsClient] = useState(false);
 	const t = useTranslations("Home");
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
+	const shouldShowOnboarding = isClient && !hasSeenOnboarding;
 
 	return (
 		<main className="min-h-screen flex flex-col items-center bg-gray-50/50">
+			<OnboardingCarousel
+				open={shouldShowOnboarding}
+				onClose={() => setHasSeenOnboarding(true)}
+			/>
 			<div className="w-full max-w-6xl p-4 md:p-8 space-y-8">
 				<div className="text-center space-y-2">
 					<h1 className="text-4xl font-bold tracking-tight">{t("title")}</h1>

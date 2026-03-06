@@ -46,7 +46,46 @@
 			"upvoted": "Nhiều vote"
 		},
 		"noRequests": "Chưa có nhu cầu.",
-		"seeFullWishlist": "Xem hết đồ cần"
+		"seeFullWishlist": "Xem hết đồ cần",
+		"onboarding": {
+			"title": "Cách Sharity hoạt động",
+			"subtitle": "Xem nhanh toàn bộ timeline mượn đồ.",
+			"back": "Quay lại",
+			"next": "Tiếp",
+			"getStarted": "Bắt đầu",
+			"progress": "Slide {current}/{total}",
+			"goToSlide": "Đi tới slide {slide}",
+			"slides": {
+				"timeline": {
+					"title": "Tổng quan timeline",
+					"description": "Luồng cơ bản: gửi yêu cầu, duyệt, nhận đồ, trả đồ.",
+					"point1": "Người mượn gửi yêu cầu kèm thời gian.",
+					"point2": "Chủ đồ duyệt và hai bên chốt giờ nhận.",
+					"point3": "Dùng xong thì đề xuất trả, duyệt trả, rồi xác nhận trả."
+				},
+				"lend": {
+					"title": "Cho mượn đồ của bạn",
+					"description": "Đăng đồ và chủ động chọn người mượn phù hợp.",
+					"point1": "Thêm thông tin, ảnh, và giới hạn mượn nếu cần.",
+					"point2": "Xem các yêu cầu vào và duyệt yêu cầu phù hợp.",
+					"point3": "Theo dõi trạng thái rõ ràng trong timeline."
+				},
+				"borrow": {
+					"title": "Mượn đồ bạn cần",
+					"description": "Tìm món phù hợp và gửi yêu cầu theo khung thời gian.",
+					"point1": "Khám phá danh sách và mở chi tiết món đồ.",
+					"point2": "Gửi yêu cầu và chờ chủ đồ duyệt.",
+					"point3": "Đề xuất và xác nhận giờ nhận với đối tác."
+				},
+				"return": {
+					"title": "Trả đồ minh bạch",
+					"description": "Bước kết thúc rõ ràng để cả hai bên cùng yên tâm.",
+					"point1": "Khi dùng xong, đề xuất thời gian trả đồ.",
+					"point2": "Đối tác duyệt khung giờ trả.",
+					"point3": "Xác nhận đã trả để hoàn tất timeline."
+				}
+			}
+		}
 	},
 	"ItemCard": {
 		"giveaway": "Tặng",

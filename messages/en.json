@@ -46,7 +46,46 @@
 			"upvoted": "Most Upvoted"
 		},
 		"noRequests": "No requests yet.",
-		"seeFullWishlist": "See full wishlist"
+		"seeFullWishlist": "See full wishlist",
+		"onboarding": {
+			"title": "How Sharity works",
+			"subtitle": "Quick overview of the full lending timeline.",
+			"back": "Back",
+			"next": "Next",
+			"getStarted": "Get started",
+			"progress": "Slide {current} of {total}",
+			"goToSlide": "Go to slide {slide}",
+			"slides": {
+				"timeline": {
+					"title": "Full timeline overview",
+					"description": "A typical item flow moves through request, approval, pickup, and return.",
+					"point1": "Borrower sends a request with dates.",
+					"point2": "Owner approves, then both sides align on pickup.",
+					"point3": "After use, return is proposed, approved, and confirmed."
+				},
+				"lend": {
+					"title": "Lend your item",
+					"description": "Post your item and control who can borrow it.",
+					"point1": "Add item details, photos, and optional lease limits.",
+					"point2": "Review incoming requests and approve the right one.",
+					"point3": "Track status clearly in your timeline."
+				},
+				"borrow": {
+					"title": "Borrow what you need",
+					"description": "Find items and request them for your planned time window.",
+					"point1": "Browse listings and open item details.",
+					"point2": "Send a request and wait for owner approval.",
+					"point3": "Propose and confirm pickup at a shared time."
+				},
+				"return": {
+					"title": "Return with confidence",
+					"description": "Closing the loop is explicit so both sides stay synced.",
+					"point1": "Propose return time when you're done.",
+					"point2": "Counterpart approves the return window.",
+					"point3": "Confirm returned to complete the timeline."
+				}
+			}
+		}
 	},
 	"ItemCard": {
 		"giveaway": "Giveaway",
