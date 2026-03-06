@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import "../globals.css";
 import { ConvexClientProvider } from "../ConvexClientProvider";
 import { AppHeader } from "@/components/app-header";
+import { PostHogIdentify } from "@/components/posthog-identify";
 import { Toaster } from "@/components/ui/sonner";
 import { ProfileProvider } from "@/components/profile-provider";
 
@@ -78,6 +79,7 @@ export default async function RootLayout({
 				>
 					<NextIntlClientProvider messages={messages}>
 						<ConvexClientProvider>
+							<PostHogIdentify />
 							<ProfileProvider>
 								<AppHeader />
 								{children}
