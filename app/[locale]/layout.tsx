@@ -11,6 +11,7 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { PostHogIdentify } from "@/components/posthog-identify";
 import { Toaster } from "@/components/ui/sonner";
 import { ProfileProvider } from "@/components/profile-provider";
+import { ChatWidget } from "@/components/chat-widget";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -86,6 +87,7 @@ export default async function RootLayout({
 								<div className="pb-20 md:pb-0">{children}</div>
 								<MobileTabBar />
 								<Toaster />
+								<ChatWidget />
 							</ProfileProvider>
 						</ConvexClientProvider>
 					</NextIntlClientProvider>
