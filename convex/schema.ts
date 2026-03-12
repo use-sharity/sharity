@@ -31,7 +31,7 @@ export default defineSchema({
 				ward: v.optional(v.string()), // Public display name (district/ward)
 			}),
 		),
-	}),
+	}).index("by_owner", ["ownerId"]),
 	item_activity: defineTable({
 		itemId: v.id("items"),
 		type: v.union(
