@@ -20,7 +20,7 @@ promptfoo eval
       → builds system prompt using test vars (userContext, locale)
       → calls Claude Haiku 4.5 via @ai-sdk/anthropic
   → evals/promptfooconfig.yaml
-      → 36 test cases with assertions
+      → 34 test cases with assertions
   → terminal output or promptfoo web viewer
 ```
 
@@ -37,7 +37,7 @@ Testing the `/api/chat` endpoint would require a running Next.js server, streami
 | Create | `lib/sharry-prompt.ts` | Extracted `buildSystemPrompt`, `SHARRY_IDENTITY`, `SHARRY_APP_KNOWLEDGE`, `UserContext` type |
 | Modify | `app/api/chat/route.ts` | Import from `lib/sharry-prompt.ts` instead of defining inline |
 | Create | `evals/provider.js` | Promptfoo JS provider — builds prompt, calls Claude |
-| Create | `evals/promptfooconfig.yaml` | Test suite — 36 test cases with assertions |
+| Create | `evals/promptfooconfig.yaml` | Test suite — 34 test cases with assertions |
 | Create | `.github/workflows/sharry-evals.yml` | CI workflow for PRs |
 
 ## Shared Prompt Module (`lib/sharry-prompt.ts`)
@@ -83,7 +83,7 @@ module.exports = {
 - **Deterministic** (`icontains`, `not-icontains`, `regex`): For terminology, anti-terms, emoji rules. Free and fast.
 - **LLM-as-judge** (`llm-rubric`): For quality, completeness, tone, accuracy. Uses Claude Haiku as grader.
 
-### Test Cases (36 total)
+### Test Cases (34 total)
 
 #### 1. Brand & Identity (4 tests)
 
@@ -205,7 +205,7 @@ Add to `package.json` scripts:
 
 ## Cost
 
-- ~36 test cases per run
+- ~34 test cases per run
 - ~1K input tokens + ~200 output tokens per case (Claude Haiku 4.5)
 - `llm-rubric` adds one grading call per assertion (~30 extra calls)
 - **~$0.20 per run**, under $5/month with normal PR cadence
