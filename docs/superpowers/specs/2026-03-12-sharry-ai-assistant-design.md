@@ -263,7 +263,7 @@ export const getUserContext = query({
 });
 ```
 
-**Index requirement:** The `items` table already has a `by_owner` index on `ownerId` (confirmed in schema.ts). No schema changes needed.
+**Index requirement:** The `items` table does NOT have a `by_owner` index — it must be added to `convex/schema.ts`. (The existing `by_owner` index at line 141 belongs to `owner_unavailability`, not `items`.)
 
 **Known limitation:** The N+1 query pattern (one claims query per item) is fine for early usage but should be optimized with a compound index if users accumulate many items.
 
