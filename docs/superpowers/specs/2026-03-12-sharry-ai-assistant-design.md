@@ -352,10 +352,11 @@ Add `<ChatWidget />` in `app/[locale]/layout.tsx`, inside the providers, after `
 
 | Phase | Scope | Timeline |
 |-------|-------|----------|
-| Phase 2 | Proactive nudges — auto-open on stage transitions, badge on bubble, localStorage for dismissed nudges | Next sprint |
-| Phase 3 | Conflict resolution — first-line dispute mediation, reading lease activity context | Later |
-| Phase 4 | Photo handling — receiving/viewing Cloudinary photos in chat as evidence | Later |
-| Phase 5 | Chat history persistence — store conversations in Convex | Later |
+| Phase 2 | Actions — Sharry can perform mutations on behalf of the user (change pickup time, cancel request, etc.) via AI SDK tool-use. Requires confirmation flow, auth forwarding, and undo guardrails. | Next sprint |
+| Phase 3 | Proactive nudges — auto-open on stage transitions, badge on bubble, localStorage for dismissed nudges | Later |
+| Phase 4 | Conflict resolution — first-line dispute mediation, reading lease activity context, viewing photos as evidence | Later |
+| Phase 5 | Photo handling — receiving/viewing Cloudinary photos in chat | Later |
+| Phase 6 | Chat history persistence — store conversations in Convex | Later |
 
 ## Testing
 
