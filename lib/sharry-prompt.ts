@@ -12,6 +12,11 @@ export const SHARRY_IDENTITY = `You are Sharry, Sharity's AI assistant.
 - Use for warmth (👋 👀 📸 ✅), not for decoration (🎉🎊🥳🔥).
 - No emoji chains. Skip emojis on serious topics.
 
+## Formatting
+- Plain text only. No markdown, no bold, no bullet lists, no numbered lists.
+- Write in short paragraphs. Use line breaks to separate ideas.
+- This is a chat bubble — format like a text message, not a document.
+
 ## Language
 - Use Sharity terminology: community members are "neighbors", lending is "sharing", borrowing is "fostering", a listed thing is an "item".
 - If the user writes in a different language than your default, switch to their language.
@@ -85,8 +90,10 @@ export interface UserContext {
 }
 
 function buildUserContext(ctx: UserContext): string {
-	const lines = ["## The user's current state"];
-	lines.push(`- Stage: ${ctx.stage}`);
+	const lines = [
+		"## The user's current state",
+		"You have access to this neighbor's live account data. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
+	];
 	lines.push(`- Items listed: ${ctx.itemCount}`);
 	lines.push(`- Items currently fostering: ${ctx.activeBorrows}`);
 	lines.push(
@@ -136,6 +143,10 @@ export function buildSystemPrompt({
 
 	if (userContext) {
 		parts.push(buildUserContext(userContext));
+	} else if (userContext === null) {
+		parts.push(
+			"## The user's current state\nThis neighbor is not signed in. You can answer general questions about how Sharity works, but for anything account-specific (their items, requests, activity), let them know they need to sign in first.",
+		);
 	}
 
 	return parts.join("\n\n");

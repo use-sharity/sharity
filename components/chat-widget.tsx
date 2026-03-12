@@ -55,13 +55,23 @@ export function ChatWidget() {
 	const locale = useLocale();
 	const userContext = useQuery(api.chat.getUserContext);
 
+	const userContextRef = useRef(userContext);
+	userContextRef.current = userContext;
+	const localeRef = useRef(locale);
+	localeRef.current = locale;
+
 	const transport = useMemo(
 		() =>
 			new DefaultChatTransport({
 				api: "/api/chat",
-				body: { userContext, locale },
+				fetch: async (url, init) => {
+					const body = JSON.parse((init?.body as string) ?? "{}");
+					body.userContext = userContextRef.current;
+					body.locale = localeRef.current;
+					return fetch(url, { ...init, body: JSON.stringify(body) });
+				},
 			}),
-		[userContext, locale],
+		[],
 	);
 
 	const { messages, sendMessage, status, error } = useChat({ transport });
