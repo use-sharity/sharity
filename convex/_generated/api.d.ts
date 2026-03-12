@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as chat from "../chat.js";
 import type * as cloudinary from "../cloudinary.js";
 import type * as crons from "../crons.js";
 import type * as items from "../items.js";
@@ -27,6 +28,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+	chat: typeof chat;
 	cloudinary: typeof cloudinary;
 	crons: typeof crons;
 	items: typeof items;

@@ -1,9 +1,10 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useQuery } from "convex/react";
 import { useLocale } from "next-intl";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 
@@ -35,26 +36,37 @@ const SUGGESTIONS_BY_STAGE: Record<string, string[]> = {
 	],
 };
 
+function getMessageText(message: {
+	parts?: Array<{ type: string; text?: string }>;
+}): string {
+	if (!message.parts) return "";
+	return message.parts
+		.filter((p) => p.type === "text")
+		.map((p) => p.text ?? "")
+		.join("");
+}
+
 export function ChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
+	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const locale = useLocale();
 	const userContext = useQuery(api.chat.getUserContext);
 
-	const {
-		messages,
-		input,
-		handleInputChange,
-		handleSubmit,
-		isLoading,
-		error,
-		append,
-	} = useChat({
-		api: "/api/chat",
-		body: { userContext, locale },
-	});
+	const transport = useMemo(
+		() =>
+			new DefaultChatTransport({
+				api: "/api/chat",
+				body: { userContext, locale },
+			}),
+		[userContext, locale],
+	);
+
+	const { messages, sendMessage, status, error } = useChat({ transport });
+
+	const isLoading = status === "submitted" || status === "streaming";
 
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,10 +88,32 @@ export function ChatWidget() {
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen]);
 
-	const stage =
-		userContext?.stage ?? (userContext === null ? "logged_out" : "active_user");
+	const stage = useMemo(
+		() =>
+			userContext?.stage ??
+			(userContext === null ? "logged_out" : "active_user"),
+		[userContext],
+	);
 	const suggestions =
 		SUGGESTIONS_BY_STAGE[stage] ?? SUGGESTIONS_BY_STAGE.active_user;
+
+	const handleSubmit = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+			const trimmed = input.trim();
+			if (!trimmed || isLoading) return;
+			sendMessage({ text: trimmed });
+			setInput("");
+		},
+		[input, isLoading, sendMessage],
+	);
+
+	const handleSuggestionClick = useCallback(
+		(text: string) => {
+			sendMessage({ text });
+		},
+		[sendMessage],
+	);
 
 	return (
 		<>
@@ -168,7 +202,7 @@ export function ChatWidget() {
 										<button
 											key={s}
 											type="button"
-											onClick={() => append({ role: "user", content: s })}
+											onClick={() => handleSuggestionClick(s)}
 											className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:bg-gray-50"
 											style={{
 												borderColor: "#E0D9CE",
@@ -182,63 +216,66 @@ export function ChatWidget() {
 							</>
 						)}
 
-						{messages.map((message) => (
-							<div
-								key={message.id}
-								className={`mb-3 flex ${message.role === "user" ? "justify-end" : "gap-2"}`}
-							>
-								{message.role === "assistant" && (
-									<div
-										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
-										style={{
-											backgroundColor: "#2D4A35",
-											color: "#F0EBE0",
-										}}
-									>
-										S
-									</div>
-								)}
+						{messages.map((message) => {
+							const text = getMessageText(message);
+							return (
 								<div
-									className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-										message.role === "user"
-											? "rounded-tr-none"
-											: "rounded-tl-none"
-									}`}
-									style={
-										message.role === "user"
-											? {
-													backgroundColor: "#2D4A35",
-													color: "#F0EBE0",
-												}
-											: {
-													backgroundColor: "#F0EBE0",
-													color: "#1C1C1A",
-												}
-									}
+									key={message.id}
+									className={`mb-3 flex ${message.role === "user" ? "justify-end" : "gap-2"}`}
 								>
-									{message.content || (
-										<span
-											className="inline-flex items-center gap-1"
-											style={{ color: "#7A7570" }}
+									{message.role === "assistant" && (
+										<div
+											className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+											style={{
+												backgroundColor: "#2D4A35",
+												color: "#F0EBE0",
+											}}
 										>
-											<span className="animate-pulse">●</span>
-											<span
-												className="animate-pulse"
-												style={{ animationDelay: "0.2s" }}
-											>
-												●
-											</span>
-											<span
-												className="animate-pulse"
-												style={{ animationDelay: "0.4s" }}
-											>
-												●
-											</span>
-										</span>
+											S
+										</div>
 									)}
+									<div
+										className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+											message.role === "user"
+												? "rounded-tr-none"
+												: "rounded-tl-none"
+										}`}
+										style={
+											message.role === "user"
+												? {
+														backgroundColor: "#2D4A35",
+														color: "#F0EBE0",
+													}
+												: {
+														backgroundColor: "#F0EBE0",
+														color: "#1C1C1A",
+													}
+										}
+									>
+										{text || (
+											<span
+												className="inline-flex items-center gap-1"
+												style={{ color: "#7A7570" }}
+											>
+												<span className="animate-pulse">●</span>
+												<span
+													className="animate-pulse"
+													style={{ animationDelay: "0.2s" }}
+												>
+													●
+												</span>
+												<span
+													className="animate-pulse"
+													style={{ animationDelay: "0.4s" }}
+												>
+													●
+												</span>
+											</span>
+										)}
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 
 						{error && (
 							<div className="mb-3 flex gap-2">
@@ -277,7 +314,7 @@ export function ChatWidget() {
 								ref={inputRef}
 								type="text"
 								value={input}
-								onChange={handleInputChange}
+								onChange={(e) => setInput(e.target.value)}
 								placeholder="Ask Sharry anything..."
 								disabled={isLoading}
 								className="flex-1 rounded-full px-4 py-2 text-sm outline-none"
