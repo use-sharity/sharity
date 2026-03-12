@@ -11,11 +11,12 @@ const { buildSystemPrompt } = sharryPrompt.default ?? sharryPrompt;
 const { anthropic } = await import("@ai-sdk/anthropic");
 const { generateText } = await import("ai");
 
-/** @type {import('promptfoo').ApiProvider} */
-export default {
-	id: () => "sharry-haiku",
+export default class SharryProvider {
+	id() {
+		return "sharry-haiku";
+	}
 
-	callApi: async (prompt, context) => {
+	async callApi(prompt, context) {
 		const userContext = context?.vars?.userContext ?? null;
 		const locale = context?.vars?.locale ?? "en";
 
@@ -34,5 +35,5 @@ export default {
 		} catch (error) {
 			return { error: error.message ?? String(error) };
 		}
-	},
-};
+	}
+}
