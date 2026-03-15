@@ -1,12 +1,18 @@
-import { tool } from "ai";
+import { jsonSchema, tool } from "ai";
 import type { ConvexHttpClient } from "convex/browser";
-import { z } from "zod";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 
 // Helper: cast string to Convex Id (safe for ConvexHttpClient which accepts strings at runtime)
-function asId<T extends string>(id: string) {
-	return id as unknown as Id<T>;
+function asItemId(id: string) {
+	return id as Id<"items">;
+}
+
+// Schema helpers using AI SDK's jsonSchema (avoids zod dependency)
+const noParams = jsonSchema<Record<string, never>>({ type: "object", properties: {} });
+
+function stringParam(description: string) {
+	return { type: "string" as const, description };
 }
 
 export function buildTools(convex: ConvexHttpClient, locale: string) {
@@ -14,7 +20,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getMyItems: tool({
 			description:
 				"List the user's own items with descriptions and categories. Use when the user asks about their listed items.",
-			parameters: z.object({}),
+			inputSchema: noParams,
 			execute: async () => {
 				try {
 					const items = await convex.query(api.items.getMyItems);
@@ -34,7 +40,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getMyBorrowedItems: tool({
 			description:
 				"List items the user is currently fostering, with owner name and return dates. Use when the user asks what they're borrowing.",
-			parameters: z.object({}),
+			inputSchema: noParams,
 			execute: async () => {
 				try {
 					const items = await convex.query(api.items.getMyBorrowedItems);
@@ -52,17 +58,12 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		browseItems: tool({
 			description:
 				"Search available items from other neighbors. Filter by name/keyword and/or category. Use when the user wants to find something to borrow.",
-			parameters: z.object({
-				query: z
-					.string()
-					.optional()
-					.describe("Search term to match against item names"),
-				category: z
-					.string()
-					.optional()
-					.describe(
-						"Category filter: kitchen, furniture, electronics, clothing, books, sports, other",
-					),
+			inputSchema: jsonSchema<{ query?: string; category?: string }>({
+				type: "object",
+				properties: {
+					query: stringParam("Search term to match against item names"),
+					category: stringParam("Category: kitchen, furniture, electronics, clothing, books, sports, other"),
+				},
 			}),
 			execute: async ({ query, category }) => {
 				try {
@@ -89,13 +90,15 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getItemDetails: tool({
 			description:
 				"Get full details of a specific item by ID: description, category, owner name, location. Use after browseItems to learn more.",
-			parameters: z.object({
-				itemId: z.string().describe("The item ID from browseItems results"),
+			inputSchema: jsonSchema<{ itemId: string }>({
+				type: "object",
+				properties: { itemId: stringParam("The item ID from browseItems results") },
+				required: ["itemId"],
 			}),
 			execute: async ({ itemId }) => {
 				try {
 					const item = await convex.query(api.items.getById, {
-						id: asId<"items">(itemId),
+						id: asItemId(itemId),
 					});
 					if (!item) return { error: "Item not found." };
 					const ownerInfo = await convex.query(api.users.getBasicInfo, {
@@ -117,13 +120,15 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getItemAvailability: tool({
 			description:
 				"Get the availability calendar for an item — which date ranges are booked vs free.",
-			parameters: z.object({
-				itemId: z.string().describe("The item ID"),
+			inputSchema: jsonSchema<{ itemId: string }>({
+				type: "object",
+				properties: { itemId: stringParam("The item ID") },
+				required: ["itemId"],
 			}),
 			execute: async ({ itemId }) => {
 				try {
 					const ranges = await convex.query(api.items.getAvailability, {
-						id: asId<"items">(itemId),
+						id: asItemId(itemId),
 					});
 					if (ranges.length === 0) return { available: "fully available" };
 					return {
@@ -141,8 +146,10 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getClaimsOnItem: tool({
 			description:
 				"Look up who has requested or is fostering a specific item owned by the user. Takes an item name (partial match OK).",
-			parameters: z.object({
-				itemName: z.string().describe("Name of the user's item"),
+			inputSchema: jsonSchema<{ itemName: string }>({
+				type: "object",
+				properties: { itemName: stringParam("Name of the user's item") },
+				required: ["itemName"],
 			}),
 			execute: async ({ itemName }) => {
 				try {
@@ -179,8 +186,10 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getUserProfile: tool({
 			description:
 				"Get public profile info and rating summary for a user. Use when the user asks about someone.",
-			parameters: z.object({
-				userId: z.string().describe("The user ID to look up"),
+			inputSchema: jsonSchema<{ userId: string }>({
+				type: "object",
+				properties: { userId: stringParam("The user ID to look up") },
+				required: ["userId"],
 			}),
 			execute: async ({ userId }) => {
 				try {
@@ -203,7 +212,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		getNotifications: tool({
 			description:
 				"Get the user's recent notifications. Use when the user asks for updates or what's new.",
-			parameters: z.object({}),
+			inputSchema: noParams,
 			execute: async () => {
 				try {
 					const notifs = await convex.query(api.notifications.get);
@@ -222,18 +231,17 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		navigateTo: tool({
 			description:
 				"Generate a link to a page in the app. Use when the user wants to go somewhere.",
-			parameters: z.object({
-				page: z
-					.enum([
-						"home",
-						"my-items",
-						"profile",
-						"wishlist",
-						"notifications",
-						"item-detail",
-					])
-					.describe("The page to navigate to"),
-				itemId: z.string().optional().describe("Required for item-detail page"),
+			inputSchema: jsonSchema<{ page: string; itemId?: string }>({
+				type: "object",
+				properties: {
+					page: {
+						type: "string",
+						enum: ["home", "my-items", "profile", "wishlist", "notifications", "item-detail"],
+						description: "The page to navigate to",
+					},
+					itemId: stringParam("Required for item-detail page"),
+				},
+				required: ["page"],
 			}),
 			execute: async ({ page, itemId }) => {
 				const paths: Record<string, string> = {

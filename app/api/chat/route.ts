@@ -1,15 +1,13 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { ConvexHttpClient } from "convex/browser";
-import { convertToModelMessages, streamText } from "ai";
+import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { buildSystemPrompt } from "@/lib/sharry-prompt";
 import { buildTools } from "@/lib/sharry-tools";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
 
 export async function POST(request: Request) {
-	const token = request.headers
-		.get("Authorization")
-		?.replace("Bearer ", "");
+	const token = request.headers.get("Authorization")?.replace("Bearer ", "");
 	const { messages, userContext, locale } = await request.json();
 
 	if (!Array.isArray(messages) || messages.length === 0) {
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
 			system: systemPrompt,
 			messages: modelMessages,
 			tools,
-			maxSteps: 4,
+			stopWhen: stepCountIs(4),
 			maxOutputTokens: 800,
 			temperature: 0.5,
 		});
