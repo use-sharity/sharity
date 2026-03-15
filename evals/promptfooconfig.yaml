@@ -376,3 +376,60 @@ tests:
     assert:
       - type: llm-rubric
         value: "The response references the user's 2 pending outgoing requests."
+
+  # ── Tool Use Awareness (4 cases) ──
+  - vars:
+      prompt: "who requested my Electric Drill?"
+      userContext:
+        stage: "has_pending_claims"
+        itemCount: 3
+        itemNames: ["Electric Drill", "Yoga Mat", "Camping Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 2
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should reference the Electric Drill by name and acknowledge pending requests. Should not say it can't see the user's data."
+
+  - vars:
+      prompt: "find me something in electronics"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Yoga Mat"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should offer to help find electronics items or suggest browsing the home page. Should not say it can't search."
+
+  - vars:
+      prompt: "any updates for me?"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Drill", "Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Blender"]
+        pendingClaimsOnMyItems: 1
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should reference the user's activity (pending request, fostering a Blender) or offer to check notifications. Should not deflect."
+
+  - vars:
+      prompt: "take me to my items"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Drill", "Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should direct the user to the My Items page. Can reference the page name or provide navigation guidance."
