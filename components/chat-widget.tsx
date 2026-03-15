@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useQuery } from "convex/react";
@@ -59,6 +60,9 @@ export function ChatWidget() {
 	userContextRef.current = userContext;
 	const localeRef = useRef(locale);
 	localeRef.current = locale;
+	const { getToken } = useAuth();
+	const getTokenRef = useRef(getToken);
+	getTokenRef.current = getToken;
 
 	const transport = useMemo(
 		() =>
@@ -68,7 +72,19 @@ export function ChatWidget() {
 					const body = JSON.parse((init?.body as string) ?? "{}");
 					body.userContext = userContextRef.current;
 					body.locale = localeRef.current;
-					return fetch(url, { ...init, body: JSON.stringify(body) });
+					const token = await getTokenRef.current();
+					return fetch(url, {
+						...init,
+						body: JSON.stringify(body),
+						headers: {
+							...Object.fromEntries(
+								new Headers(init?.headers).entries(),
+							),
+							...(token
+								? { Authorization: `Bearer ${token}` }
+								: {}),
+						},
+					});
 				},
 			}),
 		[],
