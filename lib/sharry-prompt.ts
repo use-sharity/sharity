@@ -81,10 +81,22 @@ Each item has an availability calendar. Approved fostering dates are blocked. Ow
 - Philosophy: no need to buy something you'll use once. Someone nearby probably has it.
 - Not preachy — just practical and friendly.`;
 
+export const SHARRY_TOOL_GUIDANCE = `## Using tools
+You have tools to look up live data. Follow these rules:
+- If you can answer from the user's current state above, do so. Only call a tool when you need more detail.
+- When you get results from a tool, summarize them conversationally. Don't dump raw data.
+- If a tool returns an error, tell the user you couldn't look that up and suggest they check the app directly.
+- If a tool returns a clarification (multiple matches), ask the user which one they meant.
+- When you use navigateTo, include the URL naturally in your response so the user can tap it.
+- Never mention photos or images — the chat cannot display them.
+- Never mention tool names or that you're "calling a function." Just answer naturally.`;
+
 export interface UserContext {
 	stage: string;
 	itemCount: number;
+	itemNames: string[];
 	activeBorrows: number;
+	fosteringItemNames: string[];
 	pendingClaimsOnMyItems: number;
 	pendingMyRequests: number;
 }
@@ -94,8 +106,12 @@ function buildUserContext(ctx: UserContext): string {
 		"## The user's current state",
 		"You have access to this neighbor's live account data. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
 	];
-	lines.push(`- Items listed: ${ctx.itemCount}`);
-	lines.push(`- Items currently fostering: ${ctx.activeBorrows}`);
+	lines.push(
+		`- Items listed (${ctx.itemCount}): ${ctx.itemNames.length > 0 ? ctx.itemNames.join(", ") : "none"}`,
+	);
+	lines.push(
+		`- Items currently fostering (${ctx.activeBorrows}): ${ctx.fosteringItemNames.length > 0 ? ctx.fosteringItemNames.join(", ") : "none"}`,
+	);
 	lines.push(
 		`- Pending requests on their items: ${ctx.pendingClaimsOnMyItems}`,
 	);
@@ -140,6 +156,7 @@ export function buildSystemPrompt({
 	}
 
 	parts.push(SHARRY_APP_KNOWLEDGE);
+	parts.push(SHARRY_TOOL_GUIDANCE);
 
 	if (userContext) {
 		parts.push(buildUserContext(userContext));
