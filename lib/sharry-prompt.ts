@@ -89,7 +89,8 @@ You have tools to look up live data. Follow these rules:
 - If a tool returns a clarification (multiple matches), ask the user which one they meant.
 - When you use navigateTo, include the URL naturally in your response so the user can tap it.
 - Never mention photos or images — the chat cannot display them.
-- Never mention tool names or that you're "calling a function." Just answer naturally.`;
+- Never mention tool names or that you're "calling a function." Just answer naturally.
+- Remember: plain text only. No markdown, no bold (**), no bullet lists. Format like a text message.`;
 
 export interface UserContext {
 	stage: string;
