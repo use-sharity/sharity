@@ -16,6 +16,7 @@
 
 | File | Action | Responsibility |
 |------|--------|----------------|
+| `convex/chat.ts` | Modify | Add `getClaimsOnItem` query (enriched claims with claimer names) |
 | `lib/sharry-tools.ts` | Create | All 9 tool definitions (factory function taking `ConvexHttpClient` + `locale`) |
 | `app/api/chat/route.ts` | Modify | Add `ConvexHttpClient` setup, auth extraction, pass tools to `streamText` |
 | `components/chat-widget.tsx` | Modify | Forward Clerk token as `Authorization` header, render internal links |
@@ -91,34 +92,125 @@ git commit -m "feat(chat): forward Clerk token in chat transport"
 
 ---
 
-### Task 2: Create tool definitions module with `getMyItems`
+### Task 2: Add `getClaimsOnItem` Convex query
+
+**Files:**
+- Modify: `convex/chat.ts`
+
+The existing `items.getClaims` returns raw claim docs without claimer names. Instead of doing N+2 HTTP queries from the tool, add a dedicated query that returns enriched claims with names resolved server-side.
+
+- [ ] **Step 1: Add `getClaimsOnItem` query to `convex/chat.ts`**
+
+```typescript
+export const getClaimsOnItem = query({
+	args: { itemName: v.string() },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const userId = identity.subject;
+
+		// Find matching owned items by case-insensitive substring
+		const myItems = await ctx.db
+			.query("items")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+
+		const q = args.itemName.toLowerCase();
+		const matches = myItems.filter((i) =>
+			i.name.toLowerCase().includes(q),
+		);
+
+		if (matches.length === 0) {
+			return {
+				found: false as const,
+				items: myItems.map((i) => i.name),
+			};
+		}
+		if (matches.length > 1) {
+			return {
+				found: "multiple" as const,
+				items: matches.map((i) => i.name),
+			};
+		}
+
+		const item = matches[0];
+		const claims = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q2) => q2.eq("itemId", item._id))
+			.collect();
+
+		// Resolve claimer names
+		const enriched = await Promise.all(
+			claims.map(async (c) => {
+				const users = await ctx.db
+					.query("users")
+					.filter((q2) => q2.eq(q2.field("clerkId"), c.claimerId))
+					.first();
+				return {
+					claimerName: users?.name ?? "a neighbor",
+					claimerId: c.claimerId,
+					status: c.status,
+					startDate: c.startDate,
+					endDate: c.endDate,
+				};
+			}),
+		);
+
+		return { found: true as const, itemName: item.name, claims: enriched };
+	},
+});
+```
+
+- [ ] **Step 2: Verify Convex compiles**
+
+Check `pnpm convex:dev` output — should show "Convex functions ready!"
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add convex/chat.ts
+git commit -m "feat(chat): add getClaimsOnItem query with enriched claimer names"
+```
+
+---
+
+### Task 3: Create tool definitions module with `getMyItems`
 
 **Files:**
 - Create: `lib/sharry-tools.ts`
 
 - [ ] **Step 1: Create `lib/sharry-tools.ts` with `buildTools` factory and first tool**
 
+Use proper types inferred from `typeof api` — the `ConvexHttpClient.query()` return types match the Convex function return types, so no `any` casts needed.
+
 ```typescript
 import { tool } from "ai";
 import type { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
+import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+
+// Helper: cast string to Convex Id (safe for ConvexHttpClient which accepts strings at runtime)
+function asId<T extends string>(id: string) {
+	return id as unknown as Id<T>;
+}
 
 export function buildTools(convex: ConvexHttpClient, locale: string) {
 	return {
 		getMyItems: tool({
 			description:
-				"List the user's own items with descriptions, categories, and pending request counts. Use when the user asks about their listed items.",
+				"List the user's own items with descriptions and categories. Use when the user asks about their listed items.",
 			parameters: z.object({}),
 			execute: async () => {
 				try {
 					const items = await convex.query(api.items.getMyItems);
-					const owned = items.filter((i: any) => i.isOwner);
-					return owned.map((i: any) => ({
-						name: i.name,
-						description: i.description ?? "",
-						category: i.category ?? "other",
-					}));
+					return items
+						.filter((i) => i.isOwner)
+						.map((i) => ({
+							name: i.name,
+							description: i.description ?? "",
+							category: i.category ?? "other",
+						}));
 				} catch {
 					return { error: "Could not fetch your items right now." };
 				}
@@ -130,8 +222,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 
 - [ ] **Step 2: Verify the file compiles**
 
-Run: `npx tsc --noEmit lib/sharry-tools.ts` or check dev server output.
-Expected: No type errors.
+Check dev server output — no TypeScript errors.
 
 - [ ] **Step 3: Commit**
 
@@ -142,7 +233,7 @@ git commit -m "feat(chat): add sharry-tools module with getMyItems tool"
 
 ---
 
-### Task 3: Wire tools into the API route
+### Task 4: Wire tools into the API route
 
 **Files:**
 - Modify: `app/api/chat/route.ts`
@@ -213,14 +304,14 @@ git commit -m "feat(chat): wire tools into streamText with ConvexHttpClient auth
 
 ## Chunk 2: Remaining Tools
 
-### Task 4: Add browsing & discovery tools
+### Task 5: Add browsing & discovery tools
 
 **Files:**
 - Modify: `lib/sharry-tools.ts`
 
 - [ ] **Step 1: Add `getMyBorrowedItems`, `browseItems`, `getItemDetails`, `getItemAvailability`**
 
-Add these tools inside the `buildTools` return object:
+All tools use properly typed Convex query returns — no `any` casts. Use the `asId` helper for ID conversions.
 
 ```typescript
 getMyBorrowedItems: tool({
@@ -229,21 +320,14 @@ getMyBorrowedItems: tool({
 	parameters: z.object({}),
 	execute: async () => {
 		try {
-			const items = await convex.query(
-				api.items.getMyBorrowedItems,
-			);
-			// getMyBorrowedItems returns { ...item, owner: { name }, claim: { endDate } }
-			return items.map((i: any) => ({
+			const items = await convex.query(api.items.getMyBorrowedItems);
+			return items.map((i) => ({
 				name: i.name,
-				ownerName: i.owner?.name ?? "a neighbor",
-				endDate: i.claim?.endDate
-					? new Date(i.claim.endDate).toLocaleDateString(locale)
-					: "unknown",
+				ownerName: i.owner.name ?? "a neighbor",
+				endDate: new Date(i.claim.endDate).toLocaleDateString(locale),
 			}));
 		} catch {
-			return {
-				error: "Could not fetch your borrowed items right now.",
-			};
+			return { error: "Could not fetch your borrowed items right now." };
 		}
 	},
 }),
@@ -252,68 +336,49 @@ browseItems: tool({
 	description:
 		"Search available items from other neighbors. Filter by name/keyword and/or category. Use when the user wants to find something to borrow.",
 	parameters: z.object({
-		query: z
-			.string()
-			.optional()
-			.describe("Search term to match against item names"),
-		category: z
-			.string()
-			.optional()
-			.describe(
-				"Category filter: kitchen, furniture, electronics, clothing, books, sports, other",
-			),
+		query: z.string().optional().describe("Search term to match against item names"),
+		category: z.string().optional().describe(
+			"Category filter: kitchen, furniture, electronics, clothing, books, sports, other",
+		),
 	}),
 	execute: async ({ query, category }) => {
 		try {
-			const allItems = await convex.query(api.items.get);
-			let filtered = allItems;
+			let items = await convex.query(api.items.get);
 			if (query) {
 				const q = query.toLowerCase();
-				filtered = filtered.filter((i: any) =>
-					i.name.toLowerCase().includes(q),
-				);
+				items = items.filter((i) => i.name.toLowerCase().includes(q));
 			}
 			if (category) {
-				filtered = filtered.filter(
-					(i: any) => i.category === category,
-				);
+				items = items.filter((i) => i.category === category);
 			}
-			const top10 = filtered.slice(0, 10);
-			return top10.map((i: any) => ({
+			return items.slice(0, 10).map((i) => ({
 				id: i._id,
 				name: i.name,
 				description: i.description ?? "",
 				category: i.category ?? "other",
 			}));
 		} catch {
-			return {
-				error: "Could not search items right now.",
-			};
+			return { error: "Could not search items right now." };
 		}
 	},
 }),
 
 getItemDetails: tool({
 	description:
-		"Get full details of a specific item by ID: description, category, owner name, location. Use after browseItems to learn more about a specific item.",
+		"Get full details of a specific item by ID: description, category, owner name, location. Use after browseItems to learn more.",
 	parameters: z.object({
 		itemId: z.string().describe("The item ID from browseItems results"),
 	}),
 	execute: async ({ itemId }) => {
 		try {
-			const item = await convex.query(api.items.getById, {
-				id: itemId as any, // ConvexHttpClient accepts string IDs at runtime
-			});
+			const item = await convex.query(api.items.getById, { id: asId<"items">(itemId) });
 			if (!item) return { error: "Item not found." };
-			// getById returns { ...item, isOwner } — ownerId is a Clerk user ID, resolve name separately
-			const ownerInfo = await convex.query(api.users.getBasicInfo, {
-				userId: item.ownerId,
-			});
+			const ownerInfo = await convex.query(api.users.getBasicInfo, { userId: item.ownerId });
 			return {
 				name: item.name,
 				description: item.description ?? "",
 				category: item.category ?? "other",
-				ownerName: ownerInfo?.name ?? "a neighbor",
+				ownerName: ownerInfo.name ?? "a neighbor",
 				location: item.location?.address ?? null,
 			};
 		} catch {
@@ -324,26 +389,22 @@ getItemDetails: tool({
 
 getItemAvailability: tool({
 	description:
-		"Get the availability calendar for an item — which date ranges are booked vs free. Use when the user asks when an item is available.",
+		"Get the availability calendar for an item — which date ranges are booked vs free.",
 	parameters: z.object({
 		itemId: z.string().describe("The item ID"),
 	}),
 	execute: async ({ itemId }) => {
 		try {
-			const ranges = await convex.query(api.items.getAvailability, {
-				id: itemId as any,
-			});
+			const ranges = await convex.query(api.items.getAvailability, { id: asId<"items">(itemId) });
 			if (ranges.length === 0) return { available: "fully available" };
 			return {
-				bookedRanges: ranges.map((r: any) => ({
+				bookedRanges: ranges.map((r) => ({
 					from: new Date(r.startDate).toLocaleDateString(locale),
 					to: new Date(r.endDate).toLocaleDateString(locale),
 				})),
 			};
 		} catch {
-			return {
-				error: "Could not fetch availability right now.",
-			};
+			return { error: "Could not fetch availability right now." };
 		}
 	},
 }),
@@ -363,62 +424,42 @@ git commit -m "feat(chat): add browsing and discovery tools"
 
 ---
 
-### Task 5: Add claims, profile, notifications, and navigation tools
+### Task 6: Add claims, profile, notifications, and navigation tools
 
 **Files:**
 - Modify: `lib/sharry-tools.ts`
 
 - [ ] **Step 1: Add `getClaimsOnItem`, `getUserProfile`, `getNotifications`, `navigateTo`**
 
-Add these tools inside the `buildTools` return object:
+`getClaimsOnItem` uses the new dedicated Convex query from Task 2 — no N+1 HTTP calls.
 
 ```typescript
 getClaimsOnItem: tool({
 	description:
-		"Look up who has requested or is fostering a specific item owned by the user. Takes an item name and resolves it. Use when the user asks about requests on their items.",
+		"Look up who has requested or is fostering a specific item owned by the user. Takes an item name (partial match OK).",
 	parameters: z.object({
-		itemName: z
-			.string()
-			.describe("Name of the user's item (partial match OK)"),
+		itemName: z.string().describe("Name of the user's item"),
 	}),
 	execute: async ({ itemName }) => {
 		try {
-			const items = await convex.query(api.items.getMyItems);
-			const owned = items.filter((i: any) => i.isOwner);
-			const q = itemName.toLowerCase();
-			const matches = owned.filter((i: any) =>
-				i.name.toLowerCase().includes(q),
-			);
-			if (matches.length === 0) {
-				return {
-					error: `No item found matching "${itemName}". Your items: ${owned.map((i: any) => i.name).join(", ")}`,
-				};
+			const result = await convex.query(api.chat.getClaimsOnItem, { itemName });
+			if (!result) return { error: "Sign in to see your items." };
+			if (result.found === false) {
+				return { error: `No item matching "${itemName}". Your items: ${result.items.join(", ")}` };
 			}
-			if (matches.length > 1) {
-				return {
-					clarify: `Multiple items match: ${matches.map((i: any) => i.name).join(", ")}. Which one?`,
-				};
+			if (result.found === "multiple") {
+				return { clarify: `Multiple items match: ${result.items.join(", ")}. Which one?` };
 			}
-			const item = matches[0];
-			const claims = await convex.query(api.items.getClaims, {
-				id: item._id,
-			});
-			// getClaims returns raw claim docs — claimerId is a Clerk user ID, resolve names
-			const enriched = await Promise.all(
-				claims.map(async (c: any) => {
-					const claimer = await convex.query(
-						api.users.getBasicInfo,
-						{ userId: c.claimerId },
-					);
-					return {
-						claimerName: claimer?.name ?? "a neighbor",
-						status: c.status,
-						startDate: new Date(c.startDate).toLocaleDateString(locale),
-						endDate: new Date(c.endDate).toLocaleDateString(locale),
-					};
-				}),
-			);
-			return enriched;
+			return {
+				itemName: result.itemName,
+				claims: result.claims.map((c) => ({
+					claimerName: c.claimerName,
+					claimerId: c.claimerId,
+					status: c.status,
+					startDate: new Date(c.startDate).toLocaleDateString(locale),
+					endDate: new Date(c.endDate).toLocaleDateString(locale),
+				})),
+			};
 		} catch {
 			return { error: "Could not look up claims right now." };
 		}
@@ -427,7 +468,7 @@ getClaimsOnItem: tool({
 
 getUserProfile: tool({
 	description:
-		"Get public profile info and rating summary for a user. Use when the user asks about someone (e.g., a person who requested their item).",
+		"Get public profile info and rating summary for a user. Use when the user asks about someone.",
 	parameters: z.object({
 		userId: z.string().describe("The user ID to look up"),
 	}),
@@ -440,8 +481,8 @@ getUserProfile: tool({
 			return {
 				name: profile?.name ?? "Unknown",
 				bio: profile?.bio ?? "",
-				averageStars: ratings?.averageStars ?? null,
-				totalRatings: ratings?.totalRatings ?? 0,
+				averageStars: ratings.averageStars,
+				totalRatings: ratings.totalRatings,
 			};
 		} catch {
 			return { error: "Could not fetch profile right now." };
@@ -451,21 +492,17 @@ getUserProfile: tool({
 
 getNotifications: tool({
 	description:
-		"Get the user's recent notifications (requests, approvals, pickups, returns, ratings). Use when the user asks for updates or what's new.",
+		"Get the user's recent notifications. Use when the user asks for updates or what's new.",
 	parameters: z.object({}),
 	execute: async () => {
 		try {
 			const notifs = await convex.query(api.notifications.get);
-			const recent = notifs.slice(0, 10);
 			// notifications.get returns { ...n, item, claim, raterName }
-			// n has: type, isRead, createdAt — no "message" or "itemName" field
-			return recent.map((n: any) => ({
+			return notifs.slice(0, 10).map((n) => ({
 				type: n.type.replace(/_/g, " "),
 				isRead: n.isRead,
 				itemName: n.item?.name ?? null,
-				createdAt: n.createdAt
-					? new Date(n.createdAt).toLocaleDateString(locale)
-					: null,
+				createdAt: new Date(n.createdAt).toLocaleDateString(locale),
 			}));
 		} catch {
 			return { error: "Could not fetch notifications right now." };
@@ -475,22 +512,11 @@ getNotifications: tool({
 
 navigateTo: tool({
 	description:
-		"Generate a link to a page in the app. Use when the user wants to go somewhere or you want to point them to a specific page.",
+		"Generate a link to a page in the app. Use when the user wants to go somewhere.",
 	parameters: z.object({
-		page: z
-			.enum([
-				"home",
-				"my-items",
-				"profile",
-				"wishlist",
-				"notifications",
-				"item-detail",
-			])
+		page: z.enum(["home", "my-items", "profile", "wishlist", "notifications", "item-detail"])
 			.describe("The page to navigate to"),
-		itemId: z
-			.string()
-			.optional()
-			.describe("Required for item-detail page"),
+		itemId: z.string().optional().describe("Required for item-detail page"),
 	}),
 	execute: async ({ page, itemId }) => {
 		const paths: Record<string, string> = {
@@ -523,7 +549,7 @@ git commit -m "feat(chat): add claims, profile, notifications, and navigation to
 
 ## Chunk 3: Prompt Update + Link Rendering + Evals
 
-### Task 6: Update system prompt with tool-use guidance
+### Task 7: Update system prompt with tool-use guidance
 
 **Files:**
 - Modify: `lib/sharry-prompt.ts`
@@ -564,7 +590,7 @@ git commit -m "feat(chat): add tool-use guidance to system prompt"
 
 ---
 
-### Task 7: Render internal links in chat messages
+### Task 8: Render internal links in chat messages
 
 **Files:**
 - Modify: `components/chat-widget.tsx:229-287`
@@ -618,7 +644,7 @@ git commit -m "feat(chat): render internal links in chat messages"
 
 ---
 
-### Task 8: Add tool-use eval test cases
+### Task 9: Add tool-use eval test cases
 
 **Files:**
 - Modify: `evals/promptfooconfig.yaml`
@@ -703,7 +729,7 @@ git commit -m "test(evals): add tool-use awareness test cases"
 
 ---
 
-### Task 9: Manual integration testing
+### Task 10: Manual integration testing
 
 - [ ] **Step 1: Test all 9 tools end-to-end in the browser**
 
