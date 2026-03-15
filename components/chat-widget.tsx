@@ -5,7 +5,13 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useQuery } from "convex/react";
 import { useLocale } from "next-intl";
-import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+	useRef,
+	useEffect,
+	useState,
+	useCallback,
+	useMemo,
+} from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 
@@ -47,6 +53,36 @@ function getMessageText(message: {
 		.join("");
 }
 
+function renderMessageContent(text: string) {
+	// Match internal paths like /en/my-items or /en/items/abc123
+	const linkRegex = /(\/(en|vi|ru)\/[a-zA-Z0-9\-\/]+)/g;
+
+	if (!linkRegex.test(text)) return text;
+
+	// Reset regex after test
+	linkRegex.lastIndex = 0;
+
+	const elements: React.ReactNode[] = [];
+	let lastIndex = 0;
+	for (const match of text.matchAll(linkRegex)) {
+		const before = text.slice(lastIndex, match.index);
+		if (before) elements.push(before);
+		elements.push(
+			<a
+				key={match.index}
+				href={match[0]}
+				style={{ color: "#2D4A35", textDecoration: "underline" }}
+			>
+				{match[0]}
+			</a>,
+		);
+		lastIndex = match.index! + match[0].length;
+	}
+	const after = text.slice(lastIndex);
+	if (after) elements.push(after);
+	return <>{elements}</>;
+}
+
 export function ChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [input, setInput] = useState("");
@@ -77,12 +113,8 @@ export function ChatWidget() {
 						...init,
 						body: JSON.stringify(body),
 						headers: {
-							...Object.fromEntries(
-								new Headers(init?.headers).entries(),
-							),
-							...(token
-								? { Authorization: `Bearer ${token}` }
-								: {}),
+							...Object.fromEntries(new Headers(init?.headers).entries()),
+							...(token ? { Authorization: `Bearer ${token}` } : {}),
 						},
 					});
 				},
@@ -278,7 +310,9 @@ export function ChatWidget() {
 													}
 										}
 									>
-										{text || (
+										{text ? (
+											renderMessageContent(text)
+										) : (
 											<span
 												className="inline-flex items-center gap-1"
 												style={{ color: "#7A7570" }}
