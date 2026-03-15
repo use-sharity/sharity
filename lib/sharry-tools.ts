@@ -137,5 +137,115 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				}
 			},
 		}),
+
+		getClaimsOnItem: tool({
+			description:
+				"Look up who has requested or is fostering a specific item owned by the user. Takes an item name (partial match OK).",
+			parameters: z.object({
+				itemName: z.string().describe("Name of the user's item"),
+			}),
+			execute: async ({ itemName }) => {
+				try {
+					const result = await convex.query(api.chat.getClaimsOnItem, {
+						itemName,
+					});
+					if (!result) return { error: "Sign in to see your items." };
+					if (result.found === false) {
+						return {
+							error: `No item matching "${itemName}". Your items: ${result.items.join(", ")}`,
+						};
+					}
+					if (result.found === "multiple") {
+						return {
+							clarify: `Multiple items match: ${result.items.join(", ")}. Which one?`,
+						};
+					}
+					return {
+						itemName: result.itemName,
+						claims: result.claims.map((c) => ({
+							claimerName: c.claimerName,
+							claimerId: c.claimerId,
+							status: c.status,
+							startDate: new Date(c.startDate).toLocaleDateString(locale),
+							endDate: new Date(c.endDate).toLocaleDateString(locale),
+						})),
+					};
+				} catch {
+					return { error: "Could not look up claims right now." };
+				}
+			},
+		}),
+
+		getUserProfile: tool({
+			description:
+				"Get public profile info and rating summary for a user. Use when the user asks about someone.",
+			parameters: z.object({
+				userId: z.string().describe("The user ID to look up"),
+			}),
+			execute: async ({ userId }) => {
+				try {
+					const [profile, ratings] = await Promise.all([
+						convex.query(api.users.getProfile, { userId }),
+						convex.query(api.ratings.getRatingSummary, { userId }),
+					]);
+					return {
+						name: profile?.name ?? "Unknown",
+						bio: profile?.bio ?? "",
+						averageStars: ratings.averageStars,
+						totalRatings: ratings.totalRatings,
+					};
+				} catch {
+					return { error: "Could not fetch profile right now." };
+				}
+			},
+		}),
+
+		getNotifications: tool({
+			description:
+				"Get the user's recent notifications. Use when the user asks for updates or what's new.",
+			parameters: z.object({}),
+			execute: async () => {
+				try {
+					const notifs = await convex.query(api.notifications.get);
+					return notifs.slice(0, 10).map((n) => ({
+						type: n.type.replace(/_/g, " "),
+						isRead: n.isRead,
+						itemName: n.item?.name ?? null,
+						createdAt: new Date(n.createdAt).toLocaleDateString(locale),
+					}));
+				} catch {
+					return { error: "Could not fetch notifications right now." };
+				}
+			},
+		}),
+
+		navigateTo: tool({
+			description:
+				"Generate a link to a page in the app. Use when the user wants to go somewhere.",
+			parameters: z.object({
+				page: z
+					.enum([
+						"home",
+						"my-items",
+						"profile",
+						"wishlist",
+						"notifications",
+						"item-detail",
+					])
+					.describe("The page to navigate to"),
+				itemId: z.string().optional().describe("Required for item-detail page"),
+			}),
+			execute: async ({ page, itemId }) => {
+				const paths: Record<string, string> = {
+					home: `/${locale}`,
+					"my-items": `/${locale}/my-items`,
+					profile: `/${locale}/profile`,
+					wishlist: `/${locale}/wishlist`,
+					notifications: `/${locale}/notifications`,
+					"item-detail": `/${locale}/items/${itemId ?? ""}`,
+				};
+				return { url: paths[page] ?? `/${locale}` };
+			},
+		}),
 	};
 }
