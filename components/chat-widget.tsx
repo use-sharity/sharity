@@ -108,7 +108,7 @@ export function ChatWidget() {
 					const body = JSON.parse((init?.body as string) ?? "{}");
 					body.userContext = userContextRef.current;
 					body.locale = localeRef.current;
-					const token = await getTokenRef.current();
+					const token = await getTokenRef.current({ template: "convex" });
 					return fetch(url, {
 						...init,
 						body: JSON.stringify(body),

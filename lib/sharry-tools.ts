@@ -9,7 +9,10 @@ function asItemId(id: string) {
 }
 
 // Schema helpers using AI SDK's jsonSchema (avoids zod dependency)
-const noParams = jsonSchema<Record<string, never>>({ type: "object", properties: {} });
+const noParams = jsonSchema<Record<string, never>>({
+	type: "object",
+	properties: {},
+});
 
 function stringParam(description: string) {
 	return { type: "string" as const, description };
@@ -62,7 +65,9 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				type: "object",
 				properties: {
 					query: stringParam("Search term to match against item names"),
-					category: stringParam("Category: kitchen, furniture, electronics, clothing, books, sports, other"),
+					category: stringParam(
+						"Category: kitchen, furniture, electronics, clothing, books, sports, other",
+					),
 				},
 			}),
 			execute: async ({ query, category }) => {
@@ -92,7 +97,9 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				"Get full details of a specific item by ID: description, category, owner name, location. Use after browseItems to learn more.",
 			inputSchema: jsonSchema<{ itemId: string }>({
 				type: "object",
-				properties: { itemId: stringParam("The item ID from browseItems results") },
+				properties: {
+					itemId: stringParam("The item ID from browseItems results"),
+				},
 				required: ["itemId"],
 			}),
 			execute: async ({ itemId }) => {
@@ -236,7 +243,14 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				properties: {
 					page: {
 						type: "string",
-						enum: ["home", "my-items", "profile", "wishlist", "notifications", "item-detail"],
+						enum: [
+							"home",
+							"my-items",
+							"profile",
+							"wishlist",
+							"notifications",
+							"item-detail",
+						],
 						description: "The page to navigate to",
 					},
 					itemId: stringParam("Required for item-detail page"),
