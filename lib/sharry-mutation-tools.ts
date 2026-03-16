@@ -98,7 +98,7 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 						category: category as any,
 					});
 					return {
-						success: `Created "${name}". Add photos and location through the app for better visibility.`,
+						success: `Created "${name}". Add photos and location at /${locale}/my-items for better visibility.`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not create item." };
