@@ -185,4 +185,12 @@ export default defineSchema({
 		.index("by_to_user", ["toUserId"])
 		.index("by_from_user", ["fromUserId"])
 		.index("by_claim", ["claimId"]),
+
+	// Chat message history
+	chat_messages: defineTable({
+		userId: v.string(),
+		role: v.union(v.literal("user"), v.literal("assistant")),
+		content: v.string(),
+		createdAt: v.number(),
+	}).index("by_user", ["userId", "createdAt"]),
 });
