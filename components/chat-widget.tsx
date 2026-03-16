@@ -14,6 +14,7 @@ import React, {
 } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { api } from "@/convex/_generated/api";
+import { ToolApprovalCard } from "@/components/tool-approval-card";
 
 const SUGGESTIONS_BY_STAGE: Record<string, string[]> = {
 	new_user: [
@@ -122,7 +123,8 @@ export function ChatWidget() {
 		[],
 	);
 
-	const { messages, sendMessage, status, error } = useChat({ transport });
+	const { messages, sendMessage, status, error, addToolApprovalResponse } =
+		useChat({ transport });
 
 	const isLoading = status === "submitted" || status === "streaming";
 
@@ -248,9 +250,9 @@ export function ChatWidget() {
 											lineHeight: "1.5",
 										}}
 									>
-										Hey 👋 I&apos;m Sharry. I can help you find your way around,
-										answer questions about sharing or fostering items, or
-										explain how things work. What&apos;s on your mind?
+										Hey 👋 I&apos;m Sharry. I can help you find items, answer
+										questions, approve requests, or manage your listings.
+										What&apos;s on your mind?
 									</div>
 								</div>
 
