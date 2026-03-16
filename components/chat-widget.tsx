@@ -2,7 +2,10 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import {
+	DefaultChatTransport,
+	lastAssistantMessageIsCompleteWithToolCalls,
+} from "ai";
 import { useQuery } from "convex/react";
 import { useLocale } from "next-intl";
 import React, {
@@ -124,7 +127,19 @@ export function ChatWidget() {
 	);
 
 	const { messages, sendMessage, status, error, addToolApprovalResponse } =
-		useChat({ transport });
+		useChat({
+			transport,
+			// Don't auto-send when tool calls need approval — wait for user click
+			sendAutomaticallyWhen: ({ messages: msgs }) => {
+				const last = msgs[msgs.length - 1];
+				if (last?.role !== "assistant") return false;
+				const hasApprovalRequest = last.parts?.some(
+					(p: any) => p.state === "approval-requested",
+				);
+				if (hasApprovalRequest) return false;
+				return lastAssistantMessageIsCompleteWithToolCalls({ messages: msgs });
+			},
+		});
 
 	const isLoading = status === "submitted" || status === "streaming";
 
@@ -313,28 +328,70 @@ export function ChatWidget() {
 													}),
 										}}
 									>
-										{text ? (
-											renderMessageContent(text)
-										) : (
-											<span
-												className="inline-flex items-center gap-1"
-												style={{ color: "#7A7570" }}
-											>
-												<span className="animate-pulse">●</span>
-												<span
-													className="animate-pulse"
-													style={{ animationDelay: "0.2s" }}
-												>
-													●
-												</span>
-												<span
-													className="animate-pulse"
-													style={{ animationDelay: "0.4s" }}
-												>
-													●
-												</span>
-											</span>
-										)}
+										{(() => {
+											const hasContent = message.parts?.some(
+												(p) =>
+													(p.type === "text" && p.text) ||
+													("state" in p && p.state === "approval-requested"),
+											);
+											if (!hasContent) {
+												return (
+													<span
+														className="inline-flex items-center gap-1"
+														style={{ color: "#7A7570" }}
+													>
+														<span className="animate-pulse">●</span>
+														<span
+															className="animate-pulse"
+															style={{ animationDelay: "0.2s" }}
+														>
+															●
+														</span>
+														<span
+															className="animate-pulse"
+															style={{ animationDelay: "0.4s" }}
+														>
+															●
+														</span>
+													</span>
+												);
+											}
+											return message.parts?.map((part, idx) => {
+												if (part.type === "text" && part.text) {
+													return (
+														<span key={idx}>
+															{renderMessageContent(part.text)}
+														</span>
+													);
+												}
+												if (
+													"state" in part &&
+													part.state === "approval-requested" &&
+													"approval" in part
+												) {
+													const toolName = part.type.replace("tool-", "");
+													return (
+														<ToolApprovalCard
+															key={idx}
+															toolName={toolName}
+															input={(part as any).input}
+															approvalId={(part as any).approval.id}
+															onApprove={(id) =>
+																addToolApprovalResponse({ id, approved: true })
+															}
+															onDeny={(id) =>
+																addToolApprovalResponse({
+																	id,
+																	approved: false,
+																	reason: "User denied",
+																})
+															}
+														/>
+													);
+												}
+												return null;
+											});
+										})()}
 									</div>
 								</div>
 							);
