@@ -15,6 +15,11 @@ import React, {
 import { MessageCircle, X, Send, RotateCcw } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { ToolApprovalCard } from "@/components/tool-approval-card";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SUGGESTIONS_BY_STAGE: Record<string, string[]> = {
 	new_user: [
@@ -292,18 +297,22 @@ export function ChatWidget() {
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={handleClearChat}
-								aria-label="New chat"
-								title="New chat"
-								className="rounded-md p-1 transition-colors hover:bg-black/5"
-							>
-								<RotateCcw
-									className="h-3.5 w-3.5"
-									style={{ color: "#7A7570" }}
-								/>
-							</button>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										onClick={handleClearChat}
+										aria-label="New chat"
+										className="rounded-md p-1 transition-colors hover:bg-black/5"
+									>
+										<RotateCcw
+											className="h-3.5 w-3.5"
+											style={{ color: "#7A7570" }}
+										/>
+									</button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">New chat</TooltipContent>
+							</Tooltip>
 							<button
 								type="button"
 								onClick={() => setIsOpen(false)}
