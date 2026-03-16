@@ -170,6 +170,22 @@ export function ChatWidget() {
 		lastSavedIndexRef.current = seeded.length;
 	}, [persistedMessages, setMessages]);
 
+	// Save assistant messages when streaming completes
+	useEffect(() => {
+		if (status !== "ready") return;
+		// Find new assistant messages since last save
+		for (let i = lastSavedIndexRef.current; i < messages.length; i++) {
+			const msg = messages[i];
+			if (msg.role === "assistant") {
+				const text = getMessageText(msg);
+				if (text) {
+					saveMessage({ role: "assistant", content: text });
+				}
+			}
+		}
+		lastSavedIndexRef.current = messages.length;
+	}, [status, messages, saveMessage]);
+
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, []);
@@ -205,16 +221,18 @@ export function ChatWidget() {
 			const trimmed = input.trim();
 			if (!trimmed || isLoading) return;
 			sendMessage({ text: trimmed });
+			saveMessage({ role: "user", content: trimmed });
 			setInput("");
 		},
-		[input, isLoading, sendMessage],
+		[input, isLoading, sendMessage, saveMessage],
 	);
 
 	const handleSuggestionClick = useCallback(
 		(text: string) => {
 			sendMessage({ text });
+			saveMessage({ role: "user", content: text });
 		},
-		[sendMessage],
+		[sendMessage, saveMessage],
 	);
 
 	return (
