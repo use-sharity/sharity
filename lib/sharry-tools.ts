@@ -205,9 +205,24 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 						convex.query(api.users.getProfile, { userId }),
 						convex.query(api.ratings.getRatingSummary, { userId }),
 					]);
+					if (!profile) {
+						return { error: "This neighbor hasn't set up their profile yet." };
+					}
+					const contacts = profile.availableContacts;
+					const contactMethods = Object.entries(contacts)
+						.filter(([, v]) => v)
+						.map(([k]) => k);
 					return {
-						name: profile?.name ?? "Unknown",
-						bio: profile?.bio ?? "",
+						name: profile.name ?? "Unknown",
+						bio: profile.bio ?? "No bio yet",
+						area: profile.address ?? "Not specified",
+						contactMethods:
+							contactMethods.length > 0
+								? contactMethods.join(", ")
+								: "None listed",
+						memberSince: new Date(profile.createdAt).toLocaleDateString(
+							locale,
+						),
 						averageStars: ratings.averageStars,
 						totalRatings: ratings.totalRatings,
 					};
