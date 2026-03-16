@@ -11,8 +11,34 @@ function asItemId(id: string) {
 	return id as Id<"items">;
 }
 
-// Helper to resolve owned item name → { itemId, claims }
-async function resolveOwned(convex: ConvexHttpClient, itemName: string) {
+const ITEM_ID_PARAM = stringParam(
+	"Item ID (use when multiple items share the same name — from a previous disambiguation response)",
+);
+
+// Helper to resolve owned item — by direct ID or by name search
+async function resolveOwned(
+	convex: ConvexHttpClient,
+	itemName: string,
+	itemId?: string,
+) {
+	// Direct ID — skip name resolution. Convex mutations verify ownership themselves.
+	if (itemId) {
+		return {
+			ok: true as const,
+			itemId: asItemId(itemId),
+			itemName: itemName || "item",
+			claims: [] as Array<{
+				claimId: Id<"claims">;
+				claimerName: string;
+				claimerId: string;
+				status: string;
+				startDate: number;
+				endDate: number;
+				pickedUpAt?: number;
+			}>,
+		};
+	}
+
 	const result = await convex.query(api.chat.resolveMyItem, { itemName });
 	if (!result)
 		return { ok: false as const, error: "Sign in to manage your items." };
@@ -23,9 +49,15 @@ async function resolveOwned(convex: ConvexHttpClient, itemName: string) {
 		};
 	}
 	if (result.found === "multiple") {
+		const descriptions = result.items
+			.map(
+				(i) =>
+					`"${i.name}" (${i.category}${i.description ? `, ${i.description.slice(0, 60)}` : ""}) — ID: ${i.itemId}`,
+			)
+			.join("\n");
 		return {
 			ok: false as const,
-			error: `Multiple items match: ${result.items.join(", ")}. Which one?`,
+			error: `Multiple items match "${itemName}":\n${descriptions}\nAsk the user which one they mean. You can use the item ID to target a specific one.`,
 		};
 	}
 	return {
@@ -98,9 +130,13 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 						category: category as any,
 					});
 					// Resolve the new item to get its ID for a direct link
-					const resolved = await convex.query(api.chat.resolveMyItem, { itemName: name });
+					const resolved = await convex.query(api.chat.resolveMyItem, {
+						itemName: name,
+					});
 					const itemId = resolved?.found === true ? resolved.itemId : null;
-					const link = itemId ? `/${locale}/item/${itemId}` : `/${locale}/my-items`;
+					const link = itemId
+						? `/${locale}/item/${itemId}`
+						: `/${locale}/my-items`;
 					return {
 						success: `Created "${name}".`,
 						nextStep: `Tell the user to add photos and location. Include this exact link in your response: ${link}`,
@@ -113,9 +149,10 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		updateItem: tool({
 			description:
-				"Update an existing item's name, description, or category. Resolves by item name.",
+				"Update an existing item's name, description, or category. Resolves by item name or item ID.",
 			inputSchema: jsonSchema<{
 				itemName: string;
+				itemId?: string;
 				name?: string;
 				description?: string;
 				category?: string;
@@ -123,6 +160,7 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 				type: "object",
 				properties: {
 					itemName: stringParam("Current name of your item"),
+					itemId: ITEM_ID_PARAM,
 					name: stringParam("New name"),
 					description: stringParam("New description"),
 					category: stringParam("New category"),
@@ -130,9 +168,9 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, name, description, category }) => {
+			execute: async ({ itemName, itemId, name, description, category }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					await convex.mutation(api.items.update, {
 						id: resolved.itemId,
@@ -148,16 +186,20 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 		}),
 
 		deleteItem: tool({
-			description: "Permanently delete an item. HIGH RISK — cannot be undone.",
-			inputSchema: jsonSchema<{ itemName: string }>({
+			description:
+				"Permanently delete an item. HIGH RISK — cannot be undone. Use itemId when multiple items share the same name.",
+			inputSchema: jsonSchema<{ itemName: string; itemId?: string }>({
 				type: "object",
-				properties: { itemName: stringParam("Name of your item to delete") },
+				properties: {
+					itemName: stringParam("Name of your item to delete"),
+					itemId: ITEM_ID_PARAM,
+				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName }) => {
+			execute: async ({ itemName, itemId }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					await convex.mutation(api.items.deleteItem, { id: resolved.itemId });
 					return { success: `Deleted "${resolved.itemName}".` };
@@ -169,18 +211,23 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		approveClaim: tool({
 			description: "Approve a pending request on your item.",
-			inputSchema: jsonSchema<{ itemName: string; claimerName?: string }>({
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				claimerName?: string;
+			}>({
 				type: "object",
 				properties: {
 					itemName: stringParam("Name of your item"),
+					itemId: ITEM_ID_PARAM,
 					claimerName: stringParam("Name of the requester (to disambiguate)"),
 				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, claimerName }) => {
+			execute: async ({ itemName, itemId, claimerName }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const pending = resolved.claims.filter((c) => c.status === "pending");
 					if (pending.length === 0)
@@ -215,18 +262,23 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		rejectClaim: tool({
 			description: "Reject a pending request on your item.",
-			inputSchema: jsonSchema<{ itemName: string; claimerName?: string }>({
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				claimerName?: string;
+			}>({
 				type: "object",
 				properties: {
 					itemName: stringParam("Name of your item"),
+					itemId: ITEM_ID_PARAM,
 					claimerName: stringParam("Name of the requester"),
 				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, claimerName }) => {
+			execute: async ({ itemName, itemId, claimerName }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const pending = resolved.claims.filter((c) => c.status === "pending");
 					if (pending.length === 0)
@@ -321,10 +373,15 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		proposePickupWindow: tool({
 			description: "Propose a 1-hour pickup time for an approved item.",
-			inputSchema: jsonSchema<{ itemName: string; dateTime: string }>({
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				dateTime: string;
+			}>({
 				type: "object",
 				properties: {
 					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
 					dateTime: stringParam(
 						"Pickup time (ISO format, e.g., 2026-03-20T14:00)",
 					),
@@ -332,12 +389,12 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 				required: ["itemName", "dateTime"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, dateTime }) => {
+			execute: async ({ itemName, itemId, dateTime }) => {
 				try {
 					const ts = parseDate(dateTime);
 					if (!ts) return { error: "Could not parse date/time." };
 					// Try as owner first, then as borrower
-					const asOwner = await resolveOwned(convex, itemName);
+					const asOwner = await resolveOwned(convex, itemName, itemId);
 					if (asOwner.ok) {
 						const approved = asOwner.claims.find(
 							(c) => c.status === "approved",
@@ -369,15 +426,18 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		approvePickupWindow: tool({
 			description: "Approve a proposed pickup time.",
-			inputSchema: jsonSchema<{ itemName: string }>({
+			inputSchema: jsonSchema<{ itemName: string; itemId?: string }>({
 				type: "object",
-				properties: { itemName: stringParam("Item name") },
+				properties: {
+					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
+				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName }) => {
+			execute: async ({ itemName, itemId }) => {
 				try {
-					const asOwner = await resolveOwned(convex, itemName);
+					const asOwner = await resolveOwned(convex, itemName, itemId);
 					if (asOwner.ok) {
 						const approved = asOwner.claims.find(
 							(c) => c.status === "approved",
@@ -406,20 +466,25 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		proposeReturnWindow: tool({
 			description: "Propose a 1-hour return time.",
-			inputSchema: jsonSchema<{ itemName: string; dateTime: string }>({
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				dateTime: string;
+			}>({
 				type: "object",
 				properties: {
 					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
 					dateTime: stringParam("Return time (ISO format)"),
 				},
 				required: ["itemName", "dateTime"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, dateTime }) => {
+			execute: async ({ itemName, itemId, dateTime }) => {
 				try {
 					const ts = parseDate(dateTime);
 					if (!ts) return { error: "Could not parse date/time." };
-					const asOwner = await resolveOwned(convex, itemName);
+					const asOwner = await resolveOwned(convex, itemName, itemId);
 					if (asOwner.ok) {
 						const active = asOwner.claims.find(
 							(c) => c.status === "approved" && c.pickedUpAt,
@@ -451,15 +516,18 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		approveReturnWindow: tool({
 			description: "Approve a proposed return time.",
-			inputSchema: jsonSchema<{ itemName: string }>({
+			inputSchema: jsonSchema<{ itemName: string; itemId?: string }>({
 				type: "object",
-				properties: { itemName: stringParam("Item name") },
+				properties: {
+					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
+				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName }) => {
+			execute: async ({ itemName, itemId }) => {
 				try {
-					const asOwner = await resolveOwned(convex, itemName);
+					const asOwner = await resolveOwned(convex, itemName, itemId);
 					if (asOwner.ok) {
 						const active = asOwner.claims.find(
 							(c) => c.status === "approved" && c.pickedUpAt,
@@ -488,15 +556,18 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		markPickedUp: tool({
 			description: "Confirm an item has been picked up.",
-			inputSchema: jsonSchema<{ itemName: string }>({
+			inputSchema: jsonSchema<{ itemName: string; itemId?: string }>({
 				type: "object",
-				properties: { itemName: stringParam("Item name") },
+				properties: {
+					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
+				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName }) => {
+			execute: async ({ itemName, itemId }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const approved = resolved.claims.find(
 						(c) => c.status === "approved" && !c.pickedUpAt,
@@ -515,15 +586,18 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 
 		markReturned: tool({
 			description: "Confirm an item has been returned.",
-			inputSchema: jsonSchema<{ itemName: string }>({
+			inputSchema: jsonSchema<{ itemName: string; itemId?: string }>({
 				type: "object",
-				properties: { itemName: stringParam("Item name") },
+				properties: {
+					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
+				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName }) => {
+			execute: async ({ itemName, itemId }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const active = resolved.claims.find(
 						(c) => c.status === "approved" && c.pickedUpAt,
@@ -543,18 +617,23 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 		markMissing: tool({
 			description:
 				"Report an item as lost/missing. HIGH RISK — cannot be undone.",
-			inputSchema: jsonSchema<{ itemName: string; note?: string }>({
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				note?: string;
+			}>({
 				type: "object",
 				properties: {
 					itemName: stringParam("Item name"),
+					itemId: ITEM_ID_PARAM,
 					note: stringParam("Description of what happened"),
 				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, note }) => {
+			execute: async ({ itemName, itemId, note }) => {
 				try {
-					const resolved = await resolveOwned(convex, itemName);
+					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const active = resolved.claims.find(
 						(c) => c.status === "approved" && c.pickedUpAt,

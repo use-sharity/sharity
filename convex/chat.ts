@@ -92,7 +92,12 @@ export const getClaimsOnItem = query({
 		if (matches.length > 1) {
 			return {
 				found: "multiple" as const,
-				items: matches.map((i) => i.name),
+				items: matches.map((i) => ({
+					itemId: i._id,
+					name: i.name,
+					category: i.category ?? "other",
+					description: i.description ?? "",
+				})),
 			};
 		}
 
@@ -141,7 +146,15 @@ export const resolveMyItem = query({
 			return { found: false as const, items: myItems.map((i) => i.name) };
 		}
 		if (matches.length > 1) {
-			return { found: "multiple" as const, items: matches.map((i) => i.name) };
+			return {
+				found: "multiple" as const,
+				items: matches.map((i) => ({
+					itemId: i._id,
+					name: i.name,
+					category: i.category ?? "other",
+					description: i.description ?? "",
+				})),
+			};
 		}
 
 		const item = matches[0];
