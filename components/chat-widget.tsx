@@ -50,7 +50,7 @@ function getMessageText(message: {
 	return message.parts
 		.filter((p) => p.type === "text")
 		.map((p) => p.text ?? "")
-		.join("");
+		.join("\n");
 }
 
 function renderMessageContent(text: string) {
@@ -298,8 +298,9 @@ export function ChatWidget() {
 												? "rounded-tr-none"
 												: "rounded-tl-none"
 										}`}
-										style={
-											message.role === "user"
+										style={{
+											whiteSpace: "pre-wrap",
+											...(message.role === "user"
 												? {
 														backgroundColor: "#2D4A35",
 														color: "#F0EBE0",
@@ -307,8 +308,8 @@ export function ChatWidget() {
 												: {
 														backgroundColor: "#F0EBE0",
 														color: "#1C1C1A",
-													}
-										}
+													}),
+										}}
 									>
 										{text ? (
 											renderMessageContent(text)
