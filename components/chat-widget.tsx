@@ -212,6 +212,16 @@ export function ChatWidget() {
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && isOpen) setIsOpen(false);
+			// Auto-focus input when typing with chat open
+			if (
+				isOpen &&
+				e.key.length === 1 &&
+				!e.metaKey &&
+				!e.ctrlKey &&
+				document.activeElement !== inputRef.current
+			) {
+				inputRef.current?.focus();
+			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
