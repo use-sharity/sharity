@@ -121,3 +121,113 @@ export const getClaimsOnItem = query({
 		return { found: true as const, itemName: item.name, claims: enriched };
 	},
 });
+
+export const resolveMyItem = query({
+	args: { itemName: v.string() },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const userId = identity.subject;
+
+		const myItems = await ctx.db
+			.query("items")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+
+		const q = args.itemName.toLowerCase();
+		const matches = myItems.filter((i) =>
+			i.name.toLowerCase().includes(q),
+		);
+
+		if (matches.length === 0) {
+			return { found: false as const, items: myItems.map((i) => i.name) };
+		}
+		if (matches.length > 1) {
+			return { found: "multiple" as const, items: matches.map((i) => i.name) };
+		}
+
+		const item = matches[0];
+		const claims = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q2) => q2.eq("itemId", item._id))
+			.collect();
+
+		const enrichedClaims = await Promise.all(
+			claims.map(async (c) => {
+				const user = await ctx.db
+					.query("users")
+					.filter((q2) => q2.eq(q2.field("clerkId"), c.claimerId))
+					.first();
+				return {
+					claimId: c._id,
+					claimerName: user?.name ?? "a neighbor",
+					claimerId: c.claimerId,
+					status: c.status,
+					startDate: c.startDate,
+					endDate: c.endDate,
+					pickedUpAt: c.pickedUpAt,
+				};
+			}),
+		);
+
+		return {
+			found: true as const,
+			itemId: item._id,
+			itemName: item.name,
+			claims: enrichedClaims,
+		};
+	},
+});
+
+export const resolveMyBorrowedItem = query({
+	args: { itemName: v.string() },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const userId = identity.subject;
+
+		const myClaims = await ctx.db
+			.query("claims")
+			.withIndex("by_claimer", (q) => q.eq("claimerId", userId))
+			.filter((q) =>
+				q.or(
+					q.eq(q.field("status"), "pending"),
+					q.eq(q.field("status"), "approved"),
+				),
+			)
+			.collect();
+
+		const itemsWithClaims = await Promise.all(
+			myClaims.map(async (c) => {
+				const item = await ctx.db.get(c.itemId);
+				if (!item) return null;
+				const owner = await ctx.db
+					.query("users")
+					.filter((q) => q.eq(q.field("clerkId"), item.ownerId))
+					.first();
+				return {
+					itemId: item._id,
+					itemName: item.name,
+					claimId: c._id,
+					ownerName: owner?.name ?? "a neighbor",
+					status: c.status,
+				};
+			}),
+		);
+
+		const valid = itemsWithClaims.filter((x) => x !== null);
+		const q = args.itemName.toLowerCase();
+		const matches = valid.filter((x) =>
+			x.itemName.toLowerCase().includes(q),
+		);
+
+		if (matches.length === 0) {
+			return { found: false as const, items: valid.map((x) => x.itemName) };
+		}
+		if (matches.length > 1) {
+			return { found: "multiple" as const, items: matches.map((x) => x.itemName) };
+		}
+
+		return { found: true as const, ...matches[0] };
+	},
+});
