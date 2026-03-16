@@ -2,6 +2,7 @@ import { jsonSchema, tool } from "ai";
 import type { ConvexHttpClient } from "convex/browser";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+import { buildMutationTools } from "@/lib/sharry-mutation-tools";
 
 // Helper: cast string to Convex Id (safe for ConvexHttpClient which accepts strings at runtime)
 function asItemId(id: string) {
@@ -269,5 +270,8 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				return { url: paths[page] ?? `/${locale}` };
 			},
 		}),
+
+		// Mutation tools
+		...buildMutationTools(convex, locale),
 	};
 }
