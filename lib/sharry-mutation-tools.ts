@@ -97,9 +97,13 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 						description,
 						category: category as any,
 					});
+					// Resolve the new item to get its ID for a direct link
+					const resolved = await convex.query(api.chat.resolveMyItem, { itemName: name });
+					const itemId = resolved?.found === true ? resolved.itemId : null;
+					const link = itemId ? `/${locale}/item/${itemId}` : `/${locale}/my-items`;
 					return {
 						success: `Created "${name}".`,
-						nextStep: `Tell the user to add photos and location. Include this exact link in your response: /${locale}/my-items`,
+						nextStep: `Tell the user to add photos and location. Include this exact link in your response: ${link}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not create item." };
