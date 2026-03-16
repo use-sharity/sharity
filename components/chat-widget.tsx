@@ -159,8 +159,9 @@ export function ChatWidget() {
 	// Seed persisted messages once on first load
 	useEffect(() => {
 		if (hasSeeded.current) return;
-		if (!persistedMessages || persistedMessages.length === 0) return;
+		if (!persistedMessages) return;
 		hasSeeded.current = true;
+		if (persistedMessages.length === 0) return;
 		const seeded = persistedMessages.map((m, i) => ({
 			id: `persisted-${i}`,
 			role: m.role as "user" | "assistant",
