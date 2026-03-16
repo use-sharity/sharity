@@ -433,3 +433,60 @@ tests:
     assert:
       - type: llm-rubric
         value: "Response should direct the user to the My Items page. Can reference the page name or provide navigation guidance."
+
+  # ── Mutation Awareness (4 cases) ──
+  - vars:
+      prompt: "can you approve the request on my tent?"
+      userContext:
+        stage: "has_pending_claims"
+        itemCount: 2
+        itemNames: ["The Yellow Tent", "Electric Drill"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 1
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should offer to approve the pending request on the tent. Should indicate it can take this action."
+
+  - vars:
+      prompt: "I want to add my blender to Sharity"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Tent", "Drill"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should start collecting item details (ask about description, category) to create a new listing."
+
+  - vars:
+      prompt: "delete my drill"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Tent", "Electric Drill"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should warn that deletion is permanent and cannot be undone before proceeding."
+
+  - vars:
+      prompt: "how was fostering the blender? it was great honestly"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: llm-rubric
+        value: "Response should offer to help compose a rating based on the positive feedback."
