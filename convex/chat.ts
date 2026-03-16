@@ -283,3 +283,20 @@ export const saveMessage = mutation({
 		});
 	},
 });
+
+export const clearMessages = mutation({
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+		const userId = identity.subject;
+
+		const messages = await ctx.db
+			.query("chat_messages")
+			.withIndex("by_user", (q) => q.eq("userId", userId))
+			.collect();
+
+		for (const msg of messages) {
+			await ctx.db.delete(msg._id);
+		}
+	},
+});

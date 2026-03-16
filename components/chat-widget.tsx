@@ -12,7 +12,7 @@ import React, {
 	useCallback,
 	useMemo,
 } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X, Send, RotateCcw } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { ToolApprovalCard } from "@/components/tool-approval-card";
 
@@ -91,6 +91,7 @@ export function ChatWidget() {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const persistedMessages = useQuery(api.chat.getMessages);
 	const saveMessage = useMutation(api.chat.saveMessage);
+	const clearMessages = useMutation(api.chat.clearMessages);
 	const hasSeeded = useRef(false);
 	const lastSavedIndexRef = useRef(0);
 
@@ -240,6 +241,13 @@ export function ChatWidget() {
 		[sendMessage, saveMessage],
 	);
 
+	const handleClearChat = useCallback(async () => {
+		await clearMessages();
+		setMessages([]);
+		hasSeeded.current = true;
+		lastSavedIndexRef.current = 0;
+	}, [clearMessages, setMessages]);
+
 	return (
 		<>
 			{/* Floating bubble */}
@@ -283,13 +291,23 @@ export function ChatWidget() {
 								Sharry
 							</span>
 						</div>
-						<button
-							type="button"
-							onClick={() => setIsOpen(false)}
-							aria-label="Close chat"
-						>
-							<X className="h-4 w-4" style={{ color: "#7A7570" }} />
-						</button>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handleClearChat}
+								aria-label="New chat"
+								title="New chat"
+							>
+								<RotateCcw className="h-3.5 w-3.5" style={{ color: "#7A7570" }} />
+							</button>
+							<button
+								type="button"
+								onClick={() => setIsOpen(false)}
+								aria-label="Close chat"
+							>
+								<X className="h-4 w-4" style={{ color: "#7A7570" }} />
+							</button>
+						</div>
 					</div>
 
 					{/* Messages */}
