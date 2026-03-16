@@ -297,8 +297,12 @@ export function ChatWidget() {
 								onClick={handleClearChat}
 								aria-label="New chat"
 								title="New chat"
+								className="rounded-md p-1 transition-colors hover:bg-black/5"
 							>
-								<RotateCcw className="h-3.5 w-3.5" style={{ color: "#7A7570" }} />
+								<RotateCcw
+									className="h-3.5 w-3.5"
+									style={{ color: "#7A7570" }}
+								/>
 							</button>
 							<button
 								type="button"
