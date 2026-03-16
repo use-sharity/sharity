@@ -31,6 +31,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 					return items
 						.filter((i) => i.isOwner)
 						.map((i) => ({
+							itemId: i._id,
 							name: i.name,
 							description: i.description ?? "",
 							category: i.category ?? "other",
@@ -49,7 +50,9 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				try {
 					const items = await convex.query(api.items.getMyBorrowedItems);
 					return items.map((i) => ({
+						itemId: i._id,
 						name: i.name,
+						ownerId: i.ownerId,
 						ownerName: i.owner.name ?? "a neighbor",
 						endDate: new Date(i.claim.endDate).toLocaleDateString(locale),
 					}));
@@ -172,8 +175,14 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 						};
 					}
 					if (result.found === "multiple") {
+						const descriptions = result.items
+							.map(
+								(i: any) =>
+									`"${i.name}" (${i.category}${i.description ? `, ${i.description.slice(0, 60)}` : ""}) — ID: ${i.itemId}`,
+							)
+							.join("\n");
 						return {
-							clarify: `Multiple items match: ${result.items.join(", ")}. Which one?`,
+							clarify: `Multiple items match:\n${descriptions}\nWhich one?`,
 						};
 					}
 					return {
@@ -241,6 +250,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 					return notifs.slice(0, 10).map((n) => ({
 						type: n.type.replace(/_/g, " "),
 						isRead: n.isRead,
+						itemId: n.itemId,
 						itemName: n.item?.name ?? null,
 						createdAt: new Date(n.createdAt).toLocaleDateString(locale),
 					}));
