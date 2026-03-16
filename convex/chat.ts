@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const getUserContext = query({
 	handler: async (ctx) => {
@@ -135,9 +135,7 @@ export const resolveMyItem = query({
 			.collect();
 
 		const q = args.itemName.toLowerCase();
-		const matches = myItems.filter((i) =>
-			i.name.toLowerCase().includes(q),
-		);
+		const matches = myItems.filter((i) => i.name.toLowerCase().includes(q));
 
 		if (matches.length === 0) {
 			return { found: false as const, items: myItems.map((i) => i.name) };
@@ -217,17 +215,58 @@ export const resolveMyBorrowedItem = query({
 
 		const valid = itemsWithClaims.filter((x) => x !== null);
 		const q = args.itemName.toLowerCase();
-		const matches = valid.filter((x) =>
-			x.itemName.toLowerCase().includes(q),
-		);
+		const matches = valid.filter((x) => x.itemName.toLowerCase().includes(q));
 
 		if (matches.length === 0) {
 			return { found: false as const, items: valid.map((x) => x.itemName) };
 		}
 		if (matches.length > 1) {
-			return { found: "multiple" as const, items: matches.map((x) => x.itemName) };
+			return {
+				found: "multiple" as const,
+				items: matches.map((x) => x.itemName),
+			};
 		}
 
 		return { found: true as const, ...matches[0] };
+	},
+});
+
+export const getMessages = query({
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const userId = identity.subject;
+
+		const messages = await ctx.db
+			.query("chat_messages")
+			.withIndex("by_user", (q) => q.eq("userId", userId))
+			.order("desc")
+			.take(200);
+
+		// Return in chronological order (oldest first)
+		return messages.reverse().map((m) => ({
+			role: m.role,
+			content: m.content,
+			createdAt: m.createdAt,
+		}));
+	},
+});
+
+export const saveMessage = mutation({
+	args: {
+		role: v.union(v.literal("user"), v.literal("assistant")),
+		content: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+		const userId = identity.subject;
+
+		await ctx.db.insert("chat_messages", {
+			userId,
+			role: args.role,
+			content: args.content,
+			createdAt: Date.now(),
+		});
 	},
 });
