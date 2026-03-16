@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useLocale } from "next-intl";
 import React, {
 	useRef,
@@ -89,6 +89,10 @@ export function ChatWidget() {
 	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const persistedMessages = useQuery(api.chat.getMessages);
+	const saveMessage = useMutation(api.chat.saveMessage);
+	const hasSeeded = useRef(false);
+	const lastSavedIndexRef = useRef(0);
 
 	const locale = useLocale();
 	const userContext = useQuery(api.chat.getUserContext);
@@ -123,30 +127,48 @@ export function ChatWidget() {
 		[],
 	);
 
-	const { messages, sendMessage, status, error, addToolApprovalResponse } =
-		useChat({
-			transport,
-			// Only auto-send when the user has responded to all approval requests.
-			// This pauses on approval-requested (shows Approve/Deny card),
-			// and resumes after the user clicks (state becomes approval-responded).
-			sendAutomaticallyWhen: ({ messages: msgs }) => {
-				const last = msgs[msgs.length - 1];
-				if (last?.role !== "assistant") return false;
-				const hasPendingApproval = last.parts?.some(
-					(p: any) =>
-						"state" in p && p.state === "approval-requested",
-				);
-				if (hasPendingApproval) return false;
-				// Auto-send when all approvals are responded to
-				const hasRespondedApproval = last.parts?.some(
-					(p: any) =>
-						"state" in p && p.state === "approval-responded",
-				);
-				return !!hasRespondedApproval;
-			},
-		});
+	const {
+		messages,
+		sendMessage,
+		status,
+		error,
+		addToolApprovalResponse,
+		setMessages,
+	} = useChat({
+		transport,
+		// Only auto-send when the user has responded to all approval requests.
+		// This pauses on approval-requested (shows Approve/Deny card),
+		// and resumes after the user clicks (state becomes approval-responded).
+		sendAutomaticallyWhen: ({ messages: msgs }) => {
+			const last = msgs[msgs.length - 1];
+			if (last?.role !== "assistant") return false;
+			const hasPendingApproval = last.parts?.some(
+				(p: any) => "state" in p && p.state === "approval-requested",
+			);
+			if (hasPendingApproval) return false;
+			// Auto-send when all approvals are responded to
+			const hasRespondedApproval = last.parts?.some(
+				(p: any) => "state" in p && p.state === "approval-responded",
+			);
+			return !!hasRespondedApproval;
+		},
+	});
 
 	const isLoading = status === "submitted" || status === "streaming";
+
+	// Seed persisted messages once on first load
+	useEffect(() => {
+		if (hasSeeded.current) return;
+		if (!persistedMessages || persistedMessages.length === 0) return;
+		hasSeeded.current = true;
+		const seeded = persistedMessages.map((m, i) => ({
+			id: `persisted-${i}`,
+			role: m.role as "user" | "assistant",
+			parts: [{ type: "text" as const, text: m.content }],
+		}));
+		setMessages(seeded);
+		lastSavedIndexRef.current = seeded.length;
+	}, [persistedMessages, setMessages]);
 
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
