@@ -116,6 +116,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 						name: item.name,
 						description: item.description ?? "",
 						category: item.category ?? "other",
+						ownerId: item.ownerId,
 						ownerName: ownerInfo.name ?? "a neighbor",
 						location: item.location?.address ?? null,
 					};
@@ -220,9 +221,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 							contactMethods.length > 0
 								? contactMethods.join(", ")
 								: "None listed",
-						memberSince: new Date(profile.createdAt).toLocaleDateString(
-							locale,
-						),
+						memberSince: new Date(profile.createdAt).toLocaleDateString(locale),
 						averageStars: ratings.averageStars,
 						totalRatings: ratings.totalRatings,
 					};
