@@ -313,13 +313,19 @@ export function ChatWidget() {
 								</TooltipTrigger>
 								<TooltipContent side="bottom">New chat</TooltipContent>
 							</Tooltip>
-							<button
-								type="button"
-								onClick={() => setIsOpen(false)}
-								aria-label="Close chat"
-							>
-								<X className="h-4 w-4" style={{ color: "#7A7570" }} />
-							</button>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										onClick={() => setIsOpen(false)}
+										aria-label="Close chat"
+										className="rounded-md p-1 transition-colors hover:bg-black/5"
+									>
+										<X className="h-4 w-4" style={{ color: "#7A7570" }} />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">Close</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
 
