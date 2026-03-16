@@ -2,10 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useChat } from "@ai-sdk/react";
-import {
-	DefaultChatTransport,
-	lastAssistantMessageIsCompleteWithToolCalls,
-} from "ai";
+import { DefaultChatTransport } from "ai";
 import { useQuery } from "convex/react";
 import { useLocale } from "next-intl";
 import React, {
@@ -129,15 +126,23 @@ export function ChatWidget() {
 	const { messages, sendMessage, status, error, addToolApprovalResponse } =
 		useChat({
 			transport,
-			// Don't auto-send when tool calls need approval — wait for user click
+			// Only auto-send when the user has responded to all approval requests.
+			// This pauses on approval-requested (shows Approve/Deny card),
+			// and resumes after the user clicks (state becomes approval-responded).
 			sendAutomaticallyWhen: ({ messages: msgs }) => {
 				const last = msgs[msgs.length - 1];
 				if (last?.role !== "assistant") return false;
-				const hasApprovalRequest = last.parts?.some(
-					(p: any) => p.state === "approval-requested",
+				const hasPendingApproval = last.parts?.some(
+					(p: any) =>
+						"state" in p && p.state === "approval-requested",
 				);
-				if (hasApprovalRequest) return false;
-				return lastAssistantMessageIsCompleteWithToolCalls({ messages: msgs });
+				if (hasPendingApproval) return false;
+				// Auto-send when all approvals are responded to
+				const hasRespondedApproval = last.parts?.some(
+					(p: any) =>
+						"state" in p && p.state === "approval-responded",
+				);
+				return !!hasRespondedApproval;
 			},
 		});
 
@@ -359,9 +364,9 @@ export function ChatWidget() {
 											return message.parts?.map((part, idx) => {
 												if (part.type === "text" && part.text) {
 													return (
-														<span key={idx}>
+														<div key={idx}>
 															{renderMessageContent(part.text)}
-														</span>
+														</div>
 													);
 												}
 												if (
