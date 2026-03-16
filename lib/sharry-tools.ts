@@ -107,14 +107,17 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 				required: ["itemId"],
 			}),
 			execute: async ({ itemId }) => {
+				console.log("[getItemDetails] called with itemId:", itemId);
 				try {
 					const item = await convex.query(api.items.getById, {
 						id: asItemId(itemId),
 					});
 					if (!item) return { error: "Item not found." };
+					console.log("[getItemDetails] ownerId:", item.ownerId);
 					const ownerInfo = await convex.query(api.users.getBasicInfo, {
 						userId: item.ownerId,
 					});
+					console.log("[getItemDetails] returning ownerId:", item.ownerId, "ownerName:", ownerInfo.name);
 					return {
 						name: item.name,
 						description: item.description ?? "",
@@ -203,18 +206,21 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 
 		getUserProfile: tool({
 			description:
-				"Get public profile info and rating summary for a user. Use when the user asks about someone.",
+				"Get public profile info, bio, contact methods, and rating summary for a user by their userId. ALWAYS call this before making claims about a user's profile, ratings, or activity level. Use the ownerId from getItemDetails or getMyBorrowedItems.",
 			inputSchema: jsonSchema<{ userId: string }>({
 				type: "object",
 				properties: { userId: stringParam("The user ID to look up") },
 				required: ["userId"],
 			}),
 			execute: async ({ userId }) => {
+				console.log("[getUserProfile] called with userId:", userId);
 				try {
 					const [profile, ratings] = await Promise.all([
 						convex.query(api.users.getProfile, { userId }),
 						convex.query(api.ratings.getRatingSummary, { userId }),
 					]);
+					console.log("[getUserProfile] profile:", JSON.stringify(profile));
+					console.log("[getUserProfile] ratings:", JSON.stringify(ratings));
 					if (!profile) {
 						return { error: "This neighbor hasn't set up their profile yet." };
 					}
