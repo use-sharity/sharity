@@ -54,8 +54,8 @@ function getMessageText(message: {
 }
 
 function renderMessageContent(text: string) {
-	// Match internal paths like /en/my-items or /en/items/abc123
-	const linkRegex = /(\/(en|vi|ru)\/[a-zA-Z0-9\-\/]+)/g;
+	// Match internal paths (/en/my-items) and full URLs (https://...)
+	const linkRegex = /(https?:\/\/[^\s]+|\/(en|vi|ru)\/[a-zA-Z0-9\-\/]+)/g;
 
 	if (!linkRegex.test(text)) return text;
 
