@@ -89,6 +89,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 						name: i.name,
 						description: i.description ?? "",
 						category: i.category ?? "other",
+						ward: i.location?.ward ?? null,
 					}));
 				} catch {
 					return { error: "Could not search items right now." };
@@ -117,7 +118,12 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 					const ownerInfo = await convex.query(api.users.getBasicInfo, {
 						userId: item.ownerId,
 					});
-					console.log("[getItemDetails] returning ownerId:", item.ownerId, "ownerName:", ownerInfo.name);
+					console.log(
+						"[getItemDetails] returning ownerId:",
+						item.ownerId,
+						"ownerName:",
+						ownerInfo.name,
+					);
 					return {
 						name: item.name,
 						description: item.description ?? "",
