@@ -33,8 +33,9 @@ Add to `convex/chat.ts`:
 ### `getMessages` (query)
 
 - Auth check — return `null` if unauthenticated
-- Fetch all `chat_messages` where `userId` matches, ordered by `createdAt`
-- Return the full list for UI rendering
+- Fetch the last **200** `chat_messages` where `userId` matches, ordered by `createdAt`
+- 200 is enough for meaningful scroll-back without loading thousands of messages for heavy users
+- If "load more" is needed later, add cursor-based pagination as a follow-up
 
 ### `saveMessage` (mutation)
 
@@ -44,16 +45,22 @@ Add to `convex/chat.ts`:
 
 ## Widget Changes (`components/chat-widget.tsx`)
 
-### Loading history
+### Loading history (seed once, not reactively)
 
-- Use `useQuery(api.chat.getMessages)` to load persisted messages
-- Convert persisted messages to the format expected by `useChat`'s `initialMessages`
-- Re-initialize `useChat` when persisted messages load
+`useQuery(api.chat.getMessages)` is a reactive Convex subscription — it re-fires on every table change. If fed directly into `useChat` as `initialMessages`, it would reset chat state on every new message (breaking streaming, tool approvals, etc.).
+
+**The pattern:**
+1. Use `useQuery(api.chat.getMessages)` to fetch persisted messages.
+2. Track a `hasSeeded` ref (initialized to `false`).
+3. On the **first** render where persisted messages are available and `hasSeeded` is `false`, convert them to `useChat`-compatible format and pass as `initialMessages`. Set `hasSeeded` to `true`.
+4. After seeding, the reactive query result is **ignored** by `useChat` — all new messages live in `useChat`'s internal state and are persisted to Convex as a side effect.
+5. The reactive query is only relevant if the widget is unmounted and remounted (e.g., page navigation), at which point a fresh seed happens.
 
 ### Saving messages
 
 - On user submit: call `saveMessage({ role: "user", content })` immediately
 - On assistant response complete (status transitions from `"streaming"` to `"ready"`): extract text from assistant message parts, call `saveMessage({ role: "assistant", content })`
+- **Failed exchanges:** If the LLM call fails (network error, 500), the user message is already persisted but no assistant response is saved. This is acceptable — on next load the user sees their unanswered message, and the LLM will naturally respond to it in the next exchange. No cleanup needed.
 
 ### Historical message rendering
 
@@ -61,12 +68,19 @@ Add to `convex/chat.ts`:
 - Tool approval cards are NOT rendered for historical messages — only text content
 - Welcome message and suggestions show only when there are zero messages (persisted or live)
 
+### Tool call context after reload
+
+After a reload, persisted history contains only text messages — tool-call/tool-result parts are not stored. This is acceptable because:
+- The `userContext` query provides the real-time state of items, claims, and stage — the LLM doesn't need tool-call history to know what actions were taken
+- Tool calls are reflected as actual DB mutations (created items, approved claims, etc.) which `userContext` captures
+- The text responses ("Created your item!", "Approved the request") provide enough conversational context
+
 ## API Route Changes (`app/api/chat/route.ts`)
 
 ### LLM context window
 
-- The client sends all messages (as `useChat` does by default)
-- The server slices to the **last 50 messages** before passing to `streamText()`
+- The client sends only the last **50 messages** from `useChat` state (truncate before sending, not on the server) to avoid unbounded request payloads as history grows
+- The server passes these directly to `streamText()` — no additional slicing needed
 - This keeps token costs bounded while preserving enough context for conversational coherence
 - The `userContext` query already provides real-time awareness of items, claims, and stage — old chat messages are not needed for that
 
