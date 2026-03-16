@@ -113,6 +113,10 @@ export function ChatWidget() {
 					const body = JSON.parse((init?.body as string) ?? "{}");
 					body.userContext = userContextRef.current;
 					body.locale = localeRef.current;
+					// Truncate to last 50 messages to keep LLM context bounded
+					if (Array.isArray(body.messages) && body.messages.length > 50) {
+						body.messages = body.messages.slice(-50);
+					}
 					const token = await getTokenRef.current({ template: "convex" });
 					return fetch(url, {
 						...init,
