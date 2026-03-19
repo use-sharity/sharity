@@ -697,10 +697,11 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 					const existing = await convex.query(api.wishlist.list);
 					return {
 						existingWishes: existing.slice(0, 20).map((w: any) => ({
+							wishId: w._id,
 							text: w.text,
 							votes: w.votes?.length ?? 0,
 						})),
-						instruction: `Review these existing wishes. If any are similar to "${query}", tell the user it already exists and they can vote for it on the wishlist page. Only proceed with createWishlistItem if nothing similar exists.`,
+						instruction: `Review these existing wishes. If any are similar to "${query}", tell the user it already exists and offer to vote for it with voteWishlistItem. Only proceed with createWishlistItem if nothing similar exists.`,
 					};
 				} catch {
 					return { error: "Could not check wishlist right now." };
@@ -725,6 +726,58 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not add to wishlist." };
+				}
+			},
+		}),
+
+		voteWishlistItem: tool({
+			description:
+				"Vote (or unvote) on a wishlist item. Use when the user wants to upvote a wish. Call browseWishlist or checkWishlist first to get the wishId.",
+			inputSchema: jsonSchema<{ wishId: string; wishText?: string }>({
+				type: "object",
+				properties: {
+					wishId: stringParam("The wishlist item ID to vote on"),
+					wishText: stringParam("The wish text (for confirmation)"),
+				},
+				required: ["wishId"],
+			}),
+			needsApproval: true,
+			execute: async ({ wishId, wishText }) => {
+				try {
+					await convex.mutation(api.wishlist.toggleVote, {
+						id: wishId as Id<"wishlist">,
+					});
+					return {
+						success: `Vote toggled on "${wishText ?? "wish"}". Check the wishlist to see the updated count!`,
+					};
+				} catch (e: any) {
+					return { error: e.message ?? "Could not vote on this wish." };
+				}
+			},
+		}),
+
+		deleteWishlistItem: tool({
+			description:
+				"Delete a wish from the wishlist. Only the creator can delete their own wish. This cannot be undone.",
+			inputSchema: jsonSchema<{ wishId: string; wishText?: string }>({
+				type: "object",
+				properties: {
+					wishId: stringParam("The wishlist item ID to delete"),
+					wishText: stringParam("The wish text (for confirmation)"),
+				},
+				required: ["wishId"],
+			}),
+			needsApproval: true,
+			execute: async ({ wishId, wishText }) => {
+				try {
+					await convex.mutation(api.wishlist.deleteItem, {
+						id: wishId as Id<"wishlist">,
+					});
+					return {
+						success: `Deleted wish: "${wishText ?? "wish"}". It's been removed from the wishlist.`,
+					};
+				} catch (e: any) {
+					return { error: e.message ?? "Could not delete this wish." };
 				}
 			},
 		}),

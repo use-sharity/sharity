@@ -262,6 +262,27 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 			},
 		}),
 
+		browseWishlist: tool({
+			description:
+				"List wishlist items with vote counts. Use when the user asks what people are wishing for, or before voting on a wish.",
+			inputSchema: noParams,
+			execute: async () => {
+				try {
+					const wishes = await convex.query(api.wishlist.list);
+					return wishes.slice(0, 20).map((w) => ({
+						wishId: w._id,
+						text: w.text,
+						votes: w.votes?.length ?? 0,
+						matchCount: w.matchCount ?? 0,
+						isOwner: w.isOwner ?? false,
+						isLiked: w.isLiked ?? false,
+					}));
+				} catch {
+					return { error: "Could not fetch wishlist right now." };
+				}
+			},
+		}),
+
 		navigateTo: tool({
 			description:
 				"Generate a link to a page in the app. Use when the user wants to go somewhere.",
