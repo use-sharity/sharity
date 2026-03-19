@@ -252,10 +252,10 @@ export function ChatWidget() {
 					type="button"
 					onClick={() => setIsOpen(true)}
 					className="fixed right-4 bottom-20 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6"
-					style={{ backgroundColor: "#2D4A35" }}
+					style={{ backgroundColor: "var(--primary)" }}
 					aria-label="Open chat with Sharry"
 				>
-					<MessageCircle className="h-5 w-5" style={{ color: "#F0EBE0" }} />
+					<MessageCircle className="h-5 w-5" style={{ color: "var(--primary-foreground)" }} />
 				</button>
 			)}
 
@@ -268,22 +268,22 @@ export function ChatWidget() {
 					style={{
 						backgroundColor: "rgba(255, 255, 255, 0.97)",
 						backdropFilter: "blur(12px)",
-						borderColor: "#E0D9CE",
+						borderColor: "var(--border)",
 					}}
 				>
 					{/* Header */}
 					<div
 						className="flex items-center justify-between px-4 py-3"
-						style={{ borderBottom: "1px solid #E0D9CE" }}
+						style={{ borderBottom: "1px solid var(--border)" }}
 					>
 						<div className="flex items-center gap-2">
 							<div
 								className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-								style={{ backgroundColor: "#2D4A35", color: "#F0EBE0" }}
+								style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
 							>
 								S
 							</div>
-							<span className="font-semibold" style={{ color: "#1C1C1A" }}>
+							<span className="font-semibold" style={{ color: "var(--foreground)" }}>
 								Sharry
 							</span>
 						</div>
@@ -298,7 +298,7 @@ export function ChatWidget() {
 									>
 										<RotateCcw
 											className="h-3.5 w-3.5"
-											style={{ color: "#7A7570" }}
+											style={{ color: "var(--muted-foreground)" }}
 										/>
 									</button>
 								</TooltipTrigger>
@@ -312,7 +312,7 @@ export function ChatWidget() {
 										aria-label="Close chat"
 										className="rounded-md p-1 transition-colors hover:bg-black/5"
 									>
-										<X className="h-4 w-4" style={{ color: "#7A7570" }} />
+										<X className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
 									</button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">Close</TooltipContent>
@@ -329,8 +329,8 @@ export function ChatWidget() {
 									<div
 										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
 										style={{
-											backgroundColor: "#2D4A35",
-											color: "#F0EBE0",
+											backgroundColor: "var(--primary)",
+											color: "var(--primary-foreground)",
 										}}
 									>
 										S
@@ -338,8 +338,8 @@ export function ChatWidget() {
 									<div
 										className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
 										style={{
-											backgroundColor: "#F0EBE0",
-											color: "#1C1C1A",
+											backgroundColor: "var(--primary-foreground)",
+											color: "var(--foreground)",
 											lineHeight: "1.5",
 										}}
 									>
@@ -358,8 +358,8 @@ export function ChatWidget() {
 											onClick={() => handleSuggestionClick(s)}
 											className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:bg-gray-50"
 											style={{
-												borderColor: "#E0D9CE",
-												color: "#2D4A35",
+												borderColor: "var(--border)",
+												color: "var(--primary)",
 											}}
 										>
 											{s}
@@ -380,8 +380,8 @@ export function ChatWidget() {
 										<div
 											className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
 											style={{
-												backgroundColor: "#2D4A35",
-												color: "#F0EBE0",
+												backgroundColor: "var(--primary)",
+												color: "var(--primary-foreground)",
 											}}
 										>
 											S
@@ -397,12 +397,12 @@ export function ChatWidget() {
 											...(message.role === "user"
 												? {
 														whiteSpace: "pre-wrap" as const,
-														backgroundColor: "#2D4A35",
-														color: "#F0EBE0",
+														backgroundColor: "var(--primary)",
+														color: "var(--primary-foreground)",
 													}
 												: {
-														backgroundColor: "#F0EBE0",
-														color: "#1C1C1A",
+														backgroundColor: "var(--primary-foreground)",
+														color: "var(--foreground)",
 													}),
 										}}
 									>
@@ -416,7 +416,7 @@ export function ChatWidget() {
 												return (
 													<span
 														className="inline-flex items-center gap-1"
-														style={{ color: "#7A7570" }}
+														style={{ color: "var(--muted-foreground)" }}
 													>
 														<span className="animate-pulse">●</span>
 														<span
@@ -492,8 +492,8 @@ export function ChatWidget() {
 									<div
 										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
 										style={{
-											backgroundColor: "#2D4A35",
-											color: "#F0EBE0",
+											backgroundColor: "var(--primary)",
+											color: "var(--primary-foreground)",
 										}}
 									>
 										S
@@ -501,13 +501,13 @@ export function ChatWidget() {
 									<div
 										className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
 										style={{
-											backgroundColor: "#F0EBE0",
-											color: "#1C1C1A",
+											backgroundColor: "var(--primary-foreground)",
+											color: "var(--foreground)",
 										}}
 									>
 										<span
 											className="inline-flex items-center gap-1"
-											style={{ color: "#7A7570" }}
+											style={{ color: "var(--muted-foreground)" }}
 										>
 											<span className="animate-pulse">●</span>
 											<span
@@ -532,8 +532,8 @@ export function ChatWidget() {
 								<div
 									className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
 									style={{
-										backgroundColor: "#2D4A35",
-										color: "#F0EBE0",
+										backgroundColor: "var(--primary)",
+										color: "var(--primary-foreground)",
 									}}
 								>
 									S
@@ -541,8 +541,8 @@ export function ChatWidget() {
 								<div
 									className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
 									style={{
-										backgroundColor: "#F0EBE0",
-										color: "#1C1C1A",
+										backgroundColor: "var(--primary-foreground)",
+										color: "var(--foreground)",
 									}}
 								>
 									Sharry is taking a break — try again in a moment.
@@ -557,7 +557,7 @@ export function ChatWidget() {
 					<form
 						onSubmit={handleSubmit}
 						className="px-4 py-3"
-						style={{ borderTop: "1px solid #E0D9CE" }}
+						style={{ borderTop: "1px solid var(--border)" }}
 					>
 						<div className="flex gap-2">
 							<input
@@ -569,17 +569,17 @@ export function ChatWidget() {
 								disabled={isLoading}
 								className="flex-1 rounded-full px-4 py-2 text-sm outline-none"
 								style={{
-									backgroundColor: "#F0EBE0",
-									color: "#1C1C1A",
+									backgroundColor: "var(--primary-foreground)",
+									color: "var(--foreground)",
 								}}
 							/>
 							<button
 								type="submit"
 								disabled={!input.trim() || isLoading}
 								className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-40"
-								style={{ backgroundColor: "#2D4A35" }}
+								style={{ backgroundColor: "var(--primary)" }}
 							>
-								<Send className="h-4 w-4" style={{ color: "#F0EBE0" }} />
+								<Send className="h-4 w-4" style={{ color: "var(--primary-foreground)" }} />
 							</button>
 						</div>
 					</form>
