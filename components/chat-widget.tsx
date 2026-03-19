@@ -61,22 +61,7 @@ function getMessageText(message: {
 }
 
 function renderMessageContent(text: string) {
-	return (
-		<Markdown
-			components={{
-				a: ({ href, children }) => (
-					<a
-						href={href}
-						style={{ color: "#2D4A35", textDecoration: "underline" }}
-					>
-						{children}
-					</a>
-				),
-			}}
-		>
-			{text}
-		</Markdown>
-	);
+	return <Markdown>{text}</Markdown>;
 }
 
 export function ChatWidget() {

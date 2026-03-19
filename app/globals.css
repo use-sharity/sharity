@@ -510,6 +510,12 @@
 	margin: 0.25em 0;
 	padding-left: 1.25em;
 }
+.chat-markdown ul {
+	list-style-type: disc !important;
+}
+.chat-markdown ol {
+	list-style-type: decimal !important;
+}
 .chat-markdown li {
 	margin: 0;
 }
@@ -517,6 +523,6 @@
 	font-weight: 600;
 }
 .chat-markdown a {
-	color: #2d4a35;
+	color: var(--primary);
 	text-decoration: underline;
 }
