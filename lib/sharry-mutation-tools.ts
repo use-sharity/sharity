@@ -682,9 +682,35 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 			},
 		}),
 
+		checkWishlist: tool({
+			description:
+				"Check existing wishlist items for duplicates before creating a new wish. ALWAYS call this AND browseItems before createWishlistItem. If a similar wish exists, tell the user to vote for it instead.",
+			inputSchema: jsonSchema<{ query: string }>({
+				type: "object",
+				properties: {
+					query: stringParam("What the user is looking for"),
+				},
+				required: ["query"],
+			}),
+			execute: async ({ query }) => {
+				try {
+					const existing = await convex.query(api.wishlist.list);
+					return {
+						existingWishes: existing.slice(0, 20).map((w: any) => ({
+							text: w.text,
+							votes: w.votes?.length ?? 0,
+						})),
+						instruction: `Review these existing wishes. If any are similar to "${query}", tell the user it already exists and they can vote for it on the wishlist page. Only proceed with createWishlistItem if nothing similar exists.`,
+					};
+				} catch {
+					return { error: "Could not check wishlist right now." };
+				}
+			},
+		}),
+
 		createWishlistItem: tool({
 			description:
-				"Add a wish for an item you'd like someone to share. IMPORTANT: Before creating a wishlist item, ALWAYS call browseItems first to check if a matching item already exists, and check the wishlist for duplicates. Only add to wishlist if nothing relevant is available and no one has already wished for it.",
+				"Add a wish for an item you'd like someone to share. IMPORTANT: ALWAYS call browseItems AND checkWishlist BEFORE this tool. Only create if no matching items or wishes exist.",
 			inputSchema: jsonSchema<{ text: string }>({
 				type: "object",
 				properties: { text: stringParam("What you're looking for") },
@@ -693,19 +719,6 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 			needsApproval: true,
 			execute: async ({ text }) => {
 				try {
-					// Check for existing wishlist duplicates
-					const existing = await convex.query(api.wishlist.list);
-					const q = text.toLowerCase();
-					const duplicate = existing.find((w: any) =>
-						w.text.toLowerCase().includes(q) ||
-						q.includes(w.text.toLowerCase()),
-					);
-					if (duplicate) {
-						return {
-							alreadyWished: `Someone already wished for "${duplicate.text}" (${duplicate.votes?.length ?? 0} votes). Tell the user they can vote for it on the wishlist page instead of creating a duplicate.`,
-						};
-					}
-
 					await convex.mutation(api.wishlist.create, { text });
 					return {
 						success: `Added to wishlist: "${text}". Neighbors can see it and might share!`,
