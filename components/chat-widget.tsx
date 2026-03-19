@@ -190,16 +190,23 @@ export function ChatWidget() {
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && isOpen) setIsOpen(false);
-			// Auto-focus input when typing with chat open
+			// Auto-focus chat input when typing with chat open,
+			// but only if the user isn't already focused on another input
+			const active = document.activeElement;
+			const isTypingElsewhere =
+				active instanceof HTMLInputElement ||
+				active instanceof HTMLTextAreaElement ||
+				active instanceof HTMLSelectElement ||
+				active?.getAttribute("contenteditable") === "true";
 			if (
 				isOpen &&
 				e.key.length === 1 &&
 				!e.metaKey &&
 				!e.ctrlKey &&
-				document.activeElement !== inputRef.current
+				!isTypingElsewhere &&
+				active !== inputRef.current
 			) {
 				inputRef.current?.focus();
-				// Append the character that triggered the focus
 				setInput((prev) => prev + e.key);
 				e.preventDefault();
 			}
@@ -255,7 +262,10 @@ export function ChatWidget() {
 					style={{ backgroundColor: "var(--primary)" }}
 					aria-label="Open chat with Sharry"
 				>
-					<MessageCircle className="h-5 w-5" style={{ color: "var(--primary-foreground)" }} />
+					<MessageCircle
+						className="h-5 w-5"
+						style={{ color: "var(--primary-foreground)" }}
+					/>
 				</button>
 			)}
 
@@ -279,11 +289,17 @@ export function ChatWidget() {
 						<div className="flex items-center gap-2">
 							<div
 								className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-								style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+								style={{
+									backgroundColor: "var(--primary)",
+									color: "var(--primary-foreground)",
+								}}
 							>
 								S
 							</div>
-							<span className="font-semibold" style={{ color: "var(--foreground)" }}>
+							<span
+								className="font-semibold"
+								style={{ color: "var(--foreground)" }}
+							>
 								Sharry
 							</span>
 						</div>
@@ -312,7 +328,10 @@ export function ChatWidget() {
 										aria-label="Close chat"
 										className="rounded-md p-1 transition-colors hover:bg-black/5"
 									>
-										<X className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
+										<X
+											className="h-4 w-4"
+											style={{ color: "var(--muted-foreground)" }}
+										/>
 									</button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">Close</TooltipContent>
@@ -579,7 +598,10 @@ export function ChatWidget() {
 								className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-40"
 								style={{ backgroundColor: "var(--primary)" }}
 							>
-								<Send className="h-4 w-4" style={{ color: "var(--primary-foreground)" }} />
+								<Send
+									className="h-4 w-4"
+									style={{ color: "var(--primary-foreground)" }}
+								/>
 							</button>
 						</div>
 					</form>
