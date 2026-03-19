@@ -683,7 +683,8 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 		}),
 
 		createWishlistItem: tool({
-			description: "Add a wish for an item you'd like someone to share.",
+			description:
+				"Add a wish for an item you'd like someone to share. IMPORTANT: Before creating a wishlist item, ALWAYS call browseItems first to check if a matching item already exists, and check the wishlist for duplicates. Only add to wishlist if nothing relevant is available and no one has already wished for it.",
 			inputSchema: jsonSchema<{ text: string }>({
 				type: "object",
 				properties: { text: stringParam("What you're looking for") },
@@ -692,6 +693,19 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 			needsApproval: true,
 			execute: async ({ text }) => {
 				try {
+					// Check for existing wishlist duplicates
+					const existing = await convex.query(api.wishlist.list);
+					const q = text.toLowerCase();
+					const duplicate = existing.find((w: any) =>
+						w.text.toLowerCase().includes(q) ||
+						q.includes(w.text.toLowerCase()),
+					);
+					if (duplicate) {
+						return {
+							alreadyWished: `Someone already wished for "${duplicate.text}" (${duplicate.votes?.length ?? 0} votes). Tell the user they can vote for it on the wishlist page instead of creating a duplicate.`,
+						};
+					}
+
 					await convex.mutation(api.wishlist.create, { text });
 					return {
 						success: `Added to wishlist: "${text}". Neighbors can see it and might share!`,
