@@ -497,6 +497,53 @@ export function ChatWidget() {
 							);
 						})}
 
+						{isLoading &&
+							!messages.some(
+								(m) =>
+									m.role === "assistant" &&
+									!m.parts?.some(
+										(p) => p.type === "text" && p.text,
+									),
+							) && (
+								<div className="mb-3 flex gap-2">
+									<div
+										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+										style={{
+											backgroundColor: "#2D4A35",
+											color: "#F0EBE0",
+										}}
+									>
+										S
+									</div>
+									<div
+										className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
+										style={{
+											backgroundColor: "#F0EBE0",
+											color: "#1C1C1A",
+										}}
+									>
+										<span
+											className="inline-flex items-center gap-1"
+											style={{ color: "#7A7570" }}
+										>
+											<span className="animate-pulse">●</span>
+											<span
+												className="animate-pulse"
+												style={{ animationDelay: "0.2s" }}
+											>
+												●
+											</span>
+											<span
+												className="animate-pulse"
+												style={{ animationDelay: "0.4s" }}
+											>
+												●
+											</span>
+										</span>
+									</div>
+								</div>
+							)}
+
 						{error && (
 							<div className="mb-3 flex gap-2">
 								<div
