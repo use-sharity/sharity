@@ -184,8 +184,10 @@ export function ChatWidget() {
 		lastSavedIndexRef.current = messages.length;
 	}, [isSignedIn, status, messages, saveMessage]);
 
-	const scrollToBottom = useCallback(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	const scrollToBottom = useCallback((instant?: boolean) => {
+		messagesEndRef.current?.scrollIntoView({
+			behavior: instant ? "instant" : "smooth",
+		});
 	}, []);
 
 	useEffect(() => {
@@ -193,8 +195,12 @@ export function ChatWidget() {
 	}, [messages, scrollToBottom]);
 
 	useEffect(() => {
-		if (isOpen) inputRef.current?.focus();
-	}, [isOpen]);
+		if (isOpen) {
+			// Use instant scroll + slight delay to ensure messages are rendered
+			setTimeout(() => scrollToBottom(true), 50);
+			inputRef.current?.focus();
+		}
+	}, [isOpen, scrollToBottom]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
