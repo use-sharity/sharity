@@ -221,6 +221,9 @@ export function ChatWidget() {
 				document.activeElement !== inputRef.current
 			) {
 				inputRef.current?.focus();
+				// Append the character that triggered the focus
+				setInput((prev) => prev + e.key);
+				e.preventDefault();
 			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
