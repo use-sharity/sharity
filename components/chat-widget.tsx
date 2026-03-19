@@ -501,9 +501,7 @@ export function ChatWidget() {
 							!messages.some(
 								(m) =>
 									m.role === "assistant" &&
-									!m.parts?.some(
-										(p) => p.type === "text" && p.text,
-									),
+									!m.parts?.some((p) => p.type === "text" && p.text),
 							) && (
 								<div className="mb-3 flex gap-2">
 									<div
