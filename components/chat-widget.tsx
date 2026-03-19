@@ -12,6 +12,7 @@ import React, {
 	useCallback,
 	useMemo,
 } from "react";
+import Markdown from "react-markdown";
 import { MessageCircle, X, Send, RotateCcw } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { ToolApprovalCard } from "@/components/tool-approval-card";
@@ -60,33 +61,22 @@ function getMessageText(message: {
 }
 
 function renderMessageContent(text: string) {
-	// Match internal paths (/en/my-items) and full URLs (https://...)
-	const linkRegex = /(https?:\/\/[^\s]+|\/(en|vi|ru)\/[a-zA-Z0-9\-\/]+)/g;
-
-	if (!linkRegex.test(text)) return text;
-
-	// Reset regex after test
-	linkRegex.lastIndex = 0;
-
-	const elements: React.ReactNode[] = [];
-	let lastIndex = 0;
-	for (const match of text.matchAll(linkRegex)) {
-		const before = text.slice(lastIndex, match.index);
-		if (before) elements.push(before);
-		elements.push(
-			<a
-				key={match.index}
-				href={match[0]}
-				style={{ color: "#2D4A35", textDecoration: "underline" }}
-			>
-				{match[0]}
-			</a>,
-		);
-		lastIndex = match.index! + match[0].length;
-	}
-	const after = text.slice(lastIndex);
-	if (after) elements.push(after);
-	return <>{elements}</>;
+	return (
+		<Markdown
+			components={{
+				a: ({ href, children }) => (
+					<a
+						href={href}
+						style={{ color: "#2D4A35", textDecoration: "underline" }}
+					>
+						{children}
+					</a>
+				),
+			}}
+		>
+			{text}
+		</Markdown>
+	);
 }
 
 export function ChatWidget() {
@@ -413,9 +403,9 @@ export function ChatWidget() {
 												: "rounded-tl-none"
 										}`}
 										style={{
-											whiteSpace: "pre-wrap",
 											...(message.role === "user"
 												? {
+														whiteSpace: "pre-wrap" as const,
 														backgroundColor: "#2D4A35",
 														color: "#F0EBE0",
 													}
@@ -456,7 +446,14 @@ export function ChatWidget() {
 											return message.parts?.map((part, idx) => {
 												if (part.type === "text" && part.text) {
 													return (
-														<div key={idx}>
+														<div
+															key={idx}
+															className={
+																message.role === "assistant"
+																	? "chat-markdown"
+																	: undefined
+															}
+														>
 															{renderMessageContent(part.text)}
 														</div>
 													);
