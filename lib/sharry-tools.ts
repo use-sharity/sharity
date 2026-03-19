@@ -52,6 +52,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 					return items.map((i) => ({
 						itemId: i._id,
 						name: i.name,
+						claimId: i.claim._id,
 						ownerId: i.ownerId,
 						ownerName: i.owner.name ?? "a neighbor",
 						endDate: new Date(i.claim.endDate).toLocaleDateString(locale),
@@ -290,7 +291,7 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 					profile: `/${locale}/profile`,
 					wishlist: `/${locale}/wishlist`,
 					notifications: `/${locale}/notifications`,
-					"item-detail": `/${locale}/items/${itemId ?? ""}`,
+					"item-detail": `/${locale}/item/${itemId ?? ""}`,
 				};
 				return { url: paths[page] ?? `/${locale}` };
 			},

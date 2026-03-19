@@ -114,6 +114,7 @@ export const getClaimsOnItem = query({
 					.filter((q2) => q2.eq(q2.field("clerkId"), c.claimerId))
 					.first();
 				return {
+					claimId: c._id,
 					claimerName: users?.name ?? "a neighbor",
 					claimerId: c.claimerId,
 					status: c.status,
@@ -183,6 +184,47 @@ export const resolveMyItem = query({
 
 		return {
 			found: true as const,
+			itemId: item._id,
+			itemName: item.name,
+			claims: enrichedClaims,
+		};
+	},
+});
+
+export const resolveMyItemById = query({
+	args: { itemId: v.id("items") },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const userId = identity.subject;
+
+		const item = await ctx.db.get(args.itemId);
+		if (!item || item.ownerId !== userId) return null;
+
+		const claims = await ctx.db
+			.query("claims")
+			.withIndex("by_item", (q) => q.eq("itemId", item._id))
+			.collect();
+
+		const enrichedClaims = await Promise.all(
+			claims.map(async (c) => {
+				const user = await ctx.db
+					.query("users")
+					.filter((q2) => q2.eq(q2.field("clerkId"), c.claimerId))
+					.first();
+				return {
+					claimId: c._id,
+					claimerName: user?.name ?? "a neighbor",
+					claimerId: c.claimerId,
+					status: c.status,
+					startDate: c.startDate,
+					endDate: c.endDate,
+					pickedUpAt: c.pickedUpAt,
+				};
+			}),
+		);
+
+		return {
 			itemId: item._id,
 			itemName: item.name,
 			claims: enrichedClaims,

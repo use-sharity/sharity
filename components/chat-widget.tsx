@@ -103,11 +103,9 @@ export function ChatWidget() {
 	const locale = useLocale();
 	const userContext = useQuery(api.chat.getUserContext);
 
-	const userContextRef = useRef(userContext);
-	userContextRef.current = userContext;
 	const localeRef = useRef(locale);
 	localeRef.current = locale;
-	const { getToken } = useAuth();
+	const { getToken, isSignedIn } = useAuth();
 	const getTokenRef = useRef(getToken);
 	getTokenRef.current = getToken;
 
@@ -117,7 +115,6 @@ export function ChatWidget() {
 				api: "/api/chat",
 				fetch: async (url, init) => {
 					const body = JSON.parse((init?.body as string) ?? "{}");
-					body.userContext = userContextRef.current;
 					body.locale = localeRef.current;
 					// Truncate to last 50 messages to keep LLM context bounded
 					if (Array.isArray(body.messages) && body.messages.length > 50) {
@@ -181,9 +178,9 @@ export function ChatWidget() {
 		lastSavedIndexRef.current = seeded.length;
 	}, [persistedMessages, setMessages]);
 
-	// Save assistant messages when streaming completes
+	// Save assistant messages when streaming completes (authed users only)
 	useEffect(() => {
-		if (status !== "ready") return;
+		if (!isSignedIn || status !== "ready") return;
 		// Find new assistant messages since last save
 		for (let i = lastSavedIndexRef.current; i < messages.length; i++) {
 			const msg = messages[i];
@@ -195,7 +192,7 @@ export function ChatWidget() {
 			}
 		}
 		lastSavedIndexRef.current = messages.length;
-	}, [status, messages, saveMessage]);
+	}, [isSignedIn, status, messages, saveMessage]);
 
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -245,18 +242,18 @@ export function ChatWidget() {
 			const trimmed = input.trim();
 			if (!trimmed || isLoading) return;
 			sendMessage({ text: trimmed });
-			saveMessage({ role: "user", content: trimmed });
+			if (isSignedIn) saveMessage({ role: "user", content: trimmed });
 			setInput("");
 		},
-		[input, isLoading, sendMessage, saveMessage],
+		[input, isLoading, isSignedIn, sendMessage, saveMessage],
 	);
 
 	const handleSuggestionClick = useCallback(
 		(text: string) => {
 			sendMessage({ text });
-			saveMessage({ role: "user", content: text });
+			if (isSignedIn) saveMessage({ role: "user", content: text });
 		},
-		[sendMessage, saveMessage],
+		[isSignedIn, sendMessage, saveMessage],
 	);
 
 	const handleClearChat = useCallback(async () => {

@@ -21,21 +21,21 @@ async function resolveOwned(
 	itemName: string,
 	itemId?: string,
 ) {
-	// Direct ID — skip name resolution. Convex mutations verify ownership themselves.
+	// Direct ID — fetch claims from Convex so approve/reject tools work.
 	if (itemId) {
+		const result = await convex.query(api.chat.resolveMyItemById, {
+			itemId: asItemId(itemId),
+		});
+		if (!result)
+			return {
+				ok: false as const,
+				error: "Could not find that item in your inventory.",
+			};
 		return {
 			ok: true as const,
-			itemId: asItemId(itemId),
-			itemName: itemName || "item",
-			claims: [] as Array<{
-				claimId: Id<"claims">;
-				claimerName: string;
-				claimerId: string;
-				status: string;
-				startDate: number;
-				endDate: number;
-				pickedUpAt?: number;
-			}>,
+			itemId: asItemId(result.itemId),
+			itemName: result.itemName,
+			claims: result.claims,
 		};
 	}
 

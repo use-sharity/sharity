@@ -97,8 +97,15 @@ describe("resolveOwned (tested via mutation tools)", () => {
 	});
 
 	describe("deleteItem — direct itemId bypass", () => {
-		it("skips name resolution when itemId provided", async () => {
-			const convex = createMockConvex([]);
+		it("fetches claims by ID and deletes", async () => {
+			const convex = createMockConvex([
+				// resolveMyItemById query
+				{
+					itemId: "direct-id-123",
+					itemName: "Coffee Grinder",
+					claims: [],
+				},
+			]);
 			const tools = buildMutationTools(convex, "en");
 			const result = (await tools.deleteItem.execute(
 				{ itemName: "coffee", itemId: "direct-id-123" } as any,
@@ -106,8 +113,8 @@ describe("resolveOwned (tested via mutation tools)", () => {
 			)) as any;
 
 			expect(result).toHaveProperty("success");
-			// Should NOT have called resolveMyItem query
-			expect(convex.query).not.toHaveBeenCalled();
+			// Should have called resolveMyItemById query
+			expect(convex.query).toHaveBeenCalled();
 			// Should have called deleteItem mutation with the direct ID
 			expect(convex.mutation).toHaveBeenCalledWith(
 				expect.anything(),
@@ -132,7 +139,14 @@ describe("resolveOwned (tested via mutation tools)", () => {
 
 	describe("updateItem — uses itemId when provided", () => {
 		it("passes itemId through to resolveOwned", async () => {
-			const convex = createMockConvex([]);
+			const convex = createMockConvex([
+				// resolveMyItemById query
+				{
+					itemId: "specific-id",
+					itemName: "Grinder",
+					claims: [],
+				},
+			]);
 			const tools = buildMutationTools(convex, "en");
 			const result = (await tools.updateItem.execute(
 				{
@@ -144,7 +158,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 			)) as any;
 
 			expect(result).toHaveProperty("success");
-			expect(convex.query).not.toHaveBeenCalled();
+			expect(convex.query).toHaveBeenCalled();
 			expect(convex.mutation).toHaveBeenCalledWith(
 				expect.anything(),
 				expect.objectContaining({
