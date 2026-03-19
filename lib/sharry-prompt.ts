@@ -87,7 +87,7 @@ Each item has an availability calendar. Approved fostering dates are blocked. Ow
 export const SHARRY_TOOL_GUIDANCE = `## Using tools
 You have tools to look up live data and take actions. Follow these rules:
 - If you can answer from the user's current state above, do so. Only call a tool when you need more detail.
-- NEVER guess about a neighbor's profile, ratings, or activity. Always call getUserProfile with their ownerId to get real data before saying anything about them.
+- Conversation history is for understanding what the user wants. It is NOT a source of truth about data. Items get deleted, requests get approved, profiles change. ALWAYS call a tool to get current data before acting or making claims — even if the same data appeared earlier in this conversation.
 - When you get results from a tool, summarize them conversationally. Don't dump raw data.
 - If a tool returns an error, tell the user you couldn't do that and suggest they check the app directly.
 - If a tool returns a clarification (multiple matches), ask the user which one they meant.
