@@ -167,13 +167,14 @@ export function buildMutationTools(
 
 		updateItem: tool({
 			description:
-				"Update an existing item's name, description, or category. Resolves by item name or item ID.",
+				"Update an existing item's name, description, category, or photos. Resolves by item name or item ID. If the user attached images, set useAttachedImages to true to replace the item's photos.",
 			inputSchema: jsonSchema<{
 				itemName: string;
 				itemId?: string;
 				name?: string;
 				description?: string;
 				category?: string;
+				useAttachedImages?: boolean;
 			}>({
 				type: "object",
 				properties: {
@@ -182,21 +183,43 @@ export function buildMutationTools(
 					name: stringParam("New name"),
 					description: stringParam("New description"),
 					category: stringParam("New category"),
+					useAttachedImages: {
+						type: "boolean" as const,
+						description:
+							"Set true to replace the item's photos with the user's attached images",
+					},
 				},
 				required: ["itemName"],
 			}),
 			needsApproval: true,
-			execute: async ({ itemName, itemId, name, description, category }) => {
+			execute: async ({
+				itemName,
+				itemId,
+				name,
+				description,
+				category,
+				useAttachedImages,
+			}) => {
 				try {
 					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
+					const imageCloudinary =
+						useAttachedImages && attachedImageRefs.length > 0
+							? attachedImageRefs
+							: undefined;
 					await convex.mutation(api.items.update, {
 						id: resolved.itemId,
 						...(name && { name }),
 						...(description && { description }),
 						...(category && { category: category as any }),
+						...(imageCloudinary && { imageCloudinary }),
 					});
-					return { success: `Updated "${resolved.itemName}".` };
+					const photoNote = imageCloudinary
+						? ` Photos updated (${imageCloudinary.length}).`
+						: "";
+					return {
+						success: `Updated "${resolved.itemName}".${photoNote}`,
+					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update item." };
 				}
@@ -671,29 +694,43 @@ export function buildMutationTools(
 
 		createRating: tool({
 			description:
-				"Rate a completed transaction. Help the user compose their rating from vague input.",
+				"Rate a completed transaction. Help the user compose their rating from vague input. If the user attached a photo, set useAttachedImages to true.",
 			inputSchema: jsonSchema<{
 				claimId: string;
 				stars: number;
 				comment?: string;
+				useAttachedImages?: boolean;
 			}>({
 				type: "object",
 				properties: {
 					claimId: stringParam("Claim ID for the transaction"),
 					stars: { type: "number" as any, description: "Rating 1-5 stars" },
 					comment: stringParam("Review comment"),
+					useAttachedImages: {
+						type: "boolean" as const,
+						description:
+							"Set true to attach the user's photo to the rating",
+					},
 				},
 				required: ["claimId", "stars"],
 			}),
 			needsApproval: true,
-			execute: async ({ claimId, stars, comment }) => {
+			execute: async ({ claimId, stars, comment, useAttachedImages }) => {
 				try {
+					const photoCloudinary =
+						useAttachedImages && attachedImageRefs.length > 0
+							? attachedImageRefs
+							: undefined;
 					await convex.mutation(api.ratings.createRating, {
 						claimId: claimId as Id<"claims">,
 						stars,
 						comment,
+						photoCloudinary,
 					});
-					return { success: `Submitted ${stars}-star rating.` };
+					const photoNote = photoCloudinary ? " Photo attached." : "";
+					return {
+						success: `Submitted ${stars}-star rating.${photoNote}`,
+					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not submit rating." };
 				}
@@ -729,18 +766,36 @@ export function buildMutationTools(
 
 		createWishlistItem: tool({
 			description:
-				"Add a wish for an item you'd like someone to share. IMPORTANT: ALWAYS call browseItems AND checkWishlist BEFORE this tool. Only create if no matching items or wishes exist.",
-			inputSchema: jsonSchema<{ text: string }>({
+				"Add a wish for an item you'd like someone to share. IMPORTANT: ALWAYS call browseItems AND checkWishlist BEFORE this tool. Only create if no matching items or wishes exist. If the user attached an image, set useAttachedImages to true.",
+			inputSchema: jsonSchema<{
+				text: string;
+				useAttachedImages?: boolean;
+			}>({
 				type: "object",
-				properties: { text: stringParam("What you're looking for") },
+				properties: {
+					text: stringParam("What you're looking for"),
+					useAttachedImages: {
+						type: "boolean" as const,
+						description:
+							"Set true to attach the user's image to the wish",
+					},
+				},
 				required: ["text"],
 			}),
 			needsApproval: true,
-			execute: async ({ text }) => {
+			execute: async ({ text, useAttachedImages }) => {
 				try {
-					await convex.mutation(api.wishlist.create, { text });
+					const imageCloudinary =
+						useAttachedImages && attachedImageRefs.length > 0
+							? attachedImageRefs
+							: undefined;
+					await convex.mutation(api.wishlist.create, {
+						text,
+						imageCloudinary,
+					});
+					const photoNote = imageCloudinary ? " Photo attached." : "";
 					return {
-						success: `Added to wishlist: "${text}". Neighbors can see it and might share!`,
+						success: `Added to wishlist: "${text}".${photoNote} Neighbors can see it and might share!`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not add to wishlist." };
