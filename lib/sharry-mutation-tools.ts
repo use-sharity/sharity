@@ -157,7 +157,7 @@ export function buildMutationTools(
 						: "No photos attached — add them in the app.";
 					return {
 						success: `Created "${name}". ${photoNote}`,
-						nextStep: `Tell the user to add location if needed. Include this exact link in your response: ${link}`,
+						nextStep: `Tell the user to add location if needed. Include this markdown link in your response: [View your listing](${link})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not create item." };
