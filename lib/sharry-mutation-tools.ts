@@ -105,7 +105,7 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 	return {
 		createItem: tool({
 			description:
-				"Create a new item listing. Collect name, description, and category through conversation first. Note: photos and location must be added via the app afterward.",
+				"Create a new item listing. Collect name, description, and category through conversation first. Note: location must be added via the app afterward. If the user attached images, set useAttachedImages to true.",
 			inputSchema: jsonSchema<{
 				name: string;
 				description?: string;
