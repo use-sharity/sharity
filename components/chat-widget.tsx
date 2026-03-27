@@ -85,6 +85,7 @@ export function ChatWidget() {
 	const lastSavedIndexRef = useRef(0);
 	const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 	const [uploadedRefs, setUploadedRefs] = useState<CloudinaryRef[]>([]);
+	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { upload: uploadToCloudinary } = useCloudinaryUpload(
@@ -290,7 +291,7 @@ export function ChatWidget() {
 				url: ref.secureUrl,
 			}));
 
-			const textContent = trimmed || (files.length > 0 ? "" : "");
+			const textContent = trimmed;
 			const sentinel =
 				uploadedRefs.length > 0
 					? `\n${IMAGE_REFS_PREFIX}${JSON.stringify(uploadedRefs)}`
@@ -312,6 +313,8 @@ export function ChatWidget() {
 			setInput("");
 			setPendingFiles([]);
 			setUploadedRefs([]);
+			previewUrls.forEach(URL.revokeObjectURL);
+			setPreviewUrls([]);
 		},
 		[
 			input,
@@ -322,6 +325,7 @@ export function ChatWidget() {
 			saveMessage,
 			uploadedRefs,
 			pendingFiles,
+			previewUrls,
 		],
 	);
 
@@ -334,11 +338,16 @@ export function ChatWidget() {
 	);
 
 	const handleClearChat = useCallback(async () => {
+		previewUrls.forEach(URL.revokeObjectURL);
 		await clearMessages();
 		setMessages([]);
+		setPendingFiles([]);
+		setUploadedRefs([]);
+		setPreviewUrls([]);
+		setIsUploading(false);
 		hasSeeded.current = true;
 		lastSavedIndexRef.current = 0;
-	}, [clearMessages, setMessages]);
+	}, [clearMessages, setMessages, previewUrls]);
 
 	const handleFileSelect = useCallback(
 		async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -361,10 +370,12 @@ export function ChatWidget() {
 			}
 			if (valid.length === 0) return;
 
+			const urls = valid.map((f) => URL.createObjectURL(f));
 			setPendingFiles((prev) => [...prev, ...valid]);
+			setPreviewUrls((prev) => [...prev, ...urls]);
 			setIsUploading(true);
 
-			const newRefs: CloudinaryRef[] = [];
+			const newRefs: (CloudinaryRef | null)[] = [];
 			for (const file of valid) {
 				try {
 					const result = (await uploadToCloudinary(file, {
@@ -374,20 +385,45 @@ export function ChatWidget() {
 					newRefs.push(toCloudinaryRef(result));
 				} catch {
 					toast.error(`Failed to upload ${file.name}`);
-					setPendingFiles((prev) => prev.filter((f) => f !== file));
+					newRefs.push(null);
 				}
 			}
 
-			setUploadedRefs((prev) => [...prev, ...newRefs]);
+			// Remove failed uploads and their corresponding files/urls
+			const failedIndices = new Set(
+				newRefs.map((r, i) => (r === null ? i : -1)).filter((i) => i >= 0),
+			);
+			if (failedIndices.size > 0) {
+				const offset = pendingFiles.length;
+				setPendingFiles((prev) =>
+					prev.filter((_, i) => i < offset || !failedIndices.has(i - offset)),
+				);
+				setPreviewUrls((prev) => {
+					const result = prev.filter(
+						(_, i) => i < offset || !failedIndices.has(i - offset),
+					);
+					// Revoke failed URLs
+					failedIndices.forEach((fi) => URL.revokeObjectURL(urls[fi]));
+					return result;
+				});
+			}
+
+			const successRefs = newRefs.filter((r): r is CloudinaryRef => r !== null);
+			setUploadedRefs((prev) => [...prev, ...successRefs]);
 			setIsUploading(false);
 		},
 		[pendingFiles.length, uploadToCloudinary],
 	);
 
-	const handleRemoveFile = useCallback((index: number) => {
-		setPendingFiles((prev) => prev.filter((_, i) => i !== index));
-		setUploadedRefs((prev) => prev.filter((_, i) => i !== index));
-	}, []);
+	const handleRemoveFile = useCallback(
+		(index: number) => {
+			URL.revokeObjectURL(previewUrls[index]);
+			setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+			setUploadedRefs((prev) => prev.filter((_, i) => i !== index));
+			setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+		},
+		[previewUrls],
+	);
 
 	return (
 		<>
@@ -740,7 +776,7 @@ export function ChatWidget() {
 								{pendingFiles.map((file, i) => (
 									<div key={i} className="relative shrink-0">
 										<img
-											src={URL.createObjectURL(file)}
+											src={previewUrls[i]}
 											alt={file.name}
 											className="h-10 w-10 rounded-md border object-cover"
 										/>
@@ -815,6 +851,12 @@ export function ChatWidget() {
 							</button>
 						</div>
 					</form>
+					<p
+						className="px-4 pb-2 text-center text-[10px]"
+						style={{ color: "var(--muted-foreground)" }}
+					>
+						Sharry is an AI assistant and can make mistakes.
+					</p>
 				</div>
 			)}
 		</>
