@@ -13,7 +13,7 @@ import React, {
 	useMemo,
 } from "react";
 import Markdown from "react-markdown";
-import { MessageCircle, X, Send, RotateCcw } from "lucide-react";
+import { MessageCircle, X, Send, RotateCcw, ImagePlus } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { ToolApprovalCard } from "@/components/tool-approval-card";
 import {
@@ -21,6 +21,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCloudinaryUpload } from "@imaxis/cloudinary-convex/react";
+import { toast } from "sonner";
+import { toCloudinaryRef, type CloudinaryRef } from "@/lib/cloudinary-ref";
+import { MAX_IMAGE_SIZE_BYTES } from "@/lib/image-constants";
+
+const IMAGE_REFS_PREFIX = "__IMAGE_REFS__";
 
 const SUGGESTIONS_BY_STAGE: Record<string, string[]> = {
 	new_user: [
@@ -55,7 +61,10 @@ function getMessageText(message: {
 }): string {
 	if (!message.parts) return "";
 	return message.parts
-		.filter((p) => p.type === "text")
+		.filter(
+			(p) =>
+				p.type === "text" && p.text && !p.text.startsWith(IMAGE_REFS_PREFIX),
+		)
 		.map((p) => p.text ?? "")
 		.join("\n");
 }
@@ -74,6 +83,13 @@ export function ChatWidget() {
 	const clearMessages = useMutation(api.chat.clearMessages);
 	const hasSeeded = useRef(false);
 	const lastSavedIndexRef = useRef(0);
+	const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+	const [uploadedRefs, setUploadedRefs] = useState<CloudinaryRef[]>([]);
+	const [isUploading, setIsUploading] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const { upload: uploadToCloudinary } = useCloudinaryUpload(
+		api.cloudinary.upload,
+	);
 
 	const locale = useLocale();
 	const userContext = useQuery(api.chat.getUserContext);
@@ -144,11 +160,44 @@ export function ChatWidget() {
 		if (!persistedMessages) return;
 		hasSeeded.current = true;
 		if (persistedMessages.length === 0) return;
-		const seeded = persistedMessages.map((m, i) => ({
-			id: `persisted-${i}`,
-			role: m.role as "user" | "assistant",
-			parts: [{ type: "text" as const, text: m.content }],
-		}));
+		const seeded = persistedMessages.map((m, i) => {
+			const parts: Array<
+				| { type: "text"; text: string }
+				| { type: "file"; mediaType: string; url: string }
+			> = [];
+			const content = m.content;
+			const sentinelIdx = content.indexOf(IMAGE_REFS_PREFIX);
+			if (sentinelIdx !== -1) {
+				const textBefore = content.slice(0, sentinelIdx).trim();
+				if (textBefore) parts.push({ type: "text" as const, text: textBefore });
+				try {
+					const refs: CloudinaryRef[] = JSON.parse(
+						content.slice(sentinelIdx + IMAGE_REFS_PREFIX.length),
+					);
+					for (const ref of refs) {
+						parts.push({
+							type: "file" as const,
+							mediaType: "image/jpeg",
+							url: ref.secureUrl,
+						});
+					}
+					// Re-add sentinel as text part so it stays in message history for the API route
+					parts.push({
+						type: "text" as const,
+						text: content.slice(sentinelIdx),
+					});
+				} catch {
+					parts.push({ type: "text" as const, text: content });
+				}
+			} else {
+				parts.push({ type: "text" as const, text: content });
+			}
+			return {
+				id: `persisted-${i}`,
+				role: m.role as "user" | "assistant",
+				parts,
+			};
+		});
 		setMessages(seeded);
 		lastSavedIndexRef.current = seeded.length;
 	}, [persistedMessages, setMessages]);
@@ -228,12 +277,52 @@ export function ChatWidget() {
 		(e: React.FormEvent) => {
 			e.preventDefault();
 			const trimmed = input.trim();
-			if (!trimmed || isLoading) return;
-			sendMessage({ text: trimmed });
-			if (isSignedIn) saveMessage({ role: "user", content: trimmed });
+			if ((!trimmed && uploadedRefs.length === 0) || isLoading || isUploading)
+				return;
+
+			const files: Array<{
+				type: "file";
+				mediaType: string;
+				url: string;
+			}> = uploadedRefs.map((ref, i) => ({
+				type: "file" as const,
+				mediaType: pendingFiles[i]?.type ?? "image/jpeg",
+				url: ref.secureUrl,
+			}));
+
+			const textContent = trimmed || (files.length > 0 ? "" : "");
+			const sentinel =
+				uploadedRefs.length > 0
+					? `\n${IMAGE_REFS_PREFIX}${JSON.stringify(uploadedRefs)}`
+					: "";
+			const fullContent = `${textContent}${sentinel}`.trim();
+
+			if (files.length > 0) {
+				sendMessage({
+					text: fullContent || "Attached image(s)",
+					files,
+				});
+			} else {
+				sendMessage({ text: fullContent });
+			}
+
+			if (isSignedIn && fullContent) {
+				saveMessage({ role: "user", content: fullContent });
+			}
 			setInput("");
+			setPendingFiles([]);
+			setUploadedRefs([]);
 		},
-		[input, isLoading, isSignedIn, sendMessage, saveMessage],
+		[
+			input,
+			isLoading,
+			isUploading,
+			isSignedIn,
+			sendMessage,
+			saveMessage,
+			uploadedRefs,
+			pendingFiles,
+		],
 	);
 
 	const handleSuggestionClick = useCallback(
@@ -250,6 +339,55 @@ export function ChatWidget() {
 		hasSeeded.current = true;
 		lastSavedIndexRef.current = 0;
 	}, [clearMessages, setMessages]);
+
+	const handleFileSelect = useCallback(
+		async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const selected = Array.from(e.target.files ?? []);
+			e.target.value = "";
+
+			const remaining = 5 - pendingFiles.length;
+			if (remaining <= 0) {
+				toast.error("Maximum 5 images per message");
+				return;
+			}
+
+			const valid: File[] = [];
+			for (const file of selected.slice(0, remaining)) {
+				if (file.size > MAX_IMAGE_SIZE_BYTES) {
+					toast.error(`${file.name} is too large (max 12 MB)`);
+					continue;
+				}
+				valid.push(file);
+			}
+			if (valid.length === 0) return;
+
+			setPendingFiles((prev) => [...prev, ...valid]);
+			setIsUploading(true);
+
+			const newRefs: CloudinaryRef[] = [];
+			for (const file of valid) {
+				try {
+					const result = (await uploadToCloudinary(file, {
+						folder: "items",
+						tags: ["items"],
+					})) as unknown;
+					newRefs.push(toCloudinaryRef(result));
+				} catch {
+					toast.error(`Failed to upload ${file.name}`);
+					setPendingFiles((prev) => prev.filter((f) => f !== file));
+				}
+			}
+
+			setUploadedRefs((prev) => [...prev, ...newRefs]);
+			setIsUploading(false);
+		},
+		[pendingFiles.length, uploadToCloudinary],
+	);
+
+	const handleRemoveFile = useCallback((index: number) => {
+		setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+		setUploadedRefs((prev) => prev.filter((_, i) => i !== index));
+	}, []);
 
 	return (
 		<>
@@ -429,6 +567,7 @@ export function ChatWidget() {
 											const hasContent = message.parts?.some(
 												(p) =>
 													(p.type === "text" && p.text) ||
+													p.type === "file" ||
 													("state" in p && p.state === "approval-requested"),
 											);
 											if (!hasContent) {
@@ -454,6 +593,23 @@ export function ChatWidget() {
 												);
 											}
 											return message.parts?.map((part, idx) => {
+												// Skip sentinel text parts
+												if (
+													part.type === "text" &&
+													part.text?.startsWith(IMAGE_REFS_PREFIX)
+												) {
+													return null;
+												}
+												if (part.type === "file" && "url" in part) {
+													return (
+														<img
+															key={idx}
+															src={(part as any).url}
+															alt="Attached"
+															className="mt-1 max-h-[120px] rounded-md object-cover"
+														/>
+													);
+												}
 												if (part.type === "text" && part.text) {
 													return (
 														<div
@@ -578,7 +734,57 @@ export function ChatWidget() {
 						className="px-4 py-3"
 						style={{ borderTop: "1px solid var(--border)" }}
 					>
+						{/* Image preview strip */}
+						{pendingFiles.length > 0 && (
+							<div className="mb-2 flex gap-1.5 overflow-x-auto">
+								{pendingFiles.map((file, i) => (
+									<div key={i} className="relative shrink-0">
+										<img
+											src={URL.createObjectURL(file)}
+											alt={file.name}
+											className="h-10 w-10 rounded-md border object-cover"
+										/>
+										{isUploading && i >= uploadedRefs.length && (
+											<div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40">
+												<div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+											</div>
+										)}
+										<button
+											type="button"
+											onClick={() => handleRemoveFile(i)}
+											className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white hover:bg-red-600"
+										>
+											<X className="h-2.5 w-2.5" />
+										</button>
+									</div>
+								))}
+							</div>
+						)}
+
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/*"
+							multiple
+							className="hidden"
+							onChange={handleFileSelect}
+						/>
+
 						<div className="flex gap-2">
+							{isSignedIn && (
+								<button
+									type="button"
+									onClick={() => fileInputRef.current?.click()}
+									disabled={isLoading || pendingFiles.length >= 5}
+									className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 disabled:opacity-40"
+									aria-label="Attach image"
+								>
+									<ImagePlus
+										className="h-4 w-4"
+										style={{ color: "var(--muted-foreground)" }}
+									/>
+								</button>
+							)}
 							<input
 								ref={inputRef}
 								type="text"
@@ -594,7 +800,11 @@ export function ChatWidget() {
 							/>
 							<button
 								type="submit"
-								disabled={!input.trim() || isLoading}
+								disabled={
+									(!input.trim() && uploadedRefs.length === 0) ||
+									isLoading ||
+									isUploading
+								}
 								className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-40"
 								style={{ backgroundColor: "var(--primary)" }}
 							>
