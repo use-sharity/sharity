@@ -14,9 +14,12 @@ function extractAndStripImageRefs(messages: any[]): {
 	cleaned: any[];
 	imageRefs: Array<{ publicId: string; secureUrl: string }>;
 } {
-	const imageRefs: Array<{ publicId: string; secureUrl: string }> = [];
-	const cleaned = messages.map((msg: any) => {
+	// Collect refs per-message so we can pick only the latest
+	const refsByIndex: Array<Array<{ publicId: string; secureUrl: string }>> =
+		[];
+	const cleaned = messages.map((msg: any, msgIdx: number) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
+		const msgRefs: Array<{ publicId: string; secureUrl: string }> = [];
 		const mappedParts = msg.parts
 			.map((part: any) => {
 				if (
@@ -28,11 +31,10 @@ function extractAndStripImageRefs(messages: any[]): {
 					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
 					try {
 						const refs = JSON.parse(jsonStr);
-						imageRefs.push(...refs);
+						msgRefs.push(...refs);
 					} catch {
 						/* ignore malformed */
 					}
-					// Keep the text before the sentinel, drop the sentinel
 					const textBefore = part.text.slice(0, idx).trim();
 					if (!textBefore) return null;
 					return { ...part, text: textBefore };
@@ -40,9 +42,12 @@ function extractAndStripImageRefs(messages: any[]): {
 				return part;
 			})
 			.filter(Boolean);
+		if (msgRefs.length > 0) refsByIndex[msgIdx] = msgRefs;
 		return { ...msg, parts: mappedParts };
 	});
-	return { cleaned, imageRefs };
+	// Use refs from the LAST user message that had images — not accumulated
+	const lastRefsEntry = [...refsByIndex].reverse().find(Boolean) ?? [];
+	return { cleaned, imageRefs: lastRefsEntry };
 }
 
 export async function POST(request: Request) {
