@@ -17,23 +17,30 @@ function extractAndStripImageRefs(messages: any[]): {
 	const imageRefs: Array<{ publicId: string; secureUrl: string }> = [];
 	const cleaned = messages.map((msg: any) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
-		const filteredParts = msg.parts.filter((part: any) => {
-			if (
-				part.type === "text" &&
-				typeof part.text === "string" &&
-				part.text.startsWith(IMAGE_REFS_PREFIX)
-			) {
-				try {
-					const refs = JSON.parse(part.text.slice(IMAGE_REFS_PREFIX.length));
-					imageRefs.push(...refs);
-				} catch {
-					/* ignore malformed */
+		const mappedParts = msg.parts
+			.map((part: any) => {
+				if (
+					part.type === "text" &&
+					typeof part.text === "string" &&
+					part.text.includes(IMAGE_REFS_PREFIX)
+				) {
+					const idx = part.text.indexOf(IMAGE_REFS_PREFIX);
+					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
+					try {
+						const refs = JSON.parse(jsonStr);
+						imageRefs.push(...refs);
+					} catch {
+						/* ignore malformed */
+					}
+					// Keep the text before the sentinel, drop the sentinel
+					const textBefore = part.text.slice(0, idx).trim();
+					if (!textBefore) return null;
+					return { ...part, text: textBefore };
 				}
-				return false; // strip this part
-			}
-			return true;
-		});
-		return { ...msg, parts: filteredParts };
+				return part;
+			})
+			.filter(Boolean);
+		return { ...msg, parts: mappedParts };
 	});
 	return { cleaned, imageRefs };
 }

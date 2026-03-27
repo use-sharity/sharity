@@ -28,32 +28,100 @@ import { MAX_IMAGE_SIZE_BYTES } from "@/lib/image-constants";
 
 const IMAGE_REFS_PREFIX = "__IMAGE_REFS__";
 
-const SUGGESTIONS_BY_STAGE: Record<string, string[]> = {
-	new_user: [
-		"How do I share an item?",
-		"How does fostering work?",
-		"What is Sharity?",
-	],
-	has_items_no_activity: [
-		"How can I improve my listings?",
-		"How does fostering work?",
-		"Where are my items?",
-	],
-	has_pending_claims: [
-		"How do I approve a request?",
-		"What happens after approval?",
-		"How do I contact a neighbor?",
-	],
-	active_user: [
-		"How do I return an item?",
-		"How do ratings work?",
-		"How does the calendar work?",
-	],
-	logged_out: [
-		"What is Sharity?",
-		"How does sharing work?",
-		"How do I sign up?",
-	],
+const WELCOME_MESSAGE: Record<string, string> = {
+	en: "Hey \u{1F44B} I'm Sharry. I can help you find items, answer questions, approve requests, or manage your listings. What's on your mind?",
+	vi: "Xin ch\u00E0o \u{1F44B} M\u00ECnh l\u00E0 Sharry. M\u00ECnh c\u00F3 th\u1EC3 gi\u00FAp b\u1EA1n t\u00ECm \u0111\u1ED3, tr\u1EA3 l\u1EDDi c\u00E2u h\u1ECFi, duy\u1EC7t y\u00EAu c\u1EA7u ho\u1EB7c qu\u1EA3n l\u00FD danh s\u00E1ch c\u1EE7a b\u1EA1n. B\u1EA1n c\u1EA7n g\u00EC?",
+	ru: "\u041F\u0440\u0438\u0432\u0435\u0442 \u{1F44B} \u042F Sharry. \u041C\u043E\u0433\u0443 \u043F\u043E\u043C\u043E\u0447\u044C \u043D\u0430\u0439\u0442\u0438 \u0432\u0435\u0449\u0438, \u043E\u0442\u0432\u0435\u0442\u0438\u0442\u044C \u043D\u0430 \u0432\u043E\u043F\u0440\u043E\u0441\u044B, \u043E\u0434\u043E\u0431\u0440\u0438\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0438 \u0438\u043B\u0438 \u0443\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C \u0432\u0430\u0448\u0438\u043C\u0438 \u043E\u0431\u044A\u044F\u0432\u043B\u0435\u043D\u0438\u044F\u043C\u0438. \u0427\u0435\u043C \u043F\u043E\u043C\u043E\u0447\u044C?",
+};
+
+const AI_DISCLAIMER: Record<string, string> = {
+	en: "Sharry is an AI assistant and can make mistakes.",
+	vi: "Sharry l\u00E0 tr\u1EE3 l\u00FD AI v\u00E0 c\u00F3 th\u1EC3 m\u1EAFc l\u1ED7i.",
+	ru: "Sharry \u2014 \u044D\u0442\u043E \u0418\u0418-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 \u0438 \u043C\u043E\u0436\u0435\u0442 \u043E\u0448\u0438\u0431\u0430\u0442\u044C\u0441\u044F.",
+};
+
+const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
+	new_user: {
+		en: [
+			"How do I share an item?",
+			"How does fostering work?",
+			"What is Sharity?",
+		],
+		vi: [
+			"L\u00E0m sao \u0111\u1EC3 chia s\u1EBB \u0111\u1ED3?",
+			"Fostering l\u00E0 g\u00EC?",
+			"Sharity l\u00E0 g\u00EC?",
+		],
+		ru: [
+			"\u041A\u0430\u043A \u043F\u043E\u0434\u0435\u043B\u0438\u0442\u044C\u0441\u044F \u0432\u0435\u0449\u044C\u044E?",
+			"\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0430\u0440\u0435\u043D\u0434\u0430?",
+			"\u0427\u0442\u043E \u0442\u0430\u043A\u043E\u0435 Sharity?",
+		],
+	},
+	has_items_no_activity: {
+		en: [
+			"How can I improve my listings?",
+			"How does fostering work?",
+			"Where are my items?",
+		],
+		vi: [
+			"L\u00E0m sao c\u1EA3i thi\u1EC7n danh s\u00E1ch?",
+			"Fostering l\u00E0 g\u00EC?",
+			"\u0110\u1ED3 c\u1EE7a t\u00F4i \u1EDF \u0111\u00E2u?",
+		],
+		ru: [
+			"\u041A\u0430\u043A \u0443\u043B\u0443\u0447\u0448\u0438\u0442\u044C \u043E\u0431\u044A\u044F\u0432\u043B\u0435\u043D\u0438\u044F?",
+			"\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0430\u0440\u0435\u043D\u0434\u0430?",
+			"\u0413\u0434\u0435 \u043C\u043E\u0438 \u0432\u0435\u0449\u0438?",
+		],
+	},
+	has_pending_claims: {
+		en: [
+			"How do I approve a request?",
+			"What happens after approval?",
+			"How do I contact a neighbor?",
+		],
+		vi: [
+			"L\u00E0m sao duy\u1EC7t y\u00EAu c\u1EA7u?",
+			"Sau khi duy\u1EC7t th\u00EC sao?",
+			"Li\u00EAn h\u1EC7 h\u00E0ng x\u00F3m th\u1EBF n\u00E0o?",
+		],
+		ru: [
+			"\u041A\u0430\u043A \u043E\u0434\u043E\u0431\u0440\u0438\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0443?",
+			"\u0427\u0442\u043E \u0431\u0443\u0434\u0435\u0442 \u043F\u043E\u0441\u043B\u0435 \u043E\u0434\u043E\u0431\u0440\u0435\u043D\u0438\u044F?",
+			"\u041A\u0430\u043A \u0441\u0432\u044F\u0437\u0430\u0442\u044C\u0441\u044F \u0441 \u0441\u043E\u0441\u0435\u0434\u043E\u043C?",
+		],
+	},
+	active_user: {
+		en: [
+			"How do I return an item?",
+			"How do ratings work?",
+			"How does the calendar work?",
+		],
+		vi: [
+			"L\u00E0m sao tr\u1EA3 \u0111\u1ED3?",
+			"\u0110\u00E1nh gi\u00E1 ho\u1EA1t \u0111\u1ED9ng ra sao?",
+			"L\u1ECBch ho\u1EA1t \u0111\u1ED9ng th\u1EBF n\u00E0o?",
+		],
+		ru: [
+			"\u041A\u0430\u043A \u0432\u0435\u0440\u043D\u0443\u0442\u044C \u0432\u0435\u0449\u044C?",
+			"\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0442 \u043E\u0446\u0435\u043D\u043A\u0438?",
+			"\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u044C?",
+		],
+	},
+	logged_out: {
+		en: ["What is Sharity?", "How does sharing work?", "How do I sign up?"],
+		vi: [
+			"Sharity l\u00E0 g\u00EC?",
+			"Chia s\u1EBB ho\u1EA1t \u0111\u1ED9ng ra sao?",
+			"L\u00E0m sao \u0111\u0103ng k\u00FD?",
+		],
+		ru: [
+			"\u0427\u0442\u043E \u0442\u0430\u043A\u043E\u0435 Sharity?",
+			"\u041A\u0430\u043A \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u0448\u0435\u0440\u0438\u043D\u0433?",
+			"\u041A\u0430\u043A \u0437\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C\u0441\u044F?",
+		],
+	},
 };
 
 function getMessageText(message: {
@@ -61,11 +129,13 @@ function getMessageText(message: {
 }): string {
 	if (!message.parts) return "";
 	return message.parts
-		.filter(
-			(p) =>
-				p.type === "text" && p.text && !p.text.startsWith(IMAGE_REFS_PREFIX),
-		)
-		.map((p) => p.text ?? "")
+		.filter((p) => p.type === "text" && p.text)
+		.map((p) => {
+			const text = p.text ?? "";
+			const idx = text.indexOf(IMAGE_REFS_PREFIX);
+			return idx >= 0 ? text.slice(0, idx).trim() : text;
+		})
+		.filter(Boolean)
 		.join("\n");
 }
 
@@ -271,8 +341,11 @@ export function ChatWidget() {
 			(userContext === null ? "logged_out" : "active_user"),
 		[userContext],
 	);
-	const suggestions =
+	const stageData =
 		SUGGESTIONS_BY_STAGE[stage] ?? SUGGESTIONS_BY_STAGE.active_user;
+	const suggestions = stageData[locale] ?? stageData.en;
+	const welcomeText = WELCOME_MESSAGE[locale] ?? WELCOME_MESSAGE.en;
+	const disclaimerText = AI_DISCLAIMER[locale] ?? AI_DISCLAIMER.en;
 
 	const handleSubmit = useCallback(
 		(e: React.FormEvent) => {
@@ -536,9 +609,7 @@ export function ChatWidget() {
 											lineHeight: "1.5",
 										}}
 									>
-										Hey 👋 I&apos;m Sharry. I can help you find items, answer
-										questions, approve requests, or manage your listings.
-										What&apos;s on your mind?
+										{welcomeText}
 									</div>
 								</div>
 
@@ -629,13 +700,6 @@ export function ChatWidget() {
 												);
 											}
 											return message.parts?.map((part, idx) => {
-												// Skip sentinel text parts
-												if (
-													part.type === "text" &&
-													part.text?.startsWith(IMAGE_REFS_PREFIX)
-												) {
-													return null;
-												}
 												if (part.type === "file" && "url" in part) {
 													return (
 														<img
@@ -647,6 +711,14 @@ export function ChatWidget() {
 													);
 												}
 												if (part.type === "text" && part.text) {
+													// Strip sentinel from display
+													const sentinelIdx =
+														part.text.indexOf(IMAGE_REFS_PREFIX);
+													const displayText =
+														sentinelIdx >= 0
+															? part.text.slice(0, sentinelIdx).trim()
+															: part.text;
+													if (!displayText) return null;
 													return (
 														<div
 															key={idx}
@@ -656,7 +728,7 @@ export function ChatWidget() {
 																	: undefined
 															}
 														>
-															{renderMessageContent(part.text)}
+															{renderMessageContent(displayText)}
 														</div>
 													);
 												}
@@ -855,7 +927,7 @@ export function ChatWidget() {
 						className="px-4 pb-2 text-center text-[10px]"
 						style={{ color: "var(--muted-foreground)" }}
 					>
-						Sharry is an AI assistant and can make mistakes.
+						{disclaimerText}
 					</p>
 				</div>
 			)}
