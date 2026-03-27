@@ -422,15 +422,24 @@
 	},
 	"MyItems": {
 		"title": "My Items",
+		"subtitle": "Track items you're borrowing and sharing.",
 		"signInMessage": "Please sign in to view and manage your items.",
 		"signInButton": "Sign In",
 		"loading": "Loading...",
 		"noItems": "You don't have any items yet.",
+		"noBorrowing": "You're not borrowing any items.",
+		"noShared": "You haven't shared any items yet.",
 		"borrowingTitle": "Items I'm Borrowing",
-		"myItemsTitle": "My Items"
+		"myItemsTitle": "My Items",
+		"tabs": {
+			"borrowing": "Borrowing",
+			"history": "History",
+			"shared": "Shared Items"
+		}
 	},
 	"Profile": {
 		"title": "My Profile",
+		"subtitle": "Your profile, ratings, and contact info.",
 		"loading": "Loading...",
 		"signInMessage": "Please sign in to view your profile.",
 		"backToHome": "Back to Home",
