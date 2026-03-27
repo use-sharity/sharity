@@ -157,6 +157,7 @@ export function ChatWidget() {
 	const [uploadedRefs, setUploadedRefs] = useState<CloudinaryRef[]>([]);
 	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isDragOver, setIsDragOver] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { upload: uploadToCloudinary } = useCloudinaryUpload(
 		api.cloudinary.upload,
@@ -422,11 +423,8 @@ export function ChatWidget() {
 		lastSavedIndexRef.current = 0;
 	}, [clearMessages, setMessages, previewUrls]);
 
-	const handleFileSelect = useCallback(
-		async (e: React.ChangeEvent<HTMLInputElement>) => {
-			const selected = Array.from(e.target.files ?? []);
-			e.target.value = "";
-
+	const processFiles = useCallback(
+		async (selected: File[]) => {
 			const remaining = 5 - pendingFiles.length;
 			if (remaining <= 0) {
 				toast.error("Maximum 5 images per message");
@@ -435,6 +433,7 @@ export function ChatWidget() {
 
 			const valid: File[] = [];
 			for (const file of selected.slice(0, remaining)) {
+				if (!file.type.startsWith("image/")) continue;
 				if (file.size > MAX_IMAGE_SIZE_BYTES) {
 					toast.error(`${file.name} is too large (max 12 MB)`);
 					continue;
@@ -475,17 +474,27 @@ export function ChatWidget() {
 					const result = prev.filter(
 						(_, i) => i < offset || !failedIndices.has(i - offset),
 					);
-					// Revoke failed URLs
 					failedIndices.forEach((fi) => URL.revokeObjectURL(urls[fi]));
 					return result;
 				});
 			}
 
-			const successRefs = newRefs.filter((r): r is CloudinaryRef => r !== null);
+			const successRefs = newRefs.filter(
+				(r): r is CloudinaryRef => r !== null,
+			);
 			setUploadedRefs((prev) => [...prev, ...successRefs]);
 			setIsUploading(false);
 		},
 		[pendingFiles.length, uploadToCloudinary],
+	);
+
+	const handleFileSelect = useCallback(
+		async (e: React.ChangeEvent<HTMLInputElement>) => {
+			const selected = Array.from(e.target.files ?? []);
+			e.target.value = "";
+			await processFiles(selected);
+		},
+		[processFiles],
 	);
 
 	const handleRemoveFile = useCallback(
@@ -496,6 +505,31 @@ export function ChatWidget() {
 			setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
 		},
 		[previewUrls],
+	);
+
+	const handleDragOver = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			if (isSignedIn) setIsDragOver(true);
+		},
+		[isSignedIn],
+	);
+
+	const handleDragLeave = useCallback((e: React.DragEvent) => {
+		// Only hide overlay when leaving the chat panel, not its children
+		if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+		setIsDragOver(false);
+	}, []);
+
+	const handleDrop = useCallback(
+		async (e: React.DragEvent) => {
+			e.preventDefault();
+			setIsDragOver(false);
+			if (!isSignedIn) return;
+			const files = Array.from(e.dataTransfer.files);
+			if (files.length > 0) await processFiles(files);
+		},
+		[isSignedIn, processFiles],
 	);
 
 	return (
@@ -521,6 +555,9 @@ export function ChatWidget() {
 				<div
 					role="dialog"
 					aria-label="Chat with Sharry"
+					onDragOver={handleDragOver}
+					onDragLeave={handleDragLeave}
+					onDrop={handleDrop}
 					className="fixed inset-0 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
 					style={{
 						backgroundColor: "rgba(255, 255, 255, 0.97)",
@@ -528,6 +565,19 @@ export function ChatWidget() {
 						borderColor: "var(--border)",
 					}}
 				>
+					{/* Drag overlay */}
+					{isDragOver && isSignedIn && (
+						<div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
+							<div
+								className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed px-8 py-6"
+								style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+							>
+								<ImagePlus className="h-8 w-8" />
+								<span className="text-sm font-medium">Drop image here</span>
+							</div>
+						</div>
+					)}
+
 					{/* Header */}
 					<div
 						className="flex items-center justify-between px-4 py-3"
