@@ -2,6 +2,7 @@ import { jsonSchema, tool } from "ai";
 import type { ConvexHttpClient } from "convex/browser";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+import type { CloudinaryRef } from "@/lib/cloudinary-ref";
 
 function stringParam(description: string) {
 	return { type: "string" as const, description };
@@ -101,7 +102,11 @@ function parseDate(dateStr: string): number | null {
 	return isNaN(date.getTime()) ? null : date.getTime();
 }
 
-export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
+export function buildMutationTools(
+	convex: ConvexHttpClient,
+	locale: string,
+	attachedImageRefs: CloudinaryRef[] = [],
+) {
 	return {
 		createItem: tool({
 			description:
@@ -110,6 +115,7 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 				name: string;
 				description?: string;
 				category?: string;
+				useAttachedImages?: boolean;
 			}>({
 				type: "object",
 				properties: {
@@ -118,16 +124,25 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 					category: stringParam(
 						"Category: kitchen, furniture, electronics, clothing, books, sports, other",
 					),
+					useAttachedImages: {
+						type: "boolean" as const,
+						description: "Set true to attach the user's images to this item",
+					},
 				},
 				required: ["name"],
 			}),
 			needsApproval: true,
-			execute: async ({ name, description, category }) => {
+			execute: async ({ name, description, category, useAttachedImages }) => {
 				try {
+					const imageCloudinary =
+						useAttachedImages && attachedImageRefs.length > 0
+							? attachedImageRefs
+							: undefined;
 					await convex.mutation(api.items.create, {
 						name,
 						description,
 						category: category as any,
+						imageCloudinary,
 					});
 					// Resolve the new item to get its ID for a direct link
 					const resolved = await convex.query(api.chat.resolveMyItem, {
@@ -137,9 +152,12 @@ export function buildMutationTools(convex: ConvexHttpClient, locale: string) {
 					const link = itemId
 						? `/${locale}/item/${itemId}`
 						: `/${locale}/my-items`;
+					const photoNote = imageCloudinary
+						? `${imageCloudinary.length} photo(s) attached.`
+						: "No photos attached — add them in the app.";
 					return {
-						success: `Created "${name}".`,
-						nextStep: `Tell the user to add photos and location. Include this exact link in your response: ${link}`,
+						success: `Created "${name}". ${photoNote}`,
+						nextStep: `Tell the user to add location if needed. Include this exact link in your response: ${link}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not create item." };

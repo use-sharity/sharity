@@ -3,6 +3,7 @@ import type { ConvexHttpClient } from "convex/browser";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { buildMutationTools } from "@/lib/sharry-mutation-tools";
+import type { CloudinaryRef } from "@/lib/cloudinary-ref";
 
 // Helper: cast string to Convex Id (safe for ConvexHttpClient which accepts strings at runtime)
 function asItemId(id: string) {
@@ -19,7 +20,11 @@ function stringParam(description: string) {
 	return { type: "string" as const, description };
 }
 
-export function buildTools(convex: ConvexHttpClient, locale: string) {
+export function buildTools(
+	convex: ConvexHttpClient,
+	locale: string,
+	attachedImageRefs: CloudinaryRef[] = [],
+) {
 	return {
 		getMyItems: tool({
 			description:
@@ -319,6 +324,6 @@ export function buildTools(convex: ConvexHttpClient, locale: string) {
 		}),
 
 		// Mutation tools
-		...buildMutationTools(convex, locale),
+		...buildMutationTools(convex, locale, attachedImageRefs),
 	};
 }
