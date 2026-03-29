@@ -14,12 +14,9 @@ function extractAndStripImageRefs(messages: any[]): {
 	cleaned: any[];
 	imageRefs: Array<{ publicId: string; secureUrl: string }>;
 } {
-	// Track refs per user-message index so we can pick the most recent batch
-	const refsByUserMsg: Array<Array<{ publicId: string; secureUrl: string }>> =
-		[];
+	const allRefs: Array<{ publicId: string; secureUrl: string }> = [];
 	const cleaned = messages.map((msg: any) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
-		const msgRefs: Array<{ publicId: string; secureUrl: string }> = [];
 		const mappedParts = msg.parts
 			.map((part: any) => {
 				if (
@@ -31,7 +28,7 @@ function extractAndStripImageRefs(messages: any[]): {
 					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
 					try {
 						const refs = JSON.parse(jsonStr);
-						msgRefs.push(...refs);
+						allRefs.push(...refs);
 					} catch {
 						/* ignore malformed */
 					}
@@ -42,14 +39,15 @@ function extractAndStripImageRefs(messages: any[]): {
 				return part;
 			})
 			.filter(Boolean);
-		if (msgRefs.length > 0) refsByUserMsg.push(msgRefs);
 		return { ...msg, parts: mappedParts };
 	});
-	// Use refs from the LAST user message that had images.
-	// This prevents old images from leaking into new tool calls.
-	const imageRefs = refsByUserMsg.length > 0
-		? refsByUserMsg[refsByUserMsg.length - 1]
-		: [];
+	// Deduplicate by publicId, keep chronological order
+	const seen = new Set<string>();
+	const imageRefs = allRefs.filter((ref) => {
+		if (seen.has(ref.publicId)) return false;
+		seen.add(ref.publicId);
+		return true;
+	});
 	return { cleaned, imageRefs };
 }
 
@@ -98,7 +96,16 @@ export async function POST(request: Request) {
 		? await convex.query(api.chat.getUserContext)
 		: null;
 
-	const systemPrompt = buildSystemPrompt({ userContext, locale });
+	let systemPrompt = buildSystemPrompt({ userContext, locale });
+
+	// Tell the LLM which images are available for tool use
+	if (attachedImageRefs.length > 0) {
+		const imageList = attachedImageRefs
+			.map((_, i) => `[${i + 1}] image ${i + 1} in conversation`)
+			.join(", ");
+		systemPrompt += `\n\n## Available images for tools\nThe user has shared ${attachedImageRefs.length} image(s) in this conversation: ${imageList}. When using tools that accept imageIndices, specify which image(s) to attach by number. ONLY attach images that are relevant to the specific action — do NOT attach all images by default. Match the image content to what makes sense for the action.`;
+	}
+
 	const tools = buildTools(convex, locale, attachedImageRefs);
 
 	try {

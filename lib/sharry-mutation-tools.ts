@@ -102,20 +102,37 @@ function parseDate(dateStr: string): number | null {
 	return isNaN(date.getTime()) ? null : date.getTime();
 }
 
+const IMAGE_INDICES_PARAM = {
+	type: "array" as const,
+	items: { type: "number" as const },
+	description:
+		"Which images to attach, by number (e.g. [1] or [2, 3]). Only include images relevant to this action.",
+};
+
 export function buildMutationTools(
 	convex: ConvexHttpClient,
 	locale: string,
 	attachedImageRefs: CloudinaryRef[] = [],
 ) {
+	// Resolve 1-based image indices to CloudinaryRefs
+	function resolveImageRefs(
+		indices?: number[],
+	): CloudinaryRef[] | undefined {
+		if (!indices || indices.length === 0) return undefined;
+		const refs = indices
+			.map((i) => attachedImageRefs[i - 1])
+			.filter(Boolean);
+		return refs.length > 0 ? refs : undefined;
+	}
 	return {
 		createItem: tool({
 			description:
-				"Create a new item listing. Collect name, description, and category through conversation first. Note: location must be added via the app afterward. If the user attached images, set useAttachedImages to true.",
+				"Create a new item listing. Collect name, description, and category through conversation first. Note: location must be added via the app afterward. If the user shared relevant images, specify which ones with imageIndices.",
 			inputSchema: jsonSchema<{
 				name: string;
 				description?: string;
 				category?: string;
-				useAttachedImages?: boolean;
+				imageIndices?: number[];
 			}>({
 				type: "object",
 				properties: {
@@ -124,20 +141,14 @@ export function buildMutationTools(
 					category: stringParam(
 						"Category: kitchen, furniture, electronics, clothing, books, sports, other",
 					),
-					useAttachedImages: {
-						type: "boolean" as const,
-						description: "Set true to attach the user's images to this item",
-					},
+					imageIndices: IMAGE_INDICES_PARAM,
 				},
 				required: ["name"],
 			}),
 			needsApproval: true,
-			execute: async ({ name, description, category, useAttachedImages }) => {
+			execute: async ({ name, description, category, imageIndices }) => {
 				try {
-					const imageCloudinary =
-						useAttachedImages && attachedImageRefs.length > 0
-							? attachedImageRefs
-							: undefined;
+					const imageCloudinary = resolveImageRefs(imageIndices);
 					await convex.mutation(api.items.create, {
 						name,
 						description,
@@ -167,14 +178,14 @@ export function buildMutationTools(
 
 		updateItem: tool({
 			description:
-				"Update an existing item's name, description, category, or photos. Resolves by item name or item ID. If the user attached images, set useAttachedImages to true to replace the item's photos.",
+				"Update an existing item's name, description, category, or photos. Resolves by item name or item ID. If the user shared relevant images, specify which ones with imageIndices to replace the item's photos.",
 			inputSchema: jsonSchema<{
 				itemName: string;
 				itemId?: string;
 				name?: string;
 				description?: string;
 				category?: string;
-				useAttachedImages?: boolean;
+				imageIndices?: number[];
 			}>({
 				type: "object",
 				properties: {
@@ -183,11 +194,7 @@ export function buildMutationTools(
 					name: stringParam("New name"),
 					description: stringParam("New description"),
 					category: stringParam("New category"),
-					useAttachedImages: {
-						type: "boolean" as const,
-						description:
-							"Set true to replace the item's photos with the user's attached images",
-					},
+					imageIndices: IMAGE_INDICES_PARAM,
 				},
 				required: ["itemName"],
 			}),
@@ -198,15 +205,12 @@ export function buildMutationTools(
 				name,
 				description,
 				category,
-				useAttachedImages,
+				imageIndices,
 			}) => {
 				try {
 					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
-					const imageCloudinary =
-						useAttachedImages && attachedImageRefs.length > 0
-							? attachedImageRefs
-							: undefined;
+					const imageCloudinary = resolveImageRefs(imageIndices);
 					await convex.mutation(api.items.update, {
 						id: resolved.itemId,
 						...(name && { name }),
@@ -694,32 +698,26 @@ export function buildMutationTools(
 
 		createRating: tool({
 			description:
-				"Rate a completed transaction. Help the user compose their rating from vague input. If the user attached a photo, set useAttachedImages to true.",
+				"Rate a completed transaction. Help the user compose their rating from vague input. If the user shared a relevant photo, specify which one with imageIndices.",
 			inputSchema: jsonSchema<{
 				claimId: string;
 				stars: number;
 				comment?: string;
-				useAttachedImages?: boolean;
+				imageIndices?: number[];
 			}>({
 				type: "object",
 				properties: {
 					claimId: stringParam("Claim ID for the transaction"),
 					stars: { type: "number" as any, description: "Rating 1-5 stars" },
 					comment: stringParam("Review comment"),
-					useAttachedImages: {
-						type: "boolean" as const,
-						description: "Set true to attach the user's photo to the rating",
-					},
+					imageIndices: IMAGE_INDICES_PARAM,
 				},
 				required: ["claimId", "stars"],
 			}),
 			needsApproval: true,
-			execute: async ({ claimId, stars, comment, useAttachedImages }) => {
+			execute: async ({ claimId, stars, comment, imageIndices }) => {
 				try {
-					const photoCloudinary =
-						useAttachedImages && attachedImageRefs.length > 0
-							? attachedImageRefs
-							: undefined;
+					const photoCloudinary = resolveImageRefs(imageIndices);
 					await convex.mutation(api.ratings.createRating, {
 						claimId: claimId as Id<"claims">,
 						stars,
@@ -766,28 +764,22 @@ export function buildMutationTools(
 
 		createWishlistItem: tool({
 			description:
-				"Add a wish for an item you'd like someone to share. IMPORTANT: ALWAYS call browseItems AND checkWishlist BEFORE this tool. Only create if no matching items or wishes exist. If the user attached an image, set useAttachedImages to true.",
+				"Add a wish for an item you'd like someone to share. IMPORTANT: ALWAYS call browseItems AND checkWishlist BEFORE this tool. Only create if no matching items or wishes exist. If the user shared a relevant image, specify which one with imageIndices.",
 			inputSchema: jsonSchema<{
 				text: string;
-				useAttachedImages?: boolean;
+				imageIndices?: number[];
 			}>({
 				type: "object",
 				properties: {
 					text: stringParam("What you're looking for"),
-					useAttachedImages: {
-						type: "boolean" as const,
-						description: "Set true to attach the user's image to the wish",
-					},
+					imageIndices: IMAGE_INDICES_PARAM,
 				},
 				required: ["text"],
 			}),
 			needsApproval: true,
-			execute: async ({ text, useAttachedImages }) => {
+			execute: async ({ text, imageIndices }) => {
 				try {
-					const imageCloudinary =
-						useAttachedImages && attachedImageRefs.length > 0
-							? attachedImageRefs
-							: undefined;
+					const imageCloudinary = resolveImageRefs(imageIndices);
 					await convex.mutation(api.wishlist.create, {
 						text,
 						imageCloudinary,
@@ -830,31 +822,24 @@ export function buildMutationTools(
 
 		updateWishlistItem: tool({
 			description:
-				"Update a wish's text or image. Only the creator can update their own wish. Use browseWishlist or checkWishlist first to get the wishId. If the user attached an image, set useAttachedImages to true.",
+				"Update a wish's text or image. Only the creator can update their own wish. Use browseWishlist or checkWishlist first to get the wishId. If the user shared a relevant image, specify which one with imageIndices.",
 			inputSchema: jsonSchema<{
 				wishId: string;
 				text: string;
-				useAttachedImages?: boolean;
+				imageIndices?: number[];
 			}>({
 				type: "object",
 				properties: {
 					wishId: stringParam("The wishlist item ID to update"),
 					text: stringParam("Updated wish text"),
-					useAttachedImages: {
-						type: "boolean" as const,
-						description:
-							"Set true to replace the wish's image with the user's attached image",
-					},
+					imageIndices: IMAGE_INDICES_PARAM,
 				},
 				required: ["wishId", "text"],
 			}),
 			needsApproval: true,
-			execute: async ({ wishId, text, useAttachedImages }) => {
+			execute: async ({ wishId, text, imageIndices }) => {
 				try {
-					const imageCloudinary =
-						useAttachedImages && attachedImageRefs.length > 0
-							? attachedImageRefs
-							: undefined;
+					const imageCloudinary = resolveImageRefs(imageIndices);
 					await convex.mutation(api.wishlist.update, {
 						id: wishId as Id<"wishlist">,
 						text,
@@ -918,9 +903,7 @@ export function buildMutationTools(
 			}>({
 				type: "object",
 				properties: {
-					startDate: stringParam(
-						"Start date (ISO format, e.g., 2026-04-01)",
-					),
+					startDate: stringParam("Start date (ISO format, e.g., 2026-04-01)"),
 					endDate: stringParam("End date (ISO format, e.g., 2026-04-07)"),
 					note: stringParam("Optional reason (e.g., traveling)"),
 				},
@@ -933,8 +916,7 @@ export function buildMutationTools(
 					const end = parseDate(endDate);
 					if (!start || !end)
 						return {
-							error:
-								"Could not parse dates. Use format like '2026-04-01'.",
+							error: "Could not parse dates. Use format like '2026-04-01'.",
 						};
 					await convex.mutation(api.items.addOwnerUnavailabilityRange, {
 						startDate: start,
