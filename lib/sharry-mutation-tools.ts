@@ -708,8 +708,7 @@ export function buildMutationTools(
 					comment: stringParam("Review comment"),
 					useAttachedImages: {
 						type: "boolean" as const,
-						description:
-							"Set true to attach the user's photo to the rating",
+						description: "Set true to attach the user's photo to the rating",
 					},
 				},
 				required: ["claimId", "stars"],
@@ -755,8 +754,9 @@ export function buildMutationTools(
 							wishId: w._id,
 							text: w.text,
 							votes: w.votes?.length ?? 0,
+							isOwner: w.isOwner ?? false,
 						})),
-						instruction: `Review these existing wishes. If any are similar to "${query}", tell the user it already exists and offer to vote for it with voteWishlistItem. Only proceed with createWishlistItem if nothing similar exists.`,
+						instruction: `Review these existing wishes. If any are similar to "${query}" and the user does NOT own it (isOwner: false), tell them it already exists and offer to vote for it. If they OWN a similar wish (isOwner: true), tell them they already have that wish — don't suggest voting on your own wish. Only proceed with createWishlistItem if nothing similar exists.`,
 					};
 				} catch {
 					return { error: "Could not check wishlist right now." };
@@ -776,8 +776,7 @@ export function buildMutationTools(
 					text: stringParam("What you're looking for"),
 					useAttachedImages: {
 						type: "boolean" as const,
-						description:
-							"Set true to attach the user's image to the wish",
+						description: "Set true to attach the user's image to the wish",
 					},
 				},
 				required: ["text"],
