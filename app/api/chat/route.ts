@@ -71,6 +71,24 @@ export async function POST(request: Request) {
 	const { cleaned: cleanedMessages, imageRefs: attachedImageRefs } =
 		extractAndStripImageRefs(messages);
 
+	// Drop image file parts from older messages so the LLM doesn't re-see stale images.
+	// Keep images only in the last 5 user messages. Refs are still available for tools.
+	const RECENT_IMAGE_TURNS = 5;
+	const userMsgIndices = cleanedMessages
+		.map((m: any, i: number) => (m.role === "user" ? i : -1))
+		.filter((i: number) => i >= 0);
+	const recentCutoff =
+		userMsgIndices[Math.max(0, userMsgIndices.length - RECENT_IMAGE_TURNS)] ??
+		0;
+	const visionMessages = cleanedMessages.map((msg: any, i: number) => {
+		if (i >= recentCutoff || msg.role !== "user" || !Array.isArray(msg.parts))
+			return msg;
+		const filtered = msg.parts.filter(
+			(p: any) => p.type !== "file" || !p.mediaType?.startsWith("image/"),
+		);
+		return { ...msg, parts: filtered };
+	});
+
 	const convex = new ConvexHttpClient(convexUrl);
 	if (token) convex.setAuth(token);
 
@@ -82,7 +100,7 @@ export async function POST(request: Request) {
 	const tools = buildTools(convex, locale, attachedImageRefs);
 
 	try {
-		const modelMessages = await convertToModelMessages(cleanedMessages);
+		const modelMessages = await convertToModelMessages(visionMessages);
 		const result = streamText({
 			model: anthropic("claude-haiku-4-5-20251001"),
 			system: systemPrompt,
