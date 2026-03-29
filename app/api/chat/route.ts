@@ -14,11 +14,9 @@ function extractAndStripImageRefs(messages: any[]): {
 	cleaned: any[];
 	imageRefs: Array<{ publicId: string; secureUrl: string }>;
 } {
-	// Collect refs per-message so we can pick only the latest
-	const refsByIndex: Array<Array<{ publicId: string; secureUrl: string }>> = [];
-	const cleaned = messages.map((msg: any, msgIdx: number) => {
+	const imageRefs: Array<{ publicId: string; secureUrl: string }> = [];
+	const cleaned = messages.map((msg: any) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
-		const msgRefs: Array<{ publicId: string; secureUrl: string }> = [];
 		const mappedParts = msg.parts
 			.map((part: any) => {
 				if (
@@ -30,7 +28,7 @@ function extractAndStripImageRefs(messages: any[]): {
 					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
 					try {
 						const refs = JSON.parse(jsonStr);
-						msgRefs.push(...refs);
+						imageRefs.push(...refs);
 					} catch {
 						/* ignore malformed */
 					}
@@ -41,14 +39,16 @@ function extractAndStripImageRefs(messages: any[]): {
 				return part;
 			})
 			.filter(Boolean);
-		if (msgRefs.length > 0) refsByIndex[msgIdx] = msgRefs;
 		return { ...msg, parts: mappedParts };
 	});
-	// Only use refs from the very last user message — if it has no images, refs is empty.
-	// The LLM can still SEE older images via vision, but tools won't act on stale refs.
-	const lastUserIdx = messages.findLastIndex((m: any) => m.role === "user");
-	const imageRefs = refsByIndex[lastUserIdx] ?? [];
-	return { cleaned, imageRefs };
+	// Deduplicate by publicId — same image may appear in multiple messages
+	const seen = new Set<string>();
+	const uniqueRefs = imageRefs.filter((ref) => {
+		if (seen.has(ref.publicId)) return false;
+		seen.add(ref.publicId);
+		return true;
+	});
+	return { cleaned, imageRefs: uniqueRefs };
 }
 
 export async function POST(request: Request) {
