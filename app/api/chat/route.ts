@@ -14,9 +14,12 @@ function extractAndStripImageRefs(messages: any[]): {
 	cleaned: any[];
 	imageRefs: Array<{ publicId: string; secureUrl: string }>;
 } {
-	const imageRefs: Array<{ publicId: string; secureUrl: string }> = [];
+	// Track refs per user-message index so we can pick the most recent batch
+	const refsByUserMsg: Array<Array<{ publicId: string; secureUrl: string }>> =
+		[];
 	const cleaned = messages.map((msg: any) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
+		const msgRefs: Array<{ publicId: string; secureUrl: string }> = [];
 		const mappedParts = msg.parts
 			.map((part: any) => {
 				if (
@@ -28,7 +31,7 @@ function extractAndStripImageRefs(messages: any[]): {
 					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
 					try {
 						const refs = JSON.parse(jsonStr);
-						imageRefs.push(...refs);
+						msgRefs.push(...refs);
 					} catch {
 						/* ignore malformed */
 					}
@@ -39,16 +42,15 @@ function extractAndStripImageRefs(messages: any[]): {
 				return part;
 			})
 			.filter(Boolean);
+		if (msgRefs.length > 0) refsByUserMsg.push(msgRefs);
 		return { ...msg, parts: mappedParts };
 	});
-	// Deduplicate by publicId — same image may appear in multiple messages
-	const seen = new Set<string>();
-	const uniqueRefs = imageRefs.filter((ref) => {
-		if (seen.has(ref.publicId)) return false;
-		seen.add(ref.publicId);
-		return true;
-	});
-	return { cleaned, imageRefs: uniqueRefs };
+	// Use refs from the LAST user message that had images.
+	// This prevents old images from leaking into new tool calls.
+	const imageRefs = refsByUserMsg.length > 0
+		? refsByUserMsg[refsByUserMsg.length - 1]
+		: [];
+	return { cleaned, imageRefs };
 }
 
 export async function POST(request: Request) {
