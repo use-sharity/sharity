@@ -870,6 +870,161 @@ export function buildMutationTools(
 			},
 		}),
 
+		switchItemMode: tool({
+			description:
+				"Toggle an item between lending mode and giveaway mode. Giveaway items transfer permanently with no return. WARNING: may affect active claims.",
+			inputSchema: jsonSchema<{
+				itemName: string;
+				itemId?: string;
+				giveaway: boolean;
+			}>({
+				type: "object",
+				properties: {
+					itemName: stringParam("Name of your item"),
+					itemId: ITEM_ID_PARAM,
+					giveaway: {
+						type: "boolean" as const,
+						description: "true for giveaway, false for lending",
+					},
+				},
+				required: ["itemName", "giveaway"],
+			}),
+			needsApproval: true,
+			execute: async ({ itemName, itemId, giveaway }) => {
+				try {
+					const resolved = await resolveOwned(convex, itemName, itemId);
+					if (!resolved.ok) return { error: resolved.error };
+					await convex.mutation(api.items.switchItemMode, {
+						id: resolved.itemId,
+						giveaway,
+					});
+					const mode = giveaway ? "giveaway" : "lending";
+					return {
+						success: `Switched "${resolved.itemName}" to ${mode} mode.`,
+					};
+				} catch (e: any) {
+					return { error: e.message ?? "Could not switch item mode." };
+				}
+			},
+		}),
+
+		blockDates: tool({
+			description:
+				"Block a date range on your calendar so no one can request your items during that period. Use when the owner is unavailable (e.g., traveling).",
+			inputSchema: jsonSchema<{
+				startDate: string;
+				endDate: string;
+				note?: string;
+			}>({
+				type: "object",
+				properties: {
+					startDate: stringParam(
+						"Start date (ISO format, e.g., 2026-04-01)",
+					),
+					endDate: stringParam("End date (ISO format, e.g., 2026-04-07)"),
+					note: stringParam("Optional reason (e.g., traveling)"),
+				},
+				required: ["startDate", "endDate"],
+			}),
+			needsApproval: true,
+			execute: async ({ startDate, endDate, note }) => {
+				try {
+					const start = parseDate(startDate);
+					const end = parseDate(endDate);
+					if (!start || !end)
+						return {
+							error:
+								"Could not parse dates. Use format like '2026-04-01'.",
+						};
+					await convex.mutation(api.items.addOwnerUnavailabilityRange, {
+						startDate: start,
+						endDate: end,
+						note,
+					});
+					return {
+						success: `Blocked ${startDate} to ${endDate}.${note ? ` Reason: ${note}` : ""}`,
+					};
+				} catch (e: any) {
+					return { error: e.message ?? "Could not block dates." };
+				}
+			},
+		}),
+
+		updateProfile: tool({
+			description:
+				"Update the user's profile. Can change name, bio, address, or contact methods (telegram, whatsapp, facebook, phone).",
+			inputSchema: jsonSchema<{
+				name?: string;
+				bio?: string;
+				address?: string;
+				telegram?: string;
+				whatsapp?: string;
+				facebook?: string;
+				phone?: string;
+			}>({
+				type: "object",
+				properties: {
+					name: stringParam("Display name"),
+					bio: stringParam("Short bio (max 500 chars)"),
+					address: stringParam("Area or address"),
+					telegram: stringParam("Telegram username"),
+					whatsapp: stringParam("WhatsApp number"),
+					facebook: stringParam("Facebook profile"),
+					phone: stringParam("Phone number"),
+				},
+			}),
+			needsApproval: true,
+			execute: async ({
+				name,
+				bio,
+				address,
+				telegram,
+				whatsapp,
+				facebook,
+				phone,
+			}) => {
+				try {
+					const hasContacts = telegram || whatsapp || facebook || phone;
+					const contacts = hasContacts
+						? {
+								...(telegram && { telegram }),
+								...(whatsapp && { whatsapp }),
+								...(facebook && { facebook }),
+								...(phone && { phone }),
+							}
+						: undefined;
+					await convex.mutation(api.users.updateProfile, {
+						...(name && { name }),
+						...(bio && { bio }),
+						...(address && { address }),
+						...(contacts && { contacts }),
+					});
+					return { success: "Profile updated." };
+				} catch (e: any) {
+					return { error: e.message ?? "Could not update profile." };
+				}
+			},
+		}),
+
+		markAllNotificationsRead: tool({
+			description:
+				"Mark all notifications as read. Use when the user says they've seen their updates.",
+			inputSchema: jsonSchema<Record<string, never>>({
+				type: "object",
+				properties: {},
+			}),
+			execute: async () => {
+				try {
+					await convex.mutation(api.notifications.markAllAsRead);
+					return { success: "All notifications marked as read." };
+				} catch (e: any) {
+					return {
+						error: e.message ?? "Could not mark notifications as read.",
+					};
+				}
+			},
+		}),
+
 		deleteWishlistItem: tool({
 			description:
 				"Delete a wish from the wishlist. Only the creator can delete their own wish. This cannot be undone.",
