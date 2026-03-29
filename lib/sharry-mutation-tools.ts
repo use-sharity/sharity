@@ -828,6 +828,48 @@ export function buildMutationTools(
 			},
 		}),
 
+		updateWishlistItem: tool({
+			description:
+				"Update a wish's text or image. Only the creator can update their own wish. Use browseWishlist or checkWishlist first to get the wishId. If the user attached an image, set useAttachedImages to true.",
+			inputSchema: jsonSchema<{
+				wishId: string;
+				text: string;
+				useAttachedImages?: boolean;
+			}>({
+				type: "object",
+				properties: {
+					wishId: stringParam("The wishlist item ID to update"),
+					text: stringParam("Updated wish text"),
+					useAttachedImages: {
+						type: "boolean" as const,
+						description:
+							"Set true to replace the wish's image with the user's attached image",
+					},
+				},
+				required: ["wishId", "text"],
+			}),
+			needsApproval: true,
+			execute: async ({ wishId, text, useAttachedImages }) => {
+				try {
+					const imageCloudinary =
+						useAttachedImages && attachedImageRefs.length > 0
+							? attachedImageRefs
+							: undefined;
+					await convex.mutation(api.wishlist.update, {
+						id: wishId as Id<"wishlist">,
+						text,
+						imageCloudinary,
+					});
+					const photoNote = imageCloudinary ? " Image updated." : "";
+					return {
+						success: `Updated wish: "${text}".${photoNote}`,
+					};
+				} catch (e: any) {
+					return { error: e.message ?? "Could not update this wish." };
+				}
+			},
+		}),
+
 		deleteWishlistItem: tool({
 			description:
 				"Delete a wish from the wishlist. Only the creator can delete their own wish. This cannot be undone.",
