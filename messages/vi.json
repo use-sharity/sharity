@@ -423,6 +423,11 @@
 		"giveawayNote": "Tặng luôn, không cần trả lại.",
 		"request": "Gửi yêu cầu"
 	},
+	"Calendar": {
+		"title": "Lịch",
+		"signInMessage": "Đăng nhập để xem lịch.",
+		"signInButton": "Đăng nhập"
+	},
 	"MyItems": {
 		"title": "Đồ của tôi",
 		"subtitle": "Theo dõi đồ bạn đang mượn và chia sẻ.",

@@ -423,6 +423,11 @@
 		"giveawayNote": "Giveaway: no return needed. Ownership transfers after pickup.",
 		"request": "Request"
 	},
+	"Calendar": {
+		"title": "Calendar",
+		"signInMessage": "Please sign in to view your calendar.",
+		"signInButton": "Sign In"
+	},
 	"MyItems": {
 		"title": "My Items",
 		"subtitle": "Track items you're borrowing and sharing.",
