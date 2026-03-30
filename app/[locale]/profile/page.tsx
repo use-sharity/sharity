@@ -15,11 +15,9 @@ import {
 import { ProfileForm } from "@/components/profile-form";
 import { RatingSummary } from "@/components/rating-summary";
 import { RatingsList } from "@/components/ratings-list";
-import { UserHistory } from "@/components/user-history";
 import { PendingRatings } from "@/components/pending-ratings";
 import { ContactInfo } from "@/components/contact-info";
 import { CloudinaryImage } from "@/components/cloudinary-image";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, MapPin, Settings, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -68,38 +66,41 @@ export default function ProfilePage() {
 
 	return (
 		<main className="min-h-screen bg-gray-50/50">
-			<div className="max-w-2xl mx-auto px-4 pb-4 pt-0 md:px-8 md:pb-8 md:pt-2 space-y-5">
-				<div className="flex items-center justify-between">
-					<Link
-						href="/"
-						className="text-muted-foreground hover:text-foreground transition-colors"
-					>
-						<ArrowLeft className="h-5 w-5" />
-					</Link>
-					<h1 className="text-xl font-semibold">{t("title")}</h1>
-					<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-						<DialogTrigger asChild>
-							<Button variant="outline" size="sm">
-								<Settings className="h-4 w-4 mr-1" />
-								{t("edit")}
-							</Button>
-						</DialogTrigger>
-						<DialogContent className="max-h-[90vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>{t("editTitle")}</DialogTitle>
-							</DialogHeader>
-							<ProfileForm
-								initialValues={{
-									name: profile?.name,
-									avatarUrl: profile?.avatarUrl,
-									address: profile?.address,
-									bio: profile?.bio,
-									contacts: profile?.contacts,
-								}}
-								onSuccess={() => setIsEditOpen(false)}
-							/>
-						</DialogContent>
-					</Dialog>
+			<div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+				<div className="space-y-1">
+					<div className="flex items-center gap-3">
+						<Link
+							href="/"
+							className="text-muted-foreground hover:text-foreground transition-colors"
+						>
+							<ArrowLeft className="h-5 w-5" />
+						</Link>
+						<h1 className="flex-1 text-xl font-semibold">{t("title")}</h1>
+						<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+							<DialogTrigger asChild>
+								<Button variant="outline" size="sm">
+									<Settings className="h-4 w-4 mr-1" />
+									{t("edit")}
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="max-h-[90vh] overflow-y-auto">
+								<DialogHeader>
+									<DialogTitle>{t("editTitle")}</DialogTitle>
+								</DialogHeader>
+								<ProfileForm
+									initialValues={{
+										name: profile?.name,
+										avatarUrl: profile?.avatarUrl,
+										address: profile?.address,
+										bio: profile?.bio,
+										contacts: profile?.contacts,
+									}}
+									onSuccess={() => setIsEditOpen(false)}
+								/>
+							</DialogContent>
+						</Dialog>
+					</div>
+					<p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 				</div>
 
 				{/* Profile Header */}
@@ -165,22 +166,11 @@ export default function ProfilePage() {
 					</Card>
 				)}
 
-				{/* Tabs for History and Ratings */}
-				<Tabs defaultValue="ratings" className="w-full">
-					<TabsList className="w-full grid grid-cols-2">
-						<TabsTrigger value="ratings">{t("tabs.ratings")}</TabsTrigger>
-						<TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
-					</TabsList>
-
-					<TabsContent value="ratings" className="mt-4 space-y-4">
-						<RatingSummary userId={clerkId} />
-						<RatingsList userId={clerkId} />
-					</TabsContent>
-
-					<TabsContent value="history" className="mt-4">
-						<UserHistory userId={clerkId} />
-					</TabsContent>
-				</Tabs>
+				{/* Ratings */}
+				<div className="space-y-4">
+					<RatingSummary userId={clerkId} />
+					<RatingsList userId={clerkId} />
+				</div>
 			</div>
 		</main>
 	);

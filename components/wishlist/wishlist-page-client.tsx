@@ -1,7 +1,5 @@
 "use client";
 
-import { WishlistDraftCard } from "@/components/wishlist/wishlist-draft-card";
-import { WishlistItem } from "@/components/wishlist/wishlist-item";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -10,12 +8,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { WishlistDraftCard } from "@/components/wishlist/wishlist-draft-card";
+import { WishlistItem } from "@/components/wishlist/wishlist-item";
 import { api } from "@/convex/_generated/api";
+import { Link } from "@/i18n/routing";
 import { useQuery } from "convex/react";
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useCallback, useState } from "react";
 
 type WishlistPageClientProps = {
 	shouldFocusDraft: boolean;
@@ -24,10 +24,16 @@ type WishlistPageClientProps = {
 export function WishlistPageClient({
 	shouldFocusDraft,
 }: WishlistPageClientProps) {
-	const router = useRouter();
 	const wishlistItems = useQuery(api.wishlist.list);
 	const [sortBy, setSortBy] = useState<"recent" | "upvoted">("recent");
+	const [showDraft, setShowDraft] = useState(shouldFocusDraft);
+	const [focusToken, setFocusToken] = useState(shouldFocusDraft ? 1 : 0);
 	const t = useTranslations("Wishlist");
+
+	const handleMakeRequest = useCallback(() => {
+		setShowDraft(true);
+		setFocusToken((prev) => prev + 1);
+	}, []);
 
 	if (!wishlistItems) {
 		return (
@@ -41,61 +47,62 @@ export function WishlistPageClient({
 		if (sortBy === "upvoted") {
 			return b.votes.length - a.votes.length;
 		}
-		// Default to recent (which is already the default backend order, but good to be explicit for client sort)
 		return b.createdAt - a.createdAt;
 	});
 
 	return (
 		<main className="min-h-screen bg-gray-50/50">
-			<div className="container mx-auto px-3 sm:px-4 lg:px-6 py-8 max-w-4xl">
-				<Button
-					variant="ghost"
-					className="mb-6 gap-2"
-					onClick={() => router.back()}
-				>
-					<ArrowLeft className="h-4 w-4" /> {t("back")}
-				</Button>
-
-				<div className="space-y-8">
-					<div className="flex flex-col md:flex-row items-center justify-between gap-4">
-						<div>
-							<h1 className="text-3xl font-bold tracking-tight">
-								{t("title")}
-							</h1>
-							<p className="text-gray-500">{t("subtitle")}</p>
-						</div>
-						<div className="flex items-center gap-2">
-							<Select
-								value={sortBy}
-								onValueChange={(v) => setSortBy(v as "recent" | "upvoted")}
-							>
-								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder={t("sortBy")} />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="recent">
-										{t("sortOptions.recent")}
-									</SelectItem>
-									<SelectItem value="upvoted">
-										{t("sortOptions.upvoted")}
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+			<div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+				<div className="space-y-1">
+					<div className="flex items-center gap-3">
+						<Link
+							href="/"
+							className="text-muted-foreground hover:text-foreground transition-colors"
+						>
+							<ArrowLeft className="h-5 w-5" />
+						</Link>
+						<h1 className="text-xl font-semibold">{t("title")}</h1>
 					</div>
+					<p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+				</div>
 
-					<div className="grid gap-4">
-						<WishlistDraftCard autoFocus={shouldFocusDraft} />
-						{sortedItems.length === 0 ? (
-							<div className="text-center py-12 text-gray-500 bg-white rounded-lg border shadow-sm">
-								<p>{t("noItems")}</p>
-							</div>
-						) : (
-							sortedItems.map((item) => (
-								<WishlistItem key={item._id} item={item} />
-							))
-						)}
-					</div>
+				<div className="flex items-center justify-between">
+					<Button variant="outline" size="sm" onClick={handleMakeRequest}>
+						<Plus className="h-4 w-4 mr-1.5" />
+						{t("draftCard.title")}
+					</Button>
+					<Select
+						value={sortBy}
+						onValueChange={(v) => setSortBy(v as "recent" | "upvoted")}
+					>
+						<SelectTrigger className="h-8 w-[140px]">
+							<SelectValue placeholder={t("sortBy")} />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="recent">{t("sortOptions.recent")}</SelectItem>
+							<SelectItem value="upvoted">
+								{t("sortOptions.upvoted")}
+							</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div className="grid gap-4">
+					{showDraft && (
+						<WishlistDraftCard
+							autoFocus={shouldFocusDraft}
+							focusToken={focusToken}
+						/>
+					)}
+					{sortedItems.length === 0 ? (
+						<div className="text-center py-12 text-gray-500 bg-white rounded-lg border shadow-sm">
+							<p>{t("noItems")}</p>
+						</div>
+					) : (
+						sortedItems.map((item) => (
+							<WishlistItem key={item._id} item={item} />
+						))
+					)}
 				</div>
 			</div>
 		</main>

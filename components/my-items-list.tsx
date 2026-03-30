@@ -7,7 +7,11 @@ import { BorrowedItemCard } from "./borrowed-item-card";
 import { MyItemCard } from "./my-item-card";
 import { useTranslations } from "next-intl";
 
-export function MyItemsList() {
+interface MyItemsListProps {
+	variant?: "borrowing" | "shared";
+}
+
+export function MyItemsList({ variant }: MyItemsListProps) {
 	const items = useQuery(api.items.getMyItems);
 	const borrowedItems = useQuery(api.items.getMyBorrowedItems);
 	const t = useTranslations("MyItems");
@@ -18,6 +22,38 @@ export function MyItemsList() {
 
 	// Filter out borrowed items from "my items" (they're shown separately)
 	const ownedItems = items.filter((i) => i.isOwner);
+
+	if (variant === "borrowing") {
+		if (borrowedItems.length === 0) {
+			return (
+				<div className="text-center p-4 text-gray-500">{t("noBorrowing")}</div>
+			);
+		}
+
+		return (
+			<div className="space-y-3">
+				{borrowedItems.map((item) => (
+					<BorrowedItemCard key={item._id} item={item} />
+				))}
+			</div>
+		);
+	}
+
+	if (variant === "shared") {
+		if (ownedItems.length === 0) {
+			return (
+				<div className="text-center p-4 text-gray-500">{t("noShared")}</div>
+			);
+		}
+
+		return (
+			<div className="space-y-3">
+				{ownedItems.map((item) => (
+					<MyItemCard key={item._id} item={item} isOwner />
+				))}
+			</div>
+		);
+	}
 
 	const hasNoItems = ownedItems.length === 0 && borrowedItems.length === 0;
 

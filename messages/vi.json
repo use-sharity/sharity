@@ -422,15 +422,24 @@
 	},
 	"MyItems": {
 		"title": "Đồ của tôi",
+		"subtitle": "Theo dõi đồ bạn đang mượn và chia sẻ.",
 		"signInMessage": "Đăng nhập để xem và quản lý đồ.",
 		"signInButton": "Đăng nhập",
 		"loading": "Đang tải...",
 		"noItems": "Chưa đăng món nào.",
+		"noBorrowing": "Bạn chưa mượn món nào.",
+		"noShared": "Bạn chưa chia sẻ món nào.",
 		"borrowingTitle": "Đồ đang mượn",
-		"myItemsTitle": "Đồ đã đăng"
+		"myItemsTitle": "Đồ đã đăng",
+		"tabs": {
+			"borrowing": "Đang mượn",
+			"history": "Lịch sử",
+			"shared": "Đã chia sẻ"
+		}
 	},
 	"Profile": {
 		"title": "Hồ sơ",
+		"subtitle": "Hồ sơ, đánh giá và thông tin liên hệ.",
 		"loading": "Đang tải...",
 		"signInMessage": "Đăng nhập để xem hồ sơ.",
 		"backToHome": "Về trang chủ",
