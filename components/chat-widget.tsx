@@ -479,9 +479,7 @@ export function ChatWidget() {
 				});
 			}
 
-			const successRefs = newRefs.filter(
-				(r): r is CloudinaryRef => r !== null,
-			);
+			const successRefs = newRefs.filter((r): r is CloudinaryRef => r !== null);
 			setUploadedRefs((prev) => [...prev, ...successRefs]);
 			setIsUploading(false);
 		},
@@ -570,7 +568,10 @@ export function ChatWidget() {
 						<div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
 							<div
 								className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed px-8 py-6"
-								style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+								style={{
+									borderColor: "var(--primary)",
+									color: "var(--primary)",
+								}}
 							>
 								<ImagePlus className="h-8 w-8" />
 								<span className="text-sm font-medium">Drop image here</span>
