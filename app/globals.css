@@ -313,8 +313,6 @@
 	--fc-event-text-color: var(--primary-foreground);
 	--fc-highlight-color: color-mix(in srgb, var(--primary) 12%, transparent);
 
-	border-radius: 12px;
-	overflow: hidden;
 	border: 1px solid var(--border);
 }
 
