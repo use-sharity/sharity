@@ -2290,6 +2290,302 @@ export const updateLocationWard = internalMutation({
 	},
 });
 
+// ---------------------------------------------------------------------------
+// Calendar helpers
+// ---------------------------------------------------------------------------
+
+type LeaseActivityDoc = {
+	type: string;
+	windowStartAt?: number;
+	windowEndAt?: number;
+	proposalId?: string;
+};
+
+type NeedsAction = "respond" | "schedule" | "confirm" | null;
+
+/**
+ * Determine what action (if any) is needed by the given user for a claim,
+ * based on the sorted lease_activity event log.
+ */
+function resolveNeedsAction(args: {
+	claim: {
+		status: string;
+		pickedUpAt?: number;
+		returnedAt?: number;
+		transferredAt?: number;
+		expiredAt?: number;
+		missingAt?: number;
+	};
+	events: LeaseActivityDoc[];
+	isOwner: boolean;
+}): NeedsAction {
+	const { claim, events, isOwner } = args;
+
+	// Terminal states — no action needed
+	if (
+		claim.returnedAt ||
+		claim.transferredAt ||
+		claim.expiredAt ||
+		claim.missingAt
+	) {
+		return null;
+	}
+
+	const hasPickedUp = !!claim.pickedUpAt;
+	const hasPickupProposed = events.some(
+		(e) => e.type === "lease_pickup_proposed",
+	);
+	const hasPickupApproved = events.some(
+		(e) => e.type === "lease_pickup_approved",
+	);
+	const hasReturnProposed = events.some(
+		(e) => e.type === "lease_return_proposed",
+	);
+	const hasReturnApproved = events.some(
+		(e) => e.type === "lease_return_approved",
+	);
+
+	if (claim.status === "pending") {
+		return isOwner ? "respond" : null;
+	}
+
+	if (claim.status === "approved") {
+		if (!hasPickedUp) {
+			if (!hasPickupProposed) return "schedule";
+			if (hasPickupProposed && !hasPickupApproved) {
+				return isOwner ? "respond" : null;
+			}
+			// Pickup approved but not picked up
+			if (hasPickupApproved) return "confirm";
+		}
+
+		// Already picked up
+		if (!hasReturnProposed) return "schedule";
+		if (hasReturnProposed && !hasReturnApproved) {
+			return isOwner ? "respond" : null;
+		}
+		// Return approved but not returned
+		if (hasReturnApproved) return "confirm";
+	}
+
+	return null;
+}
+
+export type CalendarEvent = {
+	id: string;
+	type: "lending" | "borrowing" | "vacation";
+	title: string;
+	startDate: number;
+	endDate: number;
+	isAllDay: boolean;
+	itemId?: string;
+	claimId?: string;
+	needsAction?: NeedsAction;
+	counterpartyName?: string;
+	vacationNote?: string;
+};
+
+/**
+ * Aggregate claims (lending + borrowing) and owner_unavailability into a flat
+ * list of calendar events for the current user.
+ */
+export const getCalendarEvents = query({
+	args: { startDate: v.number(), endDate: v.number() },
+	handler: async (ctx, args): Promise<CalendarEvent[]> => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return [];
+
+		const userId = identity.subject;
+		const events: CalendarEvent[] = [];
+
+		// Statuses that are considered "closed" — exclude from calendar
+		const isClosedClaim = (c: {
+			status: string;
+			returnedAt?: number;
+			transferredAt?: number;
+			expiredAt?: number;
+			missingAt?: number;
+		}) => {
+			if (c.status === "rejected") return true;
+			if (c.returnedAt || c.transferredAt || c.expiredAt || c.missingAt)
+				return true;
+			return false;
+		};
+
+		// Helper: resolve user display name from the users table
+		const resolveName = async (
+			clerkId: string,
+		): Promise<string | undefined> => {
+			const profile = await ctx.db
+				.query("users")
+				.withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+				.first();
+			return profile?.name ?? undefined;
+		};
+
+		// Helper: get sorted lease_activity events for a claim
+		const getEvents = async (claimId: Id<"claims">) => {
+			return await ctx.db
+				.query("lease_activity")
+				.withIndex("by_claim_createdAt", (q) => q.eq("claimId", claimId))
+				.order("asc")
+				.collect();
+		};
+
+		// Helper: derive effective start/end from activity events
+		const resolveTimestamps = (
+			claim: { startDate: number; endDate: number; pickedUpAt?: number },
+			leaseEvents: LeaseActivityDoc[],
+		): { startDate: number; endDate: number; isAllDay: boolean } => {
+			const pickupProposal = leaseEvents.find(
+				(e) => e.type === "lease_pickup_proposed",
+			);
+			const returnProposal = leaseEvents.find(
+				(e) => e.type === "lease_return_proposed",
+			);
+
+			let startDate = claim.startDate;
+			let endDate = claim.endDate;
+			let isAllDay = true;
+
+			if (pickupProposal?.windowStartAt) {
+				startDate = pickupProposal.windowStartAt;
+				isAllDay = false;
+			} else if (claim.pickedUpAt) {
+				startDate = claim.pickedUpAt;
+				isAllDay = false;
+			}
+
+			if (returnProposal?.windowEndAt) {
+				endDate = returnProposal.windowEndAt;
+				isAllDay = false;
+			}
+
+			return { startDate, endDate, isAllDay };
+		};
+
+		// -----------------------------------------------------------------------
+		// 1. Lending: claims where current user is the item owner
+		// -----------------------------------------------------------------------
+		const ownedItems = await ctx.db
+			.query("items")
+			.filter((q) => q.eq(q.field("ownerId"), userId))
+			.collect();
+
+		for (const item of ownedItems) {
+			const itemClaims = await ctx.db
+				.query("claims")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.collect();
+
+			for (const claim of itemClaims) {
+				if (isClosedClaim(claim)) continue;
+
+				// Overlap check with requested range
+				if (claim.endDate < args.startDate || claim.startDate > args.endDate)
+					continue;
+
+				const leaseEvents = await getEvents(claim._id);
+				const { startDate, endDate, isAllDay } = resolveTimestamps(
+					claim,
+					leaseEvents,
+				);
+				const counterpartyName = await resolveName(claim.claimerId);
+				const needsAction = resolveNeedsAction({
+					claim,
+					events: leaseEvents,
+					isOwner: true,
+				});
+
+				const borrowerLabel = counterpartyName ?? claim.claimerId.slice(0, 6);
+				events.push({
+					id: `lending-${claim._id}`,
+					type: "lending",
+					title: `${item.name} → ${borrowerLabel}`,
+					startDate,
+					endDate,
+					isAllDay,
+					itemId: item._id,
+					claimId: claim._id,
+					needsAction,
+					counterpartyName,
+				});
+			}
+		}
+
+		// -----------------------------------------------------------------------
+		// 2. Borrowing: claims where current user is the claimer
+		// -----------------------------------------------------------------------
+		const borrowingClaims = await ctx.db
+			.query("claims")
+			.withIndex("by_claimer", (q) => q.eq("claimerId", userId))
+			.collect();
+
+		for (const claim of borrowingClaims) {
+			if (isClosedClaim(claim)) continue;
+
+			// Overlap check with requested range
+			if (claim.endDate < args.startDate || claim.startDate > args.endDate)
+				continue;
+
+			const item = await ctx.db.get(claim.itemId);
+			if (!item) continue;
+
+			const leaseEvents = await getEvents(claim._id);
+			const { startDate, endDate, isAllDay } = resolveTimestamps(
+				claim,
+				leaseEvents,
+			);
+			const counterpartyName = await resolveName(item.ownerId);
+			const needsAction = resolveNeedsAction({
+				claim,
+				events: leaseEvents,
+				isOwner: false,
+			});
+
+			const ownerLabel = counterpartyName ?? item.ownerId.slice(0, 6);
+			events.push({
+				id: `borrowing-${claim._id}`,
+				type: "borrowing",
+				title: `${item.name} ← ${ownerLabel}`,
+				startDate,
+				endDate,
+				isAllDay,
+				itemId: item._id,
+				claimId: claim._id,
+				needsAction,
+				counterpartyName,
+			});
+		}
+
+		// -----------------------------------------------------------------------
+		// 3. Vacation: owner_unavailability ranges
+		// -----------------------------------------------------------------------
+		const vacationBlocks = await ctx.db
+			.query("owner_unavailability")
+			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
+			.collect();
+
+		for (const block of vacationBlocks) {
+			// Overlap check with requested range
+			if (block.endDate < args.startDate || block.startDate > args.endDate)
+				continue;
+
+			events.push({
+				id: `vacation-${block._id}`,
+				type: "vacation",
+				title: "Vacation",
+				startDate: block.startDate,
+				endDate: block.endDate,
+				isAllDay: true,
+				vacationNote: block.note,
+			});
+		}
+
+		return events;
+	},
+});
+
 /**
  * Get items currently borrowed by the authenticated user.
  * Returns items where the user has an approved claim that has been picked up
