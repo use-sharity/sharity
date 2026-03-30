@@ -10,13 +10,29 @@ const UNAUTHED_MESSAGE_LIMIT = 5;
 
 const IMAGE_REFS_PREFIX = "__IMAGE_REFS__";
 
+type ImageRefWithContext = {
+	publicId: string;
+	secureUrl: string;
+	context: string;
+};
+
 function extractAndStripImageRefs(messages: any[]): {
 	cleaned: any[];
-	imageRefs: Array<{ publicId: string; secureUrl: string }>;
+	imageRefs: ImageRefWithContext[];
 } {
-	const allRefs: Array<{ publicId: string; secureUrl: string }> = [];
+	const allRefs: ImageRefWithContext[] = [];
 	const cleaned = messages.map((msg: any) => {
 		if (msg.role !== "user" || !Array.isArray(msg.parts)) return msg;
+		// Get the user's text from this message (before stripping sentinel)
+		const msgText = msg.parts
+			.filter((p: any) => p.type === "text" && p.text)
+			.map((p: any) => {
+				const idx = p.text.indexOf(IMAGE_REFS_PREFIX);
+				return idx >= 0 ? p.text.slice(0, idx).trim() : p.text;
+			})
+			.join(" ")
+			.trim()
+			.slice(0, 80);
 		const mappedParts = msg.parts
 			.map((part: any) => {
 				if (
@@ -28,7 +44,12 @@ function extractAndStripImageRefs(messages: any[]): {
 					const jsonStr = part.text.slice(idx + IMAGE_REFS_PREFIX.length);
 					try {
 						const refs = JSON.parse(jsonStr);
-						allRefs.push(...refs);
+						for (const ref of refs) {
+							allRefs.push({
+								...ref,
+								context: msgText || "attached image",
+							});
+						}
 					} catch {
 						/* ignore malformed */
 					}
@@ -98,12 +119,12 @@ export async function POST(request: Request) {
 
 	let systemPrompt = buildSystemPrompt({ userContext, locale });
 
-	// Tell the LLM which images are available for tool use
+	// Tell the LLM which images are available for tool use, with context
 	if (attachedImageRefs.length > 0) {
 		const imageList = attachedImageRefs
-			.map((_, i) => `[${i + 1}] image ${i + 1} in conversation`)
-			.join(", ");
-		systemPrompt += `\n\n## Available images for tools\nThe user has shared ${attachedImageRefs.length} image(s) in this conversation: ${imageList}. When using tools that accept imageIndices, specify which image(s) to attach by number. ONLY attach images that are relevant to the specific action — do NOT attach all images by default. Match the image content to what makes sense for the action.`;
+			.map((ref, i) => `[${i + 1}] "${ref.context}"`)
+			.join("\n");
+		systemPrompt += `\n\n## Available images for tools\nThe user has shared ${attachedImageRefs.length} image(s). Each is numbered with the user's message that accompanied it:\n${imageList}\n\nWhen using tools that accept imageIndices, specify ONLY the image(s) relevant to the action. Match by the context description above — e.g. if creating a tent listing, use the image from the "tent" message, not the "monitor" message.`;
 	}
 
 	const tools = buildTools(convex, locale, attachedImageRefs);
