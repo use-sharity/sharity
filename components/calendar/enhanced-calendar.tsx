@@ -11,7 +11,10 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 
+import { Palmtree } from "lucide-react";
+
 import { OwnerUnavailabilityButton } from "@/components/owner-unavailability-button";
+import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { CalendarEvent } from "@/convex/items";
 
@@ -31,7 +34,8 @@ function FullCalendarWrapperInner({
 	onEventClick,
 	onSelect,
 	onDatesSet,
-}: FullCalendarWrapperProps) {
+	selectable,
+}: FullCalendarWrapperProps & { selectable: boolean }) {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const FullCalendarComponent = require("@fullcalendar/react").default;
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -43,8 +47,8 @@ function FullCalendarWrapperInner({
 		<FullCalendarComponent
 			plugins={[dayGrid, interaction]}
 			initialView="dayGridMonth"
-			selectable={true}
-			selectMirror={true}
+			selectable={selectable}
+			selectMirror={selectable}
 			dayMaxEvents={3}
 			events={events}
 			eventClick={onEventClick}
@@ -161,6 +165,8 @@ export function EnhancedCalendar() {
 		endDate: Date;
 	} | null>(null);
 
+	const [isVacationMode, setIsVacationMode] = useState(false);
+
 	const rawEvents = useQuery(api.items.getCalendarEvents, {
 		startDate: dateRange.startDate,
 		endDate: dateRange.endDate,
@@ -190,6 +196,7 @@ export function EnhancedCalendar() {
 		// FullCalendar end is exclusive, subtract 1 ms
 		const endDate = new Date(arg.end.getTime() - 1);
 		setVacationDialog({ startDate, endDate });
+		setIsVacationMode(false);
 	}, []);
 
 	const handleDatesSet = useCallback((arg: DatesSetArg) => {
@@ -209,16 +216,41 @@ export function EnhancedCalendar() {
 		}
 	}, []);
 
+	const handleToggleVacationMode = useCallback(() => {
+		setIsVacationMode((prev) => !prev);
+	}, []);
+
 	return (
 		<div>
 			<UpNextSection events={calendarEvents} locale={locale} />
 
-			<FullCalendarWrapper
-				events={fcEvents}
-				onEventClick={handleEventClick}
-				onSelect={handleSelect}
-				onDatesSet={handleDatesSet}
-			/>
+			<div className="flex justify-end mb-3">
+				<Button
+					variant={isVacationMode ? "default" : "outline"}
+					size="sm"
+					className="gap-1.5"
+					onClick={handleToggleVacationMode}
+				>
+					<Palmtree className="h-4 w-4" />
+					{isVacationMode ? "Cancel" : "Add Vacation"}
+				</Button>
+			</div>
+
+			{isVacationMode && (
+				<div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+					Select dates on the calendar by clicking a start date and dragging to the end date.
+				</div>
+			)}
+
+			<div className={isVacationMode ? "fc-vacation-mode" : ""}>
+				<FullCalendarWrapper
+					events={fcEvents}
+					onEventClick={handleEventClick}
+					onSelect={handleSelect}
+					onDatesSet={handleDatesSet}
+					selectable={isVacationMode}
+				/>
+			</div>
 
 			{popover && (
 				<CalendarEventPopover

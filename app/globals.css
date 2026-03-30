@@ -426,6 +426,17 @@
 	}
 }
 
+/* Vacation selection mode — crosshair cursor and highlighted border */
+.fc-vacation-mode .fc .fc-daygrid-day {
+	cursor: crosshair;
+}
+
+.fc-vacation-mode .fc {
+	outline: 2px dashed rgba(239, 68, 68, 0.4);
+	outline-offset: 2px;
+	border-radius: 8px;
+}
+
 [data-radix-dialog-content] {
 	z-index: 9999 !important;
 }
