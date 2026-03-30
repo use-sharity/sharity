@@ -13,8 +13,17 @@ import { useCallback, useMemo, useState } from "react";
 
 import { Palmtree } from "lucide-react";
 
+import { format } from "date-fns";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { CalendarEvent } from "@/convex/items";
@@ -243,25 +252,43 @@ export function EnhancedCalendar() {
 			<UpNextSection events={calendarEvents} locale={locale} />
 
 			<div className="flex justify-end mb-3">
-				{!showVacationForm && (
-					<Button
-						variant="outline"
-						size="sm"
-						className="gap-1.5"
-						onClick={() => setShowVacationForm(true)}
-					>
-						<Palmtree className="h-4 w-4" />
-						Add Vacation
-					</Button>
-				)}
+				<Button
+					variant="outline"
+					size="sm"
+					className="gap-1.5"
+					onClick={() => setShowVacationForm(true)}
+				>
+					<Palmtree className="h-4 w-4" />
+					Add Vacation
+				</Button>
 			</div>
 
-			{showVacationForm && (
-				<div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
-					<div className="flex items-center gap-2 mb-3">
-						<Palmtree className="h-4 w-4 text-red-600" />
-						<span className="font-medium text-sm">Add Vacation</span>
-					</div>
+			<Dialog
+				open={showVacationForm}
+				onOpenChange={(open) => {
+					if (!open) handleCancelVacation();
+				}}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<Palmtree className="h-4 w-4" />
+							Add Vacation
+						</DialogTitle>
+						<DialogDescription>
+							Select dates when your items will be unavailable.
+						</DialogDescription>
+					</DialogHeader>
+
+					{vacationRange?.from && (
+						<p className="text-sm font-medium">
+							{format(vacationRange.from, "MMM d, yyyy")}
+							{vacationRange.to
+								? ` – ${format(vacationRange.to, "MMM d, yyyy")}`
+								: " – select end date"}
+						</p>
+					)}
+
 					<Calendar
 						mode="range"
 						selected={vacationRange}
@@ -274,7 +301,6 @@ export function EnhancedCalendar() {
 						placeholder="Note (optional)"
 						value={vacationNote}
 						onChange={(e) => setVacationNote(e.target.value)}
-						className="mt-3 mb-3"
 					/>
 					<div className="flex gap-2 justify-end">
 						<Button
@@ -293,8 +319,8 @@ export function EnhancedCalendar() {
 							{isSavingVacation ? "Saving..." : "Save"}
 						</Button>
 					</div>
-				</div>
-			)}
+				</DialogContent>
+			</Dialog>
 
 			<FullCalendarWrapper
 				events={fcEvents}
