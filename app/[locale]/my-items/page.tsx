@@ -32,7 +32,7 @@ function MyItemsTabs() {
 			</TabsContent>
 			<TabsContent value="shared" className="mt-4 space-y-4">
 				<MyItemsList variant="shared" />
-				<AddItemForm hideMyItemsLink />
+				<AddItemForm />
 			</TabsContent>
 			<TabsContent value="history" className="mt-4">
 				<UserHistory userId={user.id} />
