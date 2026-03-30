@@ -1,13 +1,11 @@
 "use client";
 
 import type {
-	DateSelectArg,
 	DatesSetArg,
 	EventClickArg,
 	EventInput,
 } from "@fullcalendar/core";
 import { useMutation, useQuery } from "convex/react";
-import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
@@ -26,17 +24,16 @@ import { UpNextSection } from "./up-next-section";
 interface FullCalendarWrapperProps {
 	events: EventInput[];
 	onEventClick: (arg: EventClickArg) => void;
-	onSelect: (arg: DateSelectArg) => void;
 	onDatesSet: (arg: DatesSetArg) => void;
+	selectable: boolean;
 }
 
 function FullCalendarWrapperInner({
 	events,
 	onEventClick,
-	onSelect,
 	onDatesSet,
 	selectable,
-}: FullCalendarWrapperProps & { selectable: boolean }) {
+}: FullCalendarWrapperProps) {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const FullCalendarComponent = require("@fullcalendar/react").default;
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -49,11 +46,9 @@ function FullCalendarWrapperInner({
 			plugins={[dayGrid, interaction]}
 			initialView="dayGridMonth"
 			selectable={selectable}
-			selectMirror={selectable}
 			dayMaxEvents={3}
 			events={events}
 			eventClick={onEventClick}
-			select={onSelect}
 			datesSet={onDatesSet}
 			headerToolbar={{
 				left: "prev,next today",
@@ -161,12 +156,9 @@ export function EnhancedCalendar() {
 		position: { top: number; left: number };
 	} | null>(null);
 
-	const [vacationDialog, setVacationDialog] = useState<{
-		startDate: Date;
-		endDate: Date;
-	} | null>(null);
-
-	const [isVacationMode, setIsVacationMode] = useState(false);
+	const [showVacationForm, setShowVacationForm] = useState(false);
+	const [vacationStart, setVacationStart] = useState("");
+	const [vacationEnd, setVacationEnd] = useState("");
 	const [vacationNote, setVacationNote] = useState("");
 	const [isSavingVacation, setIsSavingVacation] = useState(false);
 	const addVacationRange = useMutation(api.items.addOwnerUnavailabilityRange);
@@ -195,14 +187,6 @@ export function EnhancedCalendar() {
 		setPopover({ event: calendarEvent, position: { top, left } });
 	}, []);
 
-	const handleSelect = useCallback((arg: DateSelectArg) => {
-		const startDate = arg.start;
-		// FullCalendar end is exclusive, subtract 1 ms
-		const endDate = new Date(arg.end.getTime() - 1);
-		setVacationDialog({ startDate, endDate });
-		setIsVacationMode(false);
-	}, []);
-
 	const handleDatesSet = useCallback((arg: DatesSetArg) => {
 		setDateRange({
 			startDate: arg.start.getTime(),
@@ -215,81 +199,76 @@ export function EnhancedCalendar() {
 	}, []);
 
 	const handleSaveVacation = useCallback(async () => {
-		if (!vacationDialog) return;
+		if (!vacationStart || !vacationEnd) return;
 		setIsSavingVacation(true);
 		try {
 			await addVacationRange({
-				startDate: vacationDialog.startDate.getTime(),
-				endDate: vacationDialog.endDate.getTime(),
+				startDate: new Date(vacationStart).getTime(),
+				endDate: new Date(vacationEnd).getTime(),
 				note: vacationNote.trim() || undefined,
 			});
-			setVacationDialog(null);
+			setShowVacationForm(false);
+			setVacationStart("");
+			setVacationEnd("");
 			setVacationNote("");
 		} finally {
 			setIsSavingVacation(false);
 		}
-	}, [vacationDialog, vacationNote, addVacationRange]);
+	}, [vacationStart, vacationEnd, vacationNote, addVacationRange]);
 
 	const handleCancelVacation = useCallback(() => {
-		setVacationDialog(null);
+		setShowVacationForm(false);
+		setVacationStart("");
+		setVacationEnd("");
 		setVacationNote("");
 	}, []);
 
-	const handleToggleVacationMode = useCallback(() => {
-		setIsVacationMode((prev) => !prev);
-	}, []);
+	const canSaveVacation =
+		vacationStart && vacationEnd && new Date(vacationEnd) >= new Date(vacationStart);
 
 	return (
 		<div>
 			<UpNextSection events={calendarEvents} locale={locale} />
 
 			<div className="flex justify-end mb-3">
-				<Button
-					variant={isVacationMode ? "default" : "outline"}
-					size="sm"
-					className="gap-1.5"
-					onClick={handleToggleVacationMode}
-				>
-					<Palmtree className="h-4 w-4" />
-					{isVacationMode ? "Cancel" : "Add Vacation"}
-				</Button>
+				{!showVacationForm && (
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-1.5"
+						onClick={() => setShowVacationForm(true)}
+					>
+						<Palmtree className="h-4 w-4" />
+						Add Vacation
+					</Button>
+				)}
 			</div>
 
-			{isVacationMode && (
-				<div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
-					Select dates on the calendar by clicking a start date and dragging to
-					the end date.
-				</div>
-			)}
-
-			<div className={isVacationMode ? "fc-vacation-mode" : ""}>
-				<FullCalendarWrapper
-					events={fcEvents}
-					onEventClick={handleEventClick}
-					onSelect={handleSelect}
-					onDatesSet={handleDatesSet}
-					selectable={isVacationMode}
-				/>
-			</div>
-
-			{popover && (
-				<CalendarEventPopover
-					event={popover.event}
-					position={popover.position}
-					onClose={handleClosePopover}
-					locale={locale}
-				/>
-			)}
-
-			{vacationDialog && (
-				<div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+			{showVacationForm && (
+				<div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
 					<div className="flex items-center gap-2 mb-3">
 						<Palmtree className="h-4 w-4 text-red-600" />
 						<span className="font-medium text-sm">Add Vacation</span>
 					</div>
-					<p className="text-sm text-muted-foreground mb-3">
-						{format(vacationDialog.startDate, "MMM d, yyyy")} – {format(vacationDialog.endDate, "MMM d, yyyy")}
-					</p>
+					<div className="grid grid-cols-2 gap-3 mb-3">
+						<div>
+							<label className="text-xs text-muted-foreground mb-1 block">Start</label>
+							<Input
+								type="date"
+								value={vacationStart}
+								onChange={(e) => setVacationStart(e.target.value)}
+							/>
+						</div>
+						<div>
+							<label className="text-xs text-muted-foreground mb-1 block">End</label>
+							<Input
+								type="date"
+								value={vacationEnd}
+								min={vacationStart}
+								onChange={(e) => setVacationEnd(e.target.value)}
+							/>
+						</div>
+					</div>
 					<Input
 						placeholder="Note (optional)"
 						value={vacationNote}
@@ -308,12 +287,28 @@ export function EnhancedCalendar() {
 						<Button
 							size="sm"
 							onClick={handleSaveVacation}
-							disabled={isSavingVacation}
+							disabled={!canSaveVacation || isSavingVacation}
 						>
 							{isSavingVacation ? "Saving..." : "Save"}
 						</Button>
 					</div>
 				</div>
+			)}
+
+			<FullCalendarWrapper
+				events={fcEvents}
+				onEventClick={handleEventClick}
+				onDatesSet={handleDatesSet}
+				selectable={false}
+			/>
+
+			{popover && (
+				<CalendarEventPopover
+					event={popover.event}
+					position={popover.position}
+					onClose={handleClosePopover}
+					locale={locale}
+				/>
 			)}
 		</div>
 	);
