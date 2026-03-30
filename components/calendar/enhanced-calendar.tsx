@@ -163,6 +163,9 @@ export function EnhancedCalendar() {
 	const [vacationNote, setVacationNote] = useState("");
 	const [isSavingVacation, setIsSavingVacation] = useState(false);
 	const addVacationRange = useMutation(api.items.addOwnerUnavailabilityRange);
+	const deleteVacationRange = useMutation(
+		api.items.deleteOwnerUnavailabilityRange,
+	);
 
 	const rawEvents = useQuery(api.items.getCalendarEvents, {
 		startDate: dateRange.startDate,
@@ -198,6 +201,15 @@ export function EnhancedCalendar() {
 	const handleClosePopover = useCallback(() => {
 		setPopover(null);
 	}, []);
+
+	const handleDeleteVacation = useCallback(
+		async (id: string) => {
+			await deleteVacationRange({
+				id: id as any,
+			});
+		},
+		[deleteVacationRange],
+	);
 
 	const handleSaveVacation = useCallback(async () => {
 		if (!vacationRange?.from || !vacationRange?.to) return;
@@ -293,6 +305,7 @@ export function EnhancedCalendar() {
 					event={popover.event}
 					position={popover.position}
 					onClose={handleClosePopover}
+					onDeleteVacation={handleDeleteVacation}
 					locale={locale}
 				/>
 			)}

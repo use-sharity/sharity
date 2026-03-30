@@ -1,9 +1,9 @@
 "use client";
 
 import { format } from "date-fns";
-import { Calendar, Download, X } from "lucide-react";
+import { Calendar, Download, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/convex/items";
@@ -17,6 +17,7 @@ interface EventPopoverProps {
 	event: CalendarEvent;
 	position: { top: number; left: number };
 	onClose: () => void;
+	onDeleteVacation?: (id: string) => Promise<void>;
 	locale: string;
 }
 
@@ -49,9 +50,11 @@ export function CalendarEventPopover({
 	event,
 	position,
 	onClose,
+	onDeleteVacation,
 	locale,
 }: EventPopoverProps) {
 	const ref = useRef<HTMLDivElement>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -179,6 +182,30 @@ export function CalendarEventPopover({
 					Download .ics
 				</Button>
 			</div>
+
+			{/* Delete button for vacation events */}
+			{event.type === "vacation" && onDeleteVacation && (
+				<div className="border-t px-3 py-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+						disabled={isDeleting}
+						onClick={async () => {
+							setIsDeleting(true);
+							try {
+								await onDeleteVacation(event.id);
+								onClose();
+							} finally {
+								setIsDeleting(false);
+							}
+						}}
+					>
+						<Trash2 className="h-3.5 w-3.5 shrink-0" />
+						{isDeleting ? "Deleting..." : "Delete Vacation"}
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }
