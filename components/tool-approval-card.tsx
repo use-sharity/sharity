@@ -21,8 +21,14 @@ const TOOL_SUMMARIES: Record<string, (input: any) => string> = {
 	markMissing: (i) => `Report "${i.itemName}" as missing`,
 	createRating: (i) => `Submit ${i.stars}-star rating`,
 	createWishlistItem: (i) => `Add wish: "${i.text}"`,
+	updateWishlistItem: (i) => `Update wish: "${i.text}"`,
 	voteWishlistItem: (i) => `Vote on wish: "${i.wishText ?? "item"}"`,
 	deleteWishlistItem: (i) => `Delete wish: "${i.wishText ?? "item"}"`,
+	switchItemMode: (i) =>
+		`Switch "${i.itemName}" to ${i.giveaway ? "giveaway" : "lending"} mode`,
+	blockDates: (i) => `Block calendar: ${i.startDate} – ${i.endDate}`,
+	updateProfile: () => "Update your profile",
+	markAllNotificationsRead: () => "Mark all notifications as read",
 };
 
 interface ToolApprovalCardProps {
