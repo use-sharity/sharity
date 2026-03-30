@@ -29,6 +29,9 @@ interface OwnerUnavailabilityButtonProps {
 	size?: ComponentProps<typeof Button>["size"];
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	initialStartDate?: Date;
+	initialEndDate?: Date;
+	dialogOnly?: boolean;
 }
 
 export function OwnerUnavailabilityButton(
@@ -58,6 +61,12 @@ export function OwnerUnavailabilityButton(
 	const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 	const [note, setNote] = React.useState("");
 	const [isSaving, setIsSaving] = React.useState(false);
+
+	React.useEffect(() => {
+		if (props.initialStartDate && props.initialEndDate) {
+			setDate({ from: props.initialStartDate, to: props.initialEndDate });
+		}
+	}, [props.initialStartDate, props.initialEndDate]);
 
 	const canAdd = !!date?.from && !!date?.to && !isSaving;
 
@@ -98,6 +107,87 @@ export function OwnerUnavailabilityButton(
 		})}`;
 	};
 
+	const dialogContent = (
+		<DialogContent className="sm:max-w-xl">
+			<DialogHeader>
+				<DialogTitle>{t("title")}</DialogTitle>
+				<DialogDescription>{t("description")}</DialogDescription>
+			</DialogHeader>
+
+			<div className="space-y-4">
+				<div className="space-y-2">
+					<div className="text-sm font-medium">{t("yourRanges")}</div>
+					{ranges === undefined ? (
+						<div className="text-sm text-muted-foreground">{t("loading")}</div>
+					) : ranges.length === 0 ? (
+						<div className="text-sm text-muted-foreground">{t("noRanges")}</div>
+					) : (
+						<div className="space-y-2">
+							{ranges.map((r) => (
+								<div
+									key={r._id}
+									className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+								>
+									<div className="min-w-0">
+										<div className="text-sm">
+											{formatRange(r.startDate, r.endDate)}
+										</div>
+										{r.note ? (
+											<div className="text-xs text-muted-foreground truncate">
+												{r.note}
+											</div>
+										) : null}
+									</div>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-8 w-8 p-0"
+										disabled={isSaving}
+										onClick={() =>
+											onDelete(r._id as Id<"owner_unavailability">)
+										}
+									>
+										<Trash2 className="h-4 w-4" />
+										<span className="sr-only">{t("delete")}</span>
+									</Button>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+
+				<div className="border-t pt-4 space-y-3">
+					<div className="text-sm font-medium">{t("addRange")}</div>
+					<Calendar
+						mode="range"
+						selected={date}
+						onSelect={setDate}
+						numberOfMonths={2}
+					/>
+					<Input
+						placeholder={t("notePlaceholder")}
+						value={note}
+						onChange={(e) => setNote(e.target.value)}
+					/>
+					<div className="flex justify-end">
+						<Button className="gap-2" disabled={!canAdd} onClick={onAdd}>
+							<Plus className="h-4 w-4" />
+							{isSaving ? t("saving") : t("save")}
+						</Button>
+					</div>
+				</div>
+			</div>
+		</DialogContent>
+	);
+
+	if (props.dialogOnly) {
+		return (
+			<Dialog open={open} onOpenChange={setOpen}>
+				{dialogContent}
+			</Dialog>
+		);
+	}
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
@@ -113,80 +203,7 @@ export function OwnerUnavailabilityButton(
 					) : null}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-xl">
-				<DialogHeader>
-					<DialogTitle>{t("title")}</DialogTitle>
-					<DialogDescription>{t("description")}</DialogDescription>
-				</DialogHeader>
-
-				<div className="space-y-4">
-					<div className="space-y-2">
-						<div className="text-sm font-medium">{t("yourRanges")}</div>
-						{ranges === undefined ? (
-							<div className="text-sm text-muted-foreground">
-								{t("loading")}
-							</div>
-						) : ranges.length === 0 ? (
-							<div className="text-sm text-muted-foreground">
-								{t("noRanges")}
-							</div>
-						) : (
-							<div className="space-y-2">
-								{ranges.map((r) => (
-									<div
-										key={r._id}
-										className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
-									>
-										<div className="min-w-0">
-											<div className="text-sm">
-												{formatRange(r.startDate, r.endDate)}
-											</div>
-											{r.note ? (
-												<div className="text-xs text-muted-foreground truncate">
-													{r.note}
-												</div>
-											) : null}
-										</div>
-										<Button
-											variant="outline"
-											size="sm"
-											className="h-8 w-8 p-0"
-											disabled={isSaving}
-											onClick={() =>
-												onDelete(r._id as Id<"owner_unavailability">)
-											}
-										>
-											<Trash2 className="h-4 w-4" />
-											<span className="sr-only">{t("delete")}</span>
-										</Button>
-									</div>
-								))}
-							</div>
-						)}
-					</div>
-
-					<div className="border-t pt-4 space-y-3">
-						<div className="text-sm font-medium">{t("addRange")}</div>
-						<Calendar
-							mode="range"
-							selected={date}
-							onSelect={setDate}
-							numberOfMonths={2}
-						/>
-						<Input
-							placeholder={t("notePlaceholder")}
-							value={note}
-							onChange={(e) => setNote(e.target.value)}
-						/>
-						<div className="flex justify-end">
-							<Button className="gap-2" disabled={!canAdd} onClick={onAdd}>
-								<Plus className="h-4 w-4" />
-								{isSaving ? t("saving") : t("save")}
-							</Button>
-						</div>
-					</div>
-				</div>
-			</DialogContent>
+			{dialogContent}
 		</Dialog>
 	);
 }
