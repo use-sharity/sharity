@@ -29,11 +29,14 @@
 	"AppHeader": {
 		"signIn": "Войти",
 		"signUp": "Регистрация",
-		"profile": "Профиль"
+		"profile": "Профиль",
+		"myItems": "Мои вещи",
+		"requests": "Запросы"
 	},
 	"Home": {
 		"title": "Sharity",
 		"subtitle": "Делись и находи нужное в Далате.",
+		"shareButton": "Поделиться вещью",
 		"tabs": {
 			"share": "Поделиться",
 			"request": "Запросить",

@@ -29,11 +29,14 @@
 	"AppHeader": {
 		"signIn": "Đăng nhập",
 		"signUp": "Đăng ký",
-		"profile": "Hồ sơ"
+		"profile": "Hồ sơ",
+		"myItems": "Đồ của tôi",
+		"requests": "Nhu cầu"
 	},
 	"Home": {
 		"title": "Sharity",
 		"subtitle": "Mượn/cho mượn đồ ở Đà Lạt.",
+		"shareButton": "Chia sẻ đồ",
 		"tabs": {
 			"share": "Đồ đang có",
 			"request": "Đồ cần",
