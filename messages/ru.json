@@ -31,7 +31,8 @@
 		"signUp": "Регистрация",
 		"profile": "Профиль",
 		"myItems": "Мои вещи",
-		"requests": "Запросы"
+		"requests": "Запросы",
+		"calendar": "Календарь"
 	},
 	"Home": {
 		"title": "Sharity",
