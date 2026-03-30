@@ -2491,6 +2491,538 @@ export const setupJourneyTestScenarios = mutation({
 });
 
 /**
+ * Create calendar test data: items at various journey stages for BOTH
+ * lending (USER_A owns, USER_B borrows) and borrowing (USER_B owns, USER_A borrows).
+ * Each claim has different dates so they spread across the calendar.
+ *
+ * Run with: npx convex run seed:seedCalendarTestData
+ */
+export const seedCalendarTestData = mutation({
+	args: {},
+	handler: async (ctx) => {
+		const now = Date.now();
+		const ONE_HOUR = 60 * 60 * 1000;
+		const CAL_PREFIX = "[CAL]";
+
+		// Current user (Eugenia) and counterpart
+		const ME = "user_38HaVqQ2PmPd9gVXKorK9ZDP7y1";
+		const OTHER = USER_A;
+
+		// ===== CLEANUP existing calendar test items =====
+		const allItems = await ctx.db.query("items").collect();
+		const testItems = allItems.filter((i) => i.name.startsWith(CAL_PREFIX));
+		for (const item of testItems) {
+			const claims = await ctx.db
+				.query("claims")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.collect();
+			for (const claim of claims) {
+				const activities = await ctx.db
+					.query("lease_activity")
+					.withIndex("by_claim_createdAt", (q) => q.eq("claimId", claim._id))
+					.collect();
+				for (const a of activities) await ctx.db.delete(a._id);
+				await ctx.db.delete(claim._id);
+			}
+			const itemActs = await ctx.db
+				.query("item_activity")
+				.withIndex("by_item", (q) => q.eq("itemId", item._id))
+				.collect();
+			for (const a of itemActs) await ctx.db.delete(a._id);
+			await ctx.db.delete(item._id);
+		}
+
+		type EventDef = {
+			type:
+				| "lease_requested"
+				| "lease_approved"
+				| "lease_pickup_proposed"
+				| "lease_pickup_approved"
+				| "lease_picked_up"
+				| "lease_return_proposed"
+				| "lease_return_approved"
+				| "lease_returned";
+			actorId: string;
+			createdAt: number;
+			proposalId?: string;
+			windowStartAt?: number;
+			windowEndAt?: number;
+		};
+
+		type Scenario = {
+			name: string;
+			ownerId: string;
+			claimerId: string;
+			claimStatus: "pending" | "approved";
+			startDate: number;
+			endDate: number;
+			claimExtra: Record<string, number>;
+			events: EventDef[];
+		};
+
+		const scenarios: Scenario[] = [];
+
+		// ------- LENDING: ME owns, OTHER borrows -------
+
+		// L1: Pending request — ME needs to RESPOND_REQUEST
+		scenarios.push({
+			name: `${CAL_PREFIX} Camping Tent`,
+			ownerId: ME,
+			claimerId: OTHER,
+			claimStatus: "pending",
+			startDate: now + 2 * ONE_DAY_MS,
+			endDate: now + 6 * ONE_DAY_MS,
+			claimExtra: { requestedAt: now - ONE_DAY_MS },
+			events: [
+				{
+					type: "lease_requested",
+					actorId: OTHER,
+					createdAt: now - ONE_DAY_MS,
+				},
+			],
+		});
+
+		// L2: Pickup proposed by OTHER — ME needs to RESPOND_PICKUP
+		const l2PickupId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Electric Drill`,
+			ownerId: ME,
+			claimerId: OTHER,
+			claimStatus: "approved",
+			startDate: now + 1 * ONE_DAY_MS,
+			endDate: now + 8 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 3 * ONE_DAY_MS,
+				approvedAt: now - 2 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: OTHER,
+					createdAt: now - 3 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: ME,
+					createdAt: now - 2 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: OTHER,
+					createdAt: now - ONE_DAY_MS,
+					proposalId: l2PickupId,
+					windowStartAt: now + 1 * ONE_DAY_MS + 14 * ONE_HOUR,
+					windowEndAt: now + 1 * ONE_DAY_MS + 16 * ONE_HOUR,
+				},
+			],
+		});
+
+		// L3: Pickup confirmed, window in PAST — ME needs to CONFIRM_PICKUP
+		const l3PickupId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Stand-Up Paddleboard`,
+			ownerId: ME,
+			claimerId: OTHER,
+			claimStatus: "approved",
+			startDate: now - 1 * ONE_DAY_MS,
+			endDate: now + 10 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 4 * ONE_DAY_MS,
+				approvedAt: now - 3 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: OTHER,
+					createdAt: now - 4 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: ME,
+					createdAt: now - 3 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: OTHER,
+					createdAt: now - 2 * ONE_DAY_MS,
+					proposalId: l3PickupId,
+					windowStartAt: now - 3 * ONE_HOUR,
+					windowEndAt: now - 1 * ONE_HOUR,
+				},
+				{
+					type: "lease_pickup_approved",
+					actorId: ME,
+					createdAt: now - ONE_DAY_MS,
+					proposalId: l3PickupId,
+					windowStartAt: now - 3 * ONE_HOUR,
+					windowEndAt: now - 1 * ONE_HOUR,
+				},
+			],
+		});
+
+		// L4: Return proposed by OTHER — ME needs to RESPOND_RETURN
+		const l4PickupId = crypto.randomUUID();
+		const l4ReturnId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Projector`,
+			ownerId: ME,
+			claimerId: OTHER,
+			claimStatus: "approved",
+			startDate: now - 3 * ONE_DAY_MS,
+			endDate: now + 4 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 7 * ONE_DAY_MS,
+				approvedAt: now - 6 * ONE_DAY_MS,
+				pickedUpAt: now - 3 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: OTHER,
+					createdAt: now - 7 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: ME,
+					createdAt: now - 6 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: OTHER,
+					createdAt: now - 5 * ONE_DAY_MS,
+					proposalId: l4PickupId,
+					windowStartAt: now - 3 * ONE_DAY_MS + 9 * ONE_HOUR,
+					windowEndAt: now - 3 * ONE_DAY_MS + 11 * ONE_HOUR,
+				},
+				{
+					type: "lease_pickup_approved",
+					actorId: ME,
+					createdAt: now - 4 * ONE_DAY_MS,
+					proposalId: l4PickupId,
+					windowStartAt: now - 3 * ONE_DAY_MS + 9 * ONE_HOUR,
+					windowEndAt: now - 3 * ONE_DAY_MS + 11 * ONE_HOUR,
+				},
+				{
+					type: "lease_picked_up",
+					actorId: OTHER,
+					createdAt: now - 3 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_return_proposed",
+					actorId: OTHER,
+					createdAt: now - ONE_DAY_MS,
+					proposalId: l4ReturnId,
+					windowStartAt: now + 3 * ONE_DAY_MS + 15 * ONE_HOUR,
+					windowEndAt: now + 3 * ONE_DAY_MS + 17 * ONE_HOUR,
+				},
+			],
+		});
+
+		// L5: Return confirmed, window in PAST — ME needs to CONFIRM_RETURN
+		const l5PickupId = crypto.randomUUID();
+		const l5ReturnId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Bike Rack`,
+			ownerId: ME,
+			claimerId: OTHER,
+			claimStatus: "approved",
+			startDate: now - 5 * ONE_DAY_MS,
+			endDate: now + 2 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 8 * ONE_DAY_MS,
+				approvedAt: now - 7 * ONE_DAY_MS,
+				pickedUpAt: now - 5 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: OTHER,
+					createdAt: now - 8 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: ME,
+					createdAt: now - 7 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: OTHER,
+					createdAt: now - 6 * ONE_DAY_MS,
+					proposalId: l5PickupId,
+					windowStartAt: now - 5 * ONE_DAY_MS + 10 * ONE_HOUR,
+					windowEndAt: now - 5 * ONE_DAY_MS + 12 * ONE_HOUR,
+				},
+				{
+					type: "lease_pickup_approved",
+					actorId: ME,
+					createdAt: now - 6 * ONE_DAY_MS,
+					proposalId: l5PickupId,
+					windowStartAt: now - 5 * ONE_DAY_MS + 10 * ONE_HOUR,
+					windowEndAt: now - 5 * ONE_DAY_MS + 12 * ONE_HOUR,
+				},
+				{
+					type: "lease_picked_up",
+					actorId: OTHER,
+					createdAt: now - 5 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_return_proposed",
+					actorId: OTHER,
+					createdAt: now - 3 * ONE_DAY_MS,
+					proposalId: l5ReturnId,
+					windowStartAt: now - 2 * ONE_HOUR,
+					windowEndAt: now - 1 * ONE_HOUR,
+				},
+				{
+					type: "lease_return_approved",
+					actorId: ME,
+					createdAt: now - 2 * ONE_DAY_MS,
+					proposalId: l5ReturnId,
+					windowStartAt: now - 2 * ONE_HOUR,
+					windowEndAt: now - 1 * ONE_HOUR,
+				},
+			],
+		});
+
+		// ------- BORROWING: OTHER owns, ME borrows -------
+
+		// B1: Approved, no pickup proposed — ME needs to SCHEDULE_PICKUP
+		scenarios.push({
+			name: `${CAL_PREFIX} Pressure Washer`,
+			ownerId: OTHER,
+			claimerId: ME,
+			claimStatus: "approved",
+			startDate: now + 2 * ONE_DAY_MS,
+			endDate: now + 9 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 2 * ONE_DAY_MS,
+				approvedAt: now - ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: ME,
+					createdAt: now - 2 * ONE_DAY_MS,
+				},
+				{ type: "lease_approved", actorId: OTHER, createdAt: now - ONE_DAY_MS },
+			],
+		});
+
+		// B2: Pickup proposed by OTHER — ME needs to RESPOND_PICKUP
+		const b2PickupId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Sewing Machine`,
+			ownerId: OTHER,
+			claimerId: ME,
+			claimStatus: "approved",
+			startDate: now + 1 * ONE_DAY_MS,
+			endDate: now + 7 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 5 * ONE_DAY_MS,
+				approvedAt: now - 4 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: ME,
+					createdAt: now - 5 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: OTHER,
+					createdAt: now - 4 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: OTHER,
+					createdAt: now - 3 * ONE_DAY_MS,
+					proposalId: b2PickupId,
+					windowStartAt: now + 1 * ONE_DAY_MS + 11 * ONE_HOUR,
+					windowEndAt: now + 1 * ONE_DAY_MS + 13 * ONE_HOUR,
+				},
+			],
+		});
+
+		// B3: Picked up, needs return — ME needs to SCHEDULE_RETURN
+		const b3PickupId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Telescope`,
+			ownerId: OTHER,
+			claimerId: ME,
+			claimStatus: "approved",
+			startDate: now - 4 * ONE_DAY_MS,
+			endDate: now + 3 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 8 * ONE_DAY_MS,
+				approvedAt: now - 7 * ONE_DAY_MS,
+				pickedUpAt: now - 4 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: ME,
+					createdAt: now - 8 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: OTHER,
+					createdAt: now - 7 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: ME,
+					createdAt: now - 6 * ONE_DAY_MS,
+					proposalId: b3PickupId,
+					windowStartAt: now - 4 * ONE_DAY_MS + 14 * ONE_HOUR,
+					windowEndAt: now - 4 * ONE_DAY_MS + 16 * ONE_HOUR,
+				},
+				{
+					type: "lease_pickup_approved",
+					actorId: OTHER,
+					createdAt: now - 5 * ONE_DAY_MS,
+					proposalId: b3PickupId,
+					windowStartAt: now - 4 * ONE_DAY_MS + 14 * ONE_HOUR,
+					windowEndAt: now - 4 * ONE_DAY_MS + 16 * ONE_HOUR,
+				},
+				{
+					type: "lease_picked_up",
+					actorId: ME,
+					createdAt: now - 4 * ONE_DAY_MS,
+				},
+			],
+		});
+
+		// B4: Return proposed by OTHER — ME needs to RESPOND_RETURN
+		const b4PickupId = crypto.randomUUID();
+		const b4ReturnId = crypto.randomUUID();
+		scenarios.push({
+			name: `${CAL_PREFIX} Waffle Iron`,
+			ownerId: OTHER,
+			claimerId: ME,
+			claimStatus: "approved",
+			startDate: now - 6 * ONE_DAY_MS,
+			endDate: now + 1 * ONE_DAY_MS,
+			claimExtra: {
+				requestedAt: now - 10 * ONE_DAY_MS,
+				approvedAt: now - 9 * ONE_DAY_MS,
+				pickedUpAt: now - 6 * ONE_DAY_MS,
+			},
+			events: [
+				{
+					type: "lease_requested",
+					actorId: ME,
+					createdAt: now - 10 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_approved",
+					actorId: OTHER,
+					createdAt: now - 9 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_pickup_proposed",
+					actorId: ME,
+					createdAt: now - 8 * ONE_DAY_MS,
+					proposalId: b4PickupId,
+					windowStartAt: now - 6 * ONE_DAY_MS + 10 * ONE_HOUR,
+					windowEndAt: now - 6 * ONE_DAY_MS + 12 * ONE_HOUR,
+				},
+				{
+					type: "lease_pickup_approved",
+					actorId: OTHER,
+					createdAt: now - 7 * ONE_DAY_MS,
+					proposalId: b4PickupId,
+					windowStartAt: now - 6 * ONE_DAY_MS + 10 * ONE_HOUR,
+					windowEndAt: now - 6 * ONE_DAY_MS + 12 * ONE_HOUR,
+				},
+				{
+					type: "lease_picked_up",
+					actorId: ME,
+					createdAt: now - 6 * ONE_DAY_MS,
+				},
+				{
+					type: "lease_return_proposed",
+					actorId: OTHER,
+					createdAt: now - 2 * ONE_DAY_MS,
+					proposalId: b4ReturnId,
+					windowStartAt: now + 1 * ONE_DAY_MS + 16 * ONE_HOUR,
+					windowEndAt: now + 1 * ONE_DAY_MS + 18 * ONE_HOUR,
+				},
+			],
+		});
+
+		// Ensure counterpart has a user profile
+		const existingProfile = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", OTHER))
+			.first();
+		if (!existingProfile) {
+			await ctx.db.insert("users", {
+				clerkId: OTHER,
+				name: "Alex",
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		// ===== CREATE ALL SCENARIOS =====
+		const created: string[] = [];
+		for (const s of scenarios) {
+			const itemId = await ctx.db.insert("items", {
+				name: s.name,
+				description: `Calendar test item`,
+				ownerId: s.ownerId,
+				category: "other",
+			});
+
+			await ctx.db.insert("item_activity", {
+				itemId,
+				type: "item_created",
+				actorId: s.ownerId,
+				createdAt: s.events[0].createdAt - ONE_DAY_MS,
+			});
+
+			const claimId = await ctx.db.insert("claims", {
+				itemId,
+				claimerId: s.claimerId,
+				status: s.claimStatus,
+				startDate: s.startDate,
+				endDate: s.endDate,
+				...s.claimExtra,
+			});
+
+			// Schedule auto-expiry for pending claims
+			if (s.claimStatus === "pending") {
+				await ctx.scheduler.runAt(
+					s.startDate,
+					// @ts-expect-error - internal reference
+					"items:expirePendingClaim",
+					{ claimId },
+				);
+			}
+
+			for (const event of s.events) {
+				await ctx.db.insert("lease_activity", {
+					itemId,
+					claimId,
+					type: event.type,
+					actorId: event.actorId,
+					createdAt: event.createdAt,
+					...(event.proposalId ? { proposalId: event.proposalId } : {}),
+					...(event.windowStartAt
+						? { windowStartAt: event.windowStartAt }
+						: {}),
+					...(event.windowEndAt ? { windowEndAt: event.windowEndAt } : {}),
+				});
+			}
+
+			created.push(s.name);
+		}
+
+		return { success: true, created };
+	},
+});
+
+/**
  * Shift ALL timestamps forward so test data has current dates.
  * Finds the latest endDate across all claims and shifts everything
  * so that claim ends 2 days from now.

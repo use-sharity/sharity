@@ -1,9 +1,17 @@
 "use client";
 
-import { format } from "date-fns";
+import { formatDistanceToNowStrict, isPast } from "date-fns";
+import {
+	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
+	Clock,
+	Inbox,
+} from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/convex/items";
 import { cn } from "@/lib/utils";
 
@@ -12,69 +20,146 @@ interface UpNextSectionProps {
 	locale: string;
 }
 
-type ActionType = "respond" | "schedule" | "confirm";
+type ActionType =
+	| "respond_request"
+	| "respond_pickup"
+	| "respond_return"
+	| "schedule_pickup"
+	| "schedule_return"
+	| "confirm_pickup"
+	| "confirm_return";
 
 interface ActionConfig {
 	label: string;
-	badgeClass: string;
-	borderClass: string;
-	linkText: string;
+	icon: typeof Inbox;
+	actionPhrase: string;
 }
 
 const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
-	respond: {
+	respond_request: {
 		label: "RESPOND",
-		badgeClass: "bg-amber-100 text-amber-700",
-		borderClass: "border-l-amber-400",
-		linkText: "Review →",
+		icon: Inbox,
+		actionPhrase: "Approve request",
 	},
-	schedule: {
+	respond_pickup: {
 		label: "SCHEDULE",
-		badgeClass: "bg-blue-100 text-blue-700",
-		borderClass: "border-l-blue-400",
-		linkText: "Schedule →",
+		icon: Clock,
+		actionPhrase: "Approve pickup time",
 	},
-	confirm: {
+	respond_return: {
+		label: "SCHEDULE",
+		icon: Clock,
+		actionPhrase: "Approve return time",
+	},
+	schedule_pickup: {
+		label: "SCHEDULE",
+		icon: Clock,
+		actionPhrase: "Propose pickup",
+	},
+	schedule_return: {
+		label: "SCHEDULE",
+		icon: Clock,
+		actionPhrase: "Propose return",
+	},
+	confirm_pickup: {
 		label: "CONFIRM",
-		badgeClass: "bg-green-100 text-green-700",
-		borderClass: "border-l-green-400",
-		linkText: "Confirm →",
+		icon: CheckCircle2,
+		actionPhrase: "Confirm pickup",
+	},
+	confirm_return: {
+		label: "CONFIRM",
+		icon: CheckCircle2,
+		actionPhrase: "Confirm return",
 	},
 };
 
-const MAX_VISIBLE = 5;
+type UrgencyLevel = "urgent" | "soon" | "safe";
 
-function getActionDescription(event: CalendarEvent): string {
-	const itemName = event.title;
-	const action = event.needsAction as ActionType;
+const URGENCY_STYLES: Record<
+	UrgencyLevel,
+	{ badgeClass: string; iconClass: string }
+> = {
+	urgent: {
+		badgeClass: "bg-orange-100 text-orange-800",
+		iconClass: "text-orange-500",
+	},
+	soon: {
+		badgeClass: "bg-amber-100 text-amber-800",
+		iconClass: "text-amber-500",
+	},
+	safe: {
+		badgeClass: "bg-muted text-muted-foreground",
+		iconClass: "text-muted-foreground",
+	},
+};
 
-	if (action === "respond") {
-		if (event.type === "lending") {
-			return `Approve request for ${itemName}`;
-		}
-		return `Respond to ${itemName}`;
-	}
-
-	if (action === "schedule") {
-		return `Propose pickup for ${itemName}`;
-	}
-
-	if (action === "confirm") {
-		return `Confirm handoff for ${itemName}`;
-	}
-
-	return itemName;
+function getUrgencyLevel(endDate: number): UrgencyLevel {
+	const msLeft = endDate - Date.now();
+	const ONE_DAY = 86_400_000;
+	if (msLeft < 2 * ONE_DAY) return "urgent";
+	if (msLeft < 5 * ONE_DAY) return "soon";
+	return "safe";
 }
 
-function formatDateRange(
-	startDate: number,
-	endDate: number,
-	isAllDay: boolean,
-): string {
-	const formatStr = isAllDay ? "MMM d" : "MMM d, h:mm a";
-	const start = format(startDate, formatStr);
-	const end = format(endDate, formatStr);
-	return `${start} – ${end}`;
+const CARDS_PER_ROW = 3;
+
+/** Strip prefixes and counterparty arrows from item titles */
+function cleanItemName(title: string): string {
+	return title.replace(/^\[.*?\]\s*/, "").replace(/\s*[←→].*$/, "");
+}
+
+function getUrgencyLabel(endDate: number): {
+	text: string;
+	className: string;
+} | null {
+	const now = Date.now();
+	const end = new Date(endDate);
+
+	if (isPast(end)) {
+		return {
+			text: "Overdue",
+			className: "text-orange-700 bg-orange-100 font-semibold animate-pulse",
+		};
+	}
+
+	const msLeft = endDate - now;
+	const ONE_DAY = 86_400_000;
+
+	if (msLeft < ONE_DAY) {
+		return {
+			text: "Due today",
+			className: "text-orange-700 bg-orange-100 font-semibold animate-pulse",
+		};
+	}
+	if (msLeft < 2 * ONE_DAY) {
+		return {
+			text: "Due tomorrow",
+			className: "text-orange-700 bg-orange-100 font-medium",
+		};
+	}
+
+	const ONE_DAY_5 = 5 * ONE_DAY;
+	if (msLeft < ONE_DAY_5) {
+		const days = Math.ceil(msLeft / ONE_DAY);
+		return {
+			text: `In ${days} days`,
+			className: "text-amber-700 bg-amber-100/80",
+		};
+	}
+
+	const dist = formatDistanceToNowStrict(end);
+	return {
+		text: `In ${dist}`,
+		className: "text-stone-600 bg-stone-200/80",
+	};
+}
+
+function getInitials(name: string): string {
+	return name
+		.split(/[\s_]+/)
+		.slice(0, 2)
+		.map((w) => w[0]?.toUpperCase() ?? "")
+		.join("");
 }
 
 interface ActionCardProps {
@@ -85,75 +170,96 @@ interface ActionCardProps {
 function ActionCard({ event, locale }: ActionCardProps) {
 	const action = event.needsAction as ActionType;
 	const config = ACTION_CONFIG[action];
-	const description = getActionDescription(event);
-	const dateRange = formatDateRange(
-		event.startDate,
-		event.endDate,
-		event.isAllDay,
-	);
-
+	const Icon = config.icon;
+	const itemName = cleanItemName(event.title);
 	const href = event.itemId ? `/${locale}/item/${event.itemId}` : "#";
+	const urgency = getUrgencyLabel(event.endDate);
+	const level = getUrgencyLevel(event.endDate);
+	const styles = URGENCY_STYLES[level];
+	const initials = event.counterpartyName
+		? getInitials(event.counterpartyName)
+		: null;
 
 	return (
-		<div
-			className={cn(
-				"w-56 flex-shrink-0 rounded-lg border bg-card shadow-sm border-l-4 p-3 flex flex-col gap-1.5",
-				config.borderClass,
-			)}
+		<Link
+			href={href}
+			className="flex-1 min-w-0 rounded-lg border bg-card shadow-sm p-3 flex flex-col gap-2 hover:shadow-md transition-all"
 		>
-			{/* Action badge */}
-			<span
-				className={cn(
-					"inline-flex w-fit rounded px-1.5 py-0.5 text-xs font-semibold tracking-wide",
-					config.badgeClass,
+			{/* Top row: icon + badge + urgency */}
+			<div className="flex items-center gap-1.5">
+				<Icon className={cn("h-3.5 w-3.5 shrink-0", styles.iconClass)} />
+				<span
+					className={cn(
+						"shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide leading-none",
+						styles.badgeClass,
+					)}
+				>
+					{config.label}
+				</span>
+				{urgency && (
+					<span
+						className={cn(
+							"ml-auto shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] leading-none",
+							urgency.className,
+						)}
+					>
+						{urgency.text}
+					</span>
 				)}
-			>
-				{config.label}
-			</span>
+			</div>
 
-			{/* Action description */}
-			<p className="text-sm font-medium leading-snug line-clamp-2">
-				{description}
-			</p>
-
-			{/* Counterparty */}
+			{/* Counterparty with initials avatar */}
 			{event.counterpartyName && (
-				<p className="text-xs text-muted-foreground truncate">
-					{event.type === "lending"
-						? `to ${event.counterpartyName}`
-						: `from ${event.counterpartyName}`}
+				<div className="flex items-center gap-2">
+					{initials && (
+						<span className="shrink-0 h-6 w-6 rounded-full bg-muted text-[10px] font-medium flex items-center justify-center text-muted-foreground">
+							{initials}
+						</span>
+					)}
+					<div className="min-w-0">
+						<p className="text-sm font-semibold leading-snug truncate">
+							{itemName}
+						</p>
+						<p className="text-xs text-muted-foreground">
+							{event.type === "lending" ? "to" : "from"}{" "}
+							{event.counterpartyName}
+						</p>
+					</div>
+				</div>
+			)}
+			{!event.counterpartyName && (
+				<p className="text-sm font-semibold leading-snug line-clamp-2">
+					{itemName}
 				</p>
 			)}
 
-			{/* Date range */}
-			<p className="text-xs text-muted-foreground">{dateRange}</p>
-
-			{/* Link */}
-			{event.itemId && (
-				<Link
-					href={href}
-					className="text-xs font-medium text-primary hover:underline mt-auto pt-0.5"
-				>
-					{config.linkText}
-				</Link>
-			)}
-		</div>
+			{/* CTA button */}
+			<span className="mt-auto inline-flex items-center justify-center rounded-md bg-secondary text-secondary-foreground px-3 py-1.5 text-xs font-medium hover:bg-secondary/80 transition-colors">
+				{config.actionPhrase}
+			</span>
+		</Link>
 	);
 }
 
 export function UpNextSection({ events, locale }: UpNextSectionProps) {
+	const [expanded, setExpanded] = useState(false);
+
 	const actionEvents = useMemo(() => {
 		return events
 			.filter((e) => e.needsAction != null)
 			.sort((a, b) => a.startDate - b.startDate);
 	}, [events]);
 
+	const toggleExpanded = useCallback(() => setExpanded((v) => !v), []);
+
 	if (actionEvents.length === 0) {
 		return null;
 	}
 
-	const visibleEvents = actionEvents.slice(0, MAX_VISIBLE);
-	const hiddenCount = actionEvents.length - visibleEvents.length;
+	const hasMore = actionEvents.length > CARDS_PER_ROW;
+	const visibleEvents = expanded
+		? actionEvents
+		: actionEvents.slice(0, CARDS_PER_ROW);
 
 	return (
 		<div className="mb-4">
@@ -165,27 +271,35 @@ export function UpNextSection({ events, locale }: UpNextSectionProps) {
 				</span>
 			</div>
 
-			{/* Scrollable card list */}
-			<div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+			{/* Card grid — 3 per row */}
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 				{visibleEvents.map((event) => (
 					<ActionCard key={event.id} event={event} locale={locale} />
 				))}
-
-				{/* "See all" overflow card */}
-				{hiddenCount > 0 && (
-					<div className="w-56 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col items-center justify-center gap-1 text-center">
-						<span className="text-sm font-medium text-muted-foreground">
-							+{hiddenCount} more
-						</span>
-						<Link
-							href={`/${locale}/calendar`}
-							className="text-xs font-medium text-primary hover:underline"
-						>
-							See all →
-						</Link>
-					</div>
-				)}
 			</div>
+
+			{/* Expand / collapse */}
+			{hasMore && (
+				<div className="flex justify-center mt-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-xs text-muted-foreground gap-1"
+						onClick={toggleExpanded}
+					>
+						{expanded ? (
+							<>
+								Show less <ChevronUp className="h-3 w-3" />
+							</>
+						) : (
+							<>
+								{actionEvents.length - CARDS_PER_ROW} more{" "}
+								<ChevronDown className="h-3 w-3" />
+							</>
+						)}
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

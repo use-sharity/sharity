@@ -86,6 +86,7 @@ export default defineSchema({
 			v.literal("pending"),
 			v.literal("approved"),
 			v.literal("rejected"),
+			v.literal("expired"),
 		),
 		startDate: v.number(),
 		endDate: v.number(),

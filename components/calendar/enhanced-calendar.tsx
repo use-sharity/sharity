@@ -212,9 +212,9 @@ export function EnhancedCalendar() {
 			.calendarEvent as CalendarEvent;
 		const rect = arg.el.getBoundingClientRect();
 
-		// Position popover below and to the right of the clicked event
-		const top = rect.bottom + window.scrollY + 4;
-		const left = Math.min(rect.left + window.scrollX, window.innerWidth - 300);
+		// Position popover below the clicked event (fixed positioning = viewport coords)
+		const top = Math.min(rect.bottom + 4, window.innerHeight - 320);
+		const left = Math.min(rect.left, window.innerWidth - 300);
 
 		setPopover({ event: calendarEvent, position: { top, left } });
 	}, []);

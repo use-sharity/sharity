@@ -888,6 +888,13 @@ export const requestItem = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Schedule auto-expiry at the start date
+		await ctx.scheduler.runAt(
+			args.startDate,
+			internal.items.expirePendingClaim,
+			{ claimId },
+		);
 	},
 });
 
@@ -1977,6 +1984,40 @@ export const getItemActivity = query({
 	},
 });
 
+export const expirePendingClaim = internalMutation({
+	args: { claimId: v.id("claims") },
+	handler: async (ctx, args) => {
+		const claim = await ctx.db.get(args.claimId);
+		if (!claim) return;
+		if (claim.status !== "pending" || claim.expiredAt) return;
+
+		const now = Date.now();
+		await ctx.db.patch(args.claimId, { status: "expired", expiredAt: now });
+
+		await ctx.db.insert("lease_activity", {
+			itemId: claim.itemId,
+			claimId: args.claimId,
+			type: "lease_expired",
+			actorId: "system",
+			createdAt: now,
+			note: "Auto-expired: start date passed while still pending",
+		});
+
+		const item = await ctx.db.get(claim.itemId);
+		if (!item) return;
+		for (const recipientId of [item.ownerId, claim.claimerId]) {
+			await ctx.db.insert("notifications", {
+				recipientId,
+				type: "pickup_expired",
+				itemId: claim.itemId,
+				requestId: args.claimId,
+				isRead: false,
+				createdAt: now,
+			});
+		}
+	},
+});
+
 export const resolveOverdueProposals = internalMutation({
 	args: {},
 	handler: async (ctx) => {
@@ -2296,12 +2337,21 @@ export const updateLocationWard = internalMutation({
 
 type LeaseActivityDoc = {
 	type: string;
+	actorId: string;
 	windowStartAt?: number;
 	windowEndAt?: number;
 	proposalId?: string;
 };
 
-type NeedsAction = "respond" | "schedule" | "confirm" | null;
+type NeedsAction =
+	| "respond_request"
+	| "respond_pickup"
+	| "respond_return"
+	| "schedule_pickup"
+	| "schedule_return"
+	| "confirm_pickup"
+	| "confirm_return"
+	| null;
 
 /**
  * Determine what action (if any) is needed by the given user for a claim,
@@ -2318,8 +2368,10 @@ function resolveNeedsAction(args: {
 	};
 	events: LeaseActivityDoc[];
 	isOwner: boolean;
+	userId: string;
+	now: number;
 }): NeedsAction {
-	const { claim, events, isOwner } = args;
+	const { claim, events, isOwner, userId, now } = args;
 
 	// Terminal states — no action needed
 	if (
@@ -2332,40 +2384,57 @@ function resolveNeedsAction(args: {
 	}
 
 	const hasPickedUp = !!claim.pickedUpAt;
-	const hasPickupProposed = events.some(
-		(e) => e.type === "lease_pickup_proposed",
-	);
+	const pickupProposal = [...events]
+		.reverse()
+		.find((e) => e.type === "lease_pickup_proposed");
+	const hasPickupProposed = !!pickupProposal;
 	const hasPickupApproved = events.some(
 		(e) => e.type === "lease_pickup_approved",
 	);
-	const hasReturnProposed = events.some(
-		(e) => e.type === "lease_return_proposed",
-	);
+	const returnProposal = [...events]
+		.reverse()
+		.find((e) => e.type === "lease_return_proposed");
+	const hasReturnProposed = !!returnProposal;
 	const hasReturnApproved = events.some(
 		(e) => e.type === "lease_return_approved",
 	);
 
+	// Check if a confirmed window has started (within last approved proposal)
+	const isWindowReady = (type: string): boolean => {
+		const approved = [...events].reverse().find((e) => e.type === type);
+		if (!approved?.windowStartAt) return true; // no window info, assume ready
+		return approved.windowStartAt <= now;
+	};
+
+	// Did the counterpart propose (i.e. current user needs to respond)?
+	const counterpartProposed = (proposal: LeaseActivityDoc | undefined) =>
+		proposal != null && proposal.actorId !== userId;
+
 	if (claim.status === "pending") {
-		return isOwner ? "respond" : null;
+		return isOwner ? "respond_request" : null;
 	}
 
 	if (claim.status === "approved") {
 		if (!hasPickedUp) {
-			if (!hasPickupProposed) return "schedule";
+			if (!hasPickupProposed) return "schedule_pickup";
 			if (hasPickupProposed && !hasPickupApproved) {
-				return isOwner ? "respond" : null;
+				return counterpartProposed(pickupProposal) ? "respond_pickup" : null;
 			}
-			// Pickup approved but not picked up
-			if (hasPickupApproved) return "confirm";
+			// Pickup approved but not picked up — only actionable when window arrives
+			if (hasPickupApproved) {
+				return isWindowReady("lease_pickup_approved") ? "confirm_pickup" : null;
+			}
 		}
 
 		// Already picked up
-		if (!hasReturnProposed) return "schedule";
+		if (!hasReturnProposed) return "schedule_return";
 		if (hasReturnProposed && !hasReturnApproved) {
-			return isOwner ? "respond" : null;
+			return counterpartProposed(returnProposal) ? "respond_return" : null;
 		}
-		// Return approved but not returned
-		if (hasReturnApproved) return "confirm";
+		// Return approved but not returned — only actionable when window arrives
+		if (hasReturnApproved) {
+			return isWindowReady("lease_return_approved") ? "confirm_return" : null;
+		}
 	}
 
 	return null;
@@ -2399,8 +2468,10 @@ export const getCalendarEvents = query({
 		const events: CalendarEvent[] = [];
 
 		// Statuses that are considered "closed" — exclude from calendar
+		const now = Date.now();
 		const isClosedClaim = (c: {
 			status: string;
+			startDate: number;
 			returnedAt?: number;
 			transferredAt?: number;
 			expiredAt?: number;
@@ -2409,6 +2480,8 @@ export const getCalendarEvents = query({
 			if (c.status === "rejected") return true;
 			if (c.returnedAt || c.transferredAt || c.expiredAt || c.missingAt)
 				return true;
+			// Past-due: pending claims whose start date has already passed
+			if (c.status === "pending" && c.startDate < now) return true;
 			return false;
 		};
 
@@ -2495,6 +2568,8 @@ export const getCalendarEvents = query({
 					claim,
 					events: leaseEvents,
 					isOwner: true,
+					userId,
+					now,
 				});
 
 				const borrowerLabel = counterpartyName ?? claim.claimerId.slice(0, 6);
@@ -2541,6 +2616,8 @@ export const getCalendarEvents = query({
 				claim,
 				events: leaseEvents,
 				isOwner: false,
+				userId,
+				now,
 			});
 
 			const ownerLabel = counterpartyName ?? item.ownerId.slice(0, 6);
