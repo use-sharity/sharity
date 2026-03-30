@@ -9,9 +9,9 @@ import { useMutation, useQuery } from "convex/react";
 import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import { Palmtree } from "lucide-react";
+import { ChevronLeft, ChevronRight, Palmtree } from "lucide-react";
 
 import { format } from "date-fns";
 
@@ -37,6 +37,7 @@ interface FullCalendarWrapperProps {
 	onEventClick: (arg: EventClickArg) => void;
 	onDatesSet: (arg: DatesSetArg) => void;
 	selectable: boolean;
+	calendarRef: React.RefObject<any>;
 }
 
 function FullCalendarWrapperInner({
@@ -44,6 +45,7 @@ function FullCalendarWrapperInner({
 	onEventClick,
 	onDatesSet,
 	selectable,
+	calendarRef,
 }: FullCalendarWrapperProps) {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const FullCalendarComponent = require("@fullcalendar/react").default;
@@ -54,6 +56,7 @@ function FullCalendarWrapperInner({
 
 	return (
 		<FullCalendarComponent
+			ref={calendarRef}
 			plugins={[dayGrid, interaction]}
 			initialView="dayGridMonth"
 			selectable={selectable}
@@ -61,11 +64,7 @@ function FullCalendarWrapperInner({
 			events={events}
 			eventClick={onEventClick}
 			datesSet={onDatesSet}
-			headerToolbar={{
-				left: "prev,next today",
-				center: "title",
-				right: "",
-			}}
+			headerToolbar={false}
 			height="auto"
 		/>
 	);
@@ -172,6 +171,8 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 
 export function EnhancedCalendar() {
 	const locale = useLocale();
+	const calendarRef = useRef<any>(null);
+	const [calendarTitle, setCalendarTitle] = useState("");
 
 	const [dateRange, setDateRange] = useState<{
 		startDate: number;
@@ -221,6 +222,19 @@ export function EnhancedCalendar() {
 			startDate: arg.start.getTime(),
 			endDate: arg.end.getTime(),
 		});
+		setCalendarTitle(arg.view.title);
+	}, []);
+
+	const handlePrev = useCallback(() => {
+		calendarRef.current?.getApi()?.prev();
+	}, []);
+
+	const handleNext = useCallback(() => {
+		calendarRef.current?.getApi()?.next();
+	}, []);
+
+	const handleToday = useCallback(() => {
+		calendarRef.current?.getApi()?.today();
 	}, []);
 
 	const handleClosePopover = useCallback(() => {
@@ -337,11 +351,28 @@ export function EnhancedCalendar() {
 				</DialogContent>
 			</Dialog>
 
+			{/* Custom toolbar using shadcn buttons */}
+			<div className="flex items-center justify-between mb-3">
+				<div className="flex items-center gap-2">
+					<Button variant="outline" size="icon-sm" onClick={handlePrev}>
+						<ChevronLeft className="h-4 w-4" />
+					</Button>
+					<Button variant="outline" size="icon-sm" onClick={handleNext}>
+						<ChevronRight className="h-4 w-4" />
+					</Button>
+					<Button size="sm" onClick={handleToday}>
+						Today
+					</Button>
+				</div>
+				<span className="text-sm font-semibold">{calendarTitle}</span>
+			</div>
+
 			<FullCalendarWrapper
 				events={fcEvents}
 				onEventClick={handleEventClick}
 				onDatesSet={handleDatesSet}
 				selectable={false}
+				calendarRef={calendarRef}
 			/>
 
 			{popover && (

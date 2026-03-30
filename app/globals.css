@@ -318,59 +318,9 @@
 	border: 1px solid var(--border);
 }
 
-/* Toolbar — compact, outline-style buttons */
+/* Hide FullCalendar's built-in toolbar — we render our own with shadcn buttons */
 .fc .fc-toolbar {
-	padding: 12px 16px;
-	margin-bottom: 0 !important;
-}
-
-.fc .fc-toolbar-title {
-	font-size: 0.875rem !important;
-	font-weight: 600;
-}
-
-/* Arrow buttons — outline style */
-.fc .fc-button,
-.fc .fc-button-primary {
-	font-size: 0.8125rem !important;
-	font-weight: 500 !important;
-	border-radius: var(--radius) !important;
-	padding: 0.25rem 0.625rem !important;
-	background: transparent !important;
-	border: 1px solid var(--primary) !important;
-	color: var(--primary) !important;
-	transition:
-		background-color 0.15s,
-		border-color 0.15s;
-	cursor: pointer;
-}
-
-.fc .fc-button:hover,
-.fc .fc-button-primary:hover {
-	background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
-}
-
-/* "today" button — filled green */
-.fc .fc-today-button {
-	background: var(--primary) !important;
-	color: var(--primary-foreground) !important;
-	border-color: var(--primary) !important;
-}
-
-.fc .fc-today-button:hover {
-	opacity: 0.85;
-}
-
-.fc .fc-button:focus-visible {
-	outline: 2px solid var(--ring);
-	outline-offset: 2px;
-}
-
-.fc .fc-button-primary:not(:disabled):active,
-.fc .fc-button-primary:not(:disabled).fc-button-active {
-	background: var(--primary) !important;
-	border-color: var(--primary) !important;
-	color: var(--primary-foreground) !important;
+	display: none !important;
 }
 
 /* Day-grid cell typography */
