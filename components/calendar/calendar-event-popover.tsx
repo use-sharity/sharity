@@ -142,27 +142,26 @@ export function CalendarEventPopover({
 			</div>
 
 			{/* Export buttons */}
-			<div className="flex gap-2 px-3 pb-2">
+			<div className="grid grid-cols-2 gap-2 px-3 pb-2">
 				<Button
 					variant="outline"
 					size="sm"
-					className="flex-1 text-xs h-8"
+					className="text-xs h-8 w-full"
 					onClick={handleGoogleCalClick}
 				>
-					<Calendar className="h-3.5 w-3.5" />
-					Add to Google Cal
+					<Calendar className="h-3.5 w-3.5 shrink-0" />
+					Google Cal
 				</Button>
 				<Button
 					variant="outline"
 					size="sm"
-					className="flex-1 text-xs h-8"
+					className="text-xs h-8 w-full"
 					onClick={handleIcsDownload}
 				>
-					<Download className="h-3.5 w-3.5" />
+					<Download className="h-3.5 w-3.5 shrink-0" />
 					Download .ics
 				</Button>
 			</div>
-
 		</div>
 	);
 }
