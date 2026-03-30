@@ -6,15 +6,16 @@ import type {
 	EventClickArg,
 	EventInput,
 } from "@fullcalendar/core";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 
 import { Palmtree } from "lucide-react";
 
-import { OwnerUnavailabilityButton } from "@/components/owner-unavailability-button";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { CalendarEvent } from "@/convex/items";
 
@@ -166,6 +167,9 @@ export function EnhancedCalendar() {
 	} | null>(null);
 
 	const [isVacationMode, setIsVacationMode] = useState(false);
+	const [vacationNote, setVacationNote] = useState("");
+	const [isSavingVacation, setIsSavingVacation] = useState(false);
+	const addVacationRange = useMutation(api.items.addOwnerUnavailabilityRange);
 
 	const rawEvents = useQuery(api.items.getCalendarEvents, {
 		startDate: dateRange.startDate,
@@ -210,10 +214,25 @@ export function EnhancedCalendar() {
 		setPopover(null);
 	}, []);
 
-	const handleCloseVacationDialog = useCallback((open: boolean) => {
-		if (!open) {
+	const handleSaveVacation = useCallback(async () => {
+		if (!vacationDialog) return;
+		setIsSavingVacation(true);
+		try {
+			await addVacationRange({
+				startDate: vacationDialog.startDate.getTime(),
+				endDate: vacationDialog.endDate.getTime(),
+				note: vacationNote.trim() || undefined,
+			});
 			setVacationDialog(null);
+			setVacationNote("");
+		} finally {
+			setIsSavingVacation(false);
 		}
+	}, [vacationDialog, vacationNote, addVacationRange]);
+
+	const handleCancelVacation = useCallback(() => {
+		setVacationDialog(null);
+		setVacationNote("");
 	}, []);
 
 	const handleToggleVacationMode = useCallback(() => {
@@ -238,7 +257,8 @@ export function EnhancedCalendar() {
 
 			{isVacationMode && (
 				<div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
-					Select dates on the calendar by clicking a start date and dragging to the end date.
+					Select dates on the calendar by clicking a start date and dragging to
+					the end date.
 				</div>
 			)}
 
@@ -262,13 +282,38 @@ export function EnhancedCalendar() {
 			)}
 
 			{vacationDialog && (
-				<OwnerUnavailabilityButton
-					dialogOnly
-					open={true}
-					onOpenChange={handleCloseVacationDialog}
-					initialStartDate={vacationDialog.startDate}
-					initialEndDate={vacationDialog.endDate}
-				/>
+				<div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+					<div className="flex items-center gap-2 mb-3">
+						<Palmtree className="h-4 w-4 text-red-600" />
+						<span className="font-medium text-sm">Add Vacation</span>
+					</div>
+					<p className="text-sm text-muted-foreground mb-3">
+						{format(vacationDialog.startDate, "MMM d, yyyy")} – {format(vacationDialog.endDate, "MMM d, yyyy")}
+					</p>
+					<Input
+						placeholder="Note (optional)"
+						value={vacationNote}
+						onChange={(e) => setVacationNote(e.target.value)}
+						className="mb-3"
+					/>
+					<div className="flex gap-2 justify-end">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleCancelVacation}
+							disabled={isSavingVacation}
+						>
+							Cancel
+						</Button>
+						<Button
+							size="sm"
+							onClick={handleSaveVacation}
+							disabled={isSavingVacation}
+						>
+							{isSavingVacation ? "Saving..." : "Save"}
+						</Button>
+					</div>
+				</div>
 			)}
 		</div>
 	);
