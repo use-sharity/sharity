@@ -102,7 +102,17 @@ export function CalendarEventPopover({
 
 			{/* Item name */}
 			<div className="px-3 pb-1">
-				<p className="font-semibold text-sm leading-snug">{event.title}</p>
+				{event.itemId ? (
+					<Link
+						href={`/${locale}/item/${event.itemId}`}
+						className="font-semibold text-sm leading-snug text-primary hover:underline"
+						onClick={onClose}
+					>
+						{event.title}
+					</Link>
+				) : (
+					<p className="font-semibold text-sm leading-snug">{event.title}</p>
+				)}
 				{event.counterpartyName && (
 					<p className="text-xs text-muted-foreground mt-0.5">
 						{event.type === "lending"
@@ -153,18 +163,6 @@ export function CalendarEventPopover({
 				</Button>
 			</div>
 
-			{/* Item detail link */}
-			{event.itemId && (
-				<div className="border-t px-3 py-2">
-					<Link
-						href={`/${locale}/item/${event.itemId}`}
-						className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
-						onClick={onClose}
-					>
-						View item details →
-					</Link>
-				</div>
-			)}
 		</div>
 	);
 }
