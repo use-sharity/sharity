@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { Calendar, Download, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/convex/items";
@@ -51,6 +51,18 @@ export function CalendarEventPopover({
 	onClose,
 	locale,
 }: EventPopoverProps) {
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) {
+				onClose();
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [onClose]);
+
 	const handleGoogleCalClick = useCallback(() => {
 		const url = buildGoogleCalendarUrl({
 			title: event.title,
@@ -74,6 +86,7 @@ export function CalendarEventPopover({
 
 	return (
 		<div
+			ref={ref}
 			className="fixed z-50 w-72 rounded-lg border bg-popover text-popover-foreground shadow-md"
 			style={{ top: position.top, left: position.left }}
 		>
