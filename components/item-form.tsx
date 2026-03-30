@@ -94,6 +94,7 @@ interface ItemFormProps {
 	}) => Promise<void>;
 	submitLabel?: string;
 	enableModeSwitch?: boolean;
+	hideMyItemsLink?: boolean;
 }
 
 export function ItemForm({
@@ -101,6 +102,7 @@ export function ItemForm({
 	onSubmit,
 	submitLabel = "Submit",
 	enableModeSwitch = false,
+	hideMyItemsLink = false,
 }: ItemFormProps) {
 	const t = useTranslations("ItemForm");
 	const tCategories = useTranslations("Categories");
@@ -591,20 +593,22 @@ export function ItemForm({
 				>
 					{isSubmitting ? t("uploadingSaving") : submitLabel}
 				</Button>
-				<Button
-					asChild
-					type="button"
-					variant="secondary"
-					className="w-full sm:w-auto"
-				>
-					<Link href="/my-items" className="relative">
-						<ListChecks className="h-4 w-4" />
-						{t("myItems")}
-						{hasMyItemsStatus ? (
-							<span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-background" />
-						) : null}
-					</Link>
-				</Button>
+				{!hideMyItemsLink && (
+					<Button
+						asChild
+						type="button"
+						variant="secondary"
+						className="w-full sm:w-auto"
+					>
+						<Link href="/my-items" className="relative">
+							<ListChecks className="h-4 w-4" />
+							{t("myItems")}
+							{hasMyItemsStatus ? (
+								<span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-background" />
+							) : null}
+						</Link>
+					</Button>
+				)}
 			</div>
 		</form>
 	);

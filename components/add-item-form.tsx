@@ -8,7 +8,15 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
 
-export function AddItemForm() {
+interface AddItemFormProps {
+	hideMyItemsLink?: boolean;
+	onSuccess?: () => void;
+}
+
+export function AddItemForm({
+	hideMyItemsLink = false,
+	onSuccess,
+}: AddItemFormProps = {}) {
 	const createItem = useMutation(api.items.create);
 	const t = useTranslations("AddItemForm");
 
@@ -23,9 +31,11 @@ export function AddItemForm() {
 						<ItemForm
 							onSubmit={async (values) => {
 								await createItem(values);
+								onSuccess?.();
 							}}
 							submitLabel={t("submit")}
 							enableModeSwitch
+							hideMyItemsLink={hideMyItemsLink}
 						/>
 					</CardContent>
 				</Card>

@@ -79,7 +79,7 @@ export function ItemList({
 	});
 
 	return (
-		<div className="w-full max-w-2xl space-y-4">
+		<div className="w-full space-y-4">
 			<div className="flex flex-col gap-3">
 				<div className="flex gap-2">
 					<Input

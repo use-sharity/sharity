@@ -29,11 +29,14 @@
 	"AppHeader": {
 		"signIn": "Sign In",
 		"signUp": "Sign Up",
-		"profile": "Profile"
+		"profile": "Profile",
+		"myItems": "My Items",
+		"requests": "Requests"
 	},
 	"Home": {
 		"title": "Sharity",
 		"subtitle": "Borrow and lend useful items in Da Lat.",
+		"shareButton": "Share an item",
 		"tabs": {
 			"share": "Share",
 			"request": "Request",
