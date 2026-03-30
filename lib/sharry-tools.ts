@@ -41,6 +41,9 @@ export function buildTools(
 							description: i.description ?? "",
 							category: i.category ?? "other",
 							mode: i.giveaway ? "giveaway" : "lending",
+							minLeaseDays: i.minLeaseDays ?? null,
+							maxLeaseDays: i.maxLeaseDays ?? null,
+							location: i.location?.address ?? null,
 						}));
 				} catch {
 					return { error: "Could not fetch your items right now." };
@@ -58,10 +61,17 @@ export function buildTools(
 					return items.map((i) => ({
 						itemId: i._id,
 						name: i.name,
+						description: i.description ?? "",
+						category: i.category ?? "other",
+						mode: i.giveaway ? "giveaway" : "lending",
 						claimId: i.claim._id,
 						ownerId: i.ownerId,
 						ownerName: i.owner.name ?? "a neighbor",
+						startDate: new Date(i.claim.startDate).toLocaleDateString(locale),
 						endDate: new Date(i.claim.endDate).toLocaleDateString(locale),
+						pickedUpAt: i.claim.pickedUpAt
+							? new Date(i.claim.pickedUpAt).toLocaleDateString(locale)
+							: null,
 					}));
 				} catch {
 					return { error: "Could not fetch your borrowed items right now." };
@@ -98,6 +108,8 @@ export function buildTools(
 						category: i.category ?? "other",
 						mode: i.giveaway ? "giveaway" : "lending",
 						ward: i.location?.ward ?? null,
+						minLeaseDays: i.minLeaseDays ?? null,
+						maxLeaseDays: i.maxLeaseDays ?? null,
 					}));
 				} catch {
 					return { error: "Could not search items right now." };
@@ -132,6 +144,9 @@ export function buildTools(
 						ownerId: item.ownerId,
 						ownerName: ownerInfo.name ?? "a neighbor",
 						location: item.location?.address ?? null,
+						ward: item.location?.ward ?? null,
+						minLeaseDays: item.minLeaseDays ?? null,
+						maxLeaseDays: item.maxLeaseDays ?? null,
 					};
 				} catch {
 					return { error: "Could not fetch item details right now." };
@@ -198,6 +213,7 @@ export function buildTools(
 					return {
 						itemName: result.itemName,
 						claims: result.claims.map((c) => ({
+							claimId: c.claimId,
 							claimerName: c.claimerName,
 							claimerId: c.claimerId,
 							status: c.status,
@@ -243,6 +259,8 @@ export function buildTools(
 						memberSince: new Date(profile.createdAt).toLocaleDateString(locale),
 						averageStars: ratings.averageStars,
 						totalRatings: ratings.totalRatings,
+						asLender: ratings.asLender,
+						asBorrower: ratings.asBorrower,
 					};
 				} catch {
 					return { error: "Could not fetch profile right now." };
@@ -258,6 +276,7 @@ export function buildTools(
 				try {
 					const notifs = await convex.query(api.notifications.get);
 					return notifs.slice(0, 10).map((n) => ({
+						notificationId: n._id,
 						type: n.type.replace(/_/g, " "),
 						isRead: n.isRead,
 						itemId: n.itemId,
@@ -284,6 +303,7 @@ export function buildTools(
 						matchCount: w.matchCount ?? 0,
 						isOwner: w.isOwner ?? false,
 						isLiked: w.isLiked ?? false,
+						createdAt: new Date(w.createdAt).toLocaleDateString(locale),
 					}));
 				} catch {
 					return { error: "Could not fetch wishlist right now." };
