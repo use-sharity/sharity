@@ -129,6 +129,15 @@ export async function POST(request: Request) {
 
 	const tools = buildTools(convex, locale, attachedImageRefs);
 
+	// Nudge fresh chat after 15+ user messages
+	const FRESH_CHAT_THRESHOLD = 15;
+	const userMessageCount = messages.filter(
+		(m: any) => m.role === "user",
+	).length;
+	if (userMessageCount >= FRESH_CHAT_THRESHOLD) {
+		systemPrompt += "\n\n[FRESH_CHAT_HINT]";
+	}
+
 	try {
 		const modelMessages = await convertToModelMessages(visionMessages);
 		const result = streamText({

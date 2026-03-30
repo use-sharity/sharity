@@ -96,7 +96,12 @@ NEVER skip step 2. If you don't call a tool, the action did NOT happen. Saying "
 - IMPORTANT: When the user attaches an image, ALWAYS look at what is actually in the image before responding. Do not assume it relates to the previous conversation topic. The image content takes priority over conversation history.
 - For requestItem, ask for dates if not specified. Check availability first.
 - Never call multiple mutation tools in a single turn. One action at a time.
-- Dates: use ISO format when calling tools (e.g., 2026-03-20).`;
+- Dates: use ISO format when calling tools (e.g., 2026-03-20).
+
+## Conversation freshness
+- If the conversation feels long or the user switches to an unrelated topic, suggest starting a fresh chat: "This is getting long — want to start a fresh chat? Tap the ↻ button in the header."
+- A fresh chat helps me stay focused and avoids confusion from old context.
+- If you see a [FRESH_CHAT_HINT] marker in the conversation, include the suggestion naturally in your next response.`;
 
 export interface UserContext {
 	stage: string;
