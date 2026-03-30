@@ -274,18 +274,23 @@ export function ChatWidget() {
 		lastSavedIndexRef.current = seeded.length;
 	}, [persistedMessages, setMessages]);
 
-	// Save assistant messages when streaming completes (authed users only)
+	// Save messages when streaming completes (authed users only).
+	// Track which message IDs we've saved to avoid duplicates but allow
+	// re-saving when a message gets updated (e.g. after tool approval).
+	const savedContentRef = useRef<Map<string, string>>(new Map());
+
 	useEffect(() => {
 		if (!isSignedIn || status !== "ready") return;
-		// Find new assistant messages since last save
-		for (let i = lastSavedIndexRef.current; i < messages.length; i++) {
-			const msg = messages[i];
-			if (msg.role === "assistant") {
-				const text = getMessageText(msg);
-				if (text) {
-					saveMessage({ role: "assistant", content: text });
-				}
-			}
+		for (const msg of messages) {
+			const text = getMessageText(msg);
+			if (!text) continue;
+			// Only save if content is new or changed (tool result added after approval)
+			const prev = savedContentRef.current.get(msg.id);
+			if (prev === text) continue;
+			savedContentRef.current.set(msg.id, text);
+			// Skip user messages — they're saved in handleSubmit
+			if (msg.role === "user") continue;
+			saveMessage({ role: "assistant", content: text });
 		}
 		lastSavedIndexRef.current = messages.length;
 	}, [isSignedIn, status, messages, saveMessage]);
