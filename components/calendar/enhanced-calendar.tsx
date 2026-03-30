@@ -11,7 +11,12 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { ChevronLeft, ChevronRight, Palmtree } from "lucide-react";
+import {
+	AlertTriangle,
+	ChevronLeft,
+	ChevronRight,
+	Palmtree,
+} from "lucide-react";
 
 import { format } from "date-fns";
 
@@ -281,6 +286,26 @@ export function EnhancedCalendar() {
 
 	const canSaveVacation = !!vacationRange?.from && !!vacationRange?.to;
 
+	// Warn if any pickup/return falls within the vacation range
+	const vacationConflicts = useMemo(() => {
+		if (!vacationRange?.from || !vacationRange?.to) return [];
+		const vacStart = vacationRange.from.getTime();
+		const vacEnd = vacationRange.to.getTime();
+
+		const conflicts: { itemName: string; type: "pickup" | "return" }[] = [];
+		for (const event of calendarEvents) {
+			if (event.type === "vacation") continue;
+			const name = event.title.replace(/\s*[←→].*$/, "");
+			if (event.startDate >= vacStart && event.startDate <= vacEnd) {
+				conflicts.push({ itemName: name, type: "pickup" });
+			}
+			if (event.endDate >= vacStart && event.endDate <= vacEnd) {
+				conflicts.push({ itemName: name, type: "return" });
+			}
+		}
+		return conflicts;
+	}, [vacationRange, calendarEvents]);
+
 	return (
 		<div>
 			<UpNextSection events={calendarEvents} locale={locale} />
@@ -324,6 +349,22 @@ export function EnhancedCalendar() {
 						value={vacationNote}
 						onChange={(e) => setVacationNote(e.target.value)}
 					/>
+					{vacationConflicts.length > 0 && (
+						<div className="flex gap-2 rounded-md bg-yellow-50/50 border border-yellow-200 p-3 text-sm text-foreground">
+							<AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-yellow-500" />
+							<div>
+								<p className="font-medium">Scheduling conflict</p>
+								<ul className="mt-1 text-xs space-y-0.5">
+									{vacationConflicts.map((c, i) => (
+										<li key={i}>
+											{c.type === "pickup" ? "Pickup" : "Return"} for{" "}
+											<span className="font-medium">{c.itemName}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						</div>
+					)}
 					<div className="flex gap-2 justify-end">
 						<Button
 							variant="outline"
