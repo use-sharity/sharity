@@ -156,7 +156,7 @@ export function CalendarEventPopover({
 			{event.itemId && (
 				<div className="border-t px-3 py-2">
 					<Link
-						href={`/item/${event.itemId}`}
+						href={`/${locale}/item/${event.itemId}`}
 						className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
 						onClick={onClose}
 					>
