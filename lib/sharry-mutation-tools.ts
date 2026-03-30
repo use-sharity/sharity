@@ -117,7 +117,11 @@ export function buildMutationTools(
 	// Resolve 1-based image indices to CloudinaryRefs
 	function resolveImageRefs(indices?: number[]): CloudinaryRef[] | undefined {
 		if (!indices || indices.length === 0) return undefined;
-		const refs = indices.map((i) => attachedImageRefs[i - 1]).filter(Boolean);
+		const refs = indices
+			.map((i) => attachedImageRefs[i - 1])
+			.filter(Boolean)
+			// Strip extra fields (e.g. context) — Convex expects only publicId + secureUrl
+			.map(({ publicId, secureUrl }) => ({ publicId, secureUrl }));
 		return refs.length > 0 ? refs : undefined;
 	}
 	return {
