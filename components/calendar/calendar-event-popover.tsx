@@ -28,15 +28,15 @@ const TYPE_LABELS: Record<CalendarEvent["type"], string> = {
 };
 
 const TYPE_DOT_COLORS: Record<CalendarEvent["type"], string> = {
-	lending: "bg-indigo-500",
-	borrowing: "bg-violet-500",
-	vacation: "bg-red-500",
+	lending: "bg-teal-700",
+	borrowing: "bg-amber-500",
+	vacation: "bg-gray-400",
 };
 
 const TYPE_BADGE_COLORS: Record<CalendarEvent["type"], string> = {
-	lending: "bg-indigo-100 text-indigo-700",
-	borrowing: "bg-violet-100 text-violet-700",
-	vacation: "bg-red-100 text-red-700",
+	lending: "bg-teal-100 text-teal-800",
+	borrowing: "bg-amber-100 text-amber-800",
+	vacation: "bg-gray-100 text-gray-600",
 };
 
 function formatEventDate(timestamp: number, isAllDay: boolean): string {

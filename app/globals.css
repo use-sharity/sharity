@@ -329,22 +329,24 @@
 	font-weight: 600;
 }
 
-.fc .fc-button {
-	font-size: 0.8125rem;
-	font-weight: 500;
-	border-radius: var(--radius);
-	padding: 0.25rem 0.625rem;
-	background: transparent;
-	border: 1px solid var(--border);
-	color: var(--foreground);
+.fc .fc-button,
+.fc .fc-button-primary {
+	font-size: 0.8125rem !important;
+	font-weight: 500 !important;
+	border-radius: var(--radius) !important;
+	padding: 0.25rem 0.625rem !important;
+	background: var(--primary) !important;
+	border: 1px solid var(--primary) !important;
+	color: var(--primary-foreground) !important;
 	transition:
 		background-color 0.15s,
 		border-color 0.15s;
 	cursor: pointer;
 }
 
-.fc .fc-button:hover {
-	background: var(--muted);
+.fc .fc-button:hover,
+.fc .fc-button-primary:hover {
+	opacity: 0.85;
 }
 
 .fc .fc-button:focus-visible {
@@ -354,9 +356,9 @@
 
 .fc .fc-button-primary:not(:disabled):active,
 .fc .fc-button-primary:not(:disabled).fc-button-active {
-	background: var(--muted);
-	border-color: var(--border);
-	color: var(--foreground);
+	background: var(--muted) !important;
+	border-color: var(--border) !important;
+	color: var(--foreground) !important;
 }
 
 /* Day-grid cell typography */
@@ -387,17 +389,16 @@
 .fc-vacation-event {
 	background: repeating-linear-gradient(
 		-45deg,
-		var(--muted),
-		var(--muted) 5px,
-		transparent 5px,
-		transparent 10px
+		#ccc,
+		#ccc 16px,
+		#eee 16px,
+		#eee 32px
 	) !important;
-	border: 1px dashed var(--muted-foreground) !important;
-	opacity: 0.6;
+	border: 1px solid #bbb !important;
 }
 
 .fc-vacation-event .fc-event-title {
-	color: var(--muted-foreground) !important;
+	color: #555 !important;
 }
 
 /* Needs-action indicator: amber pulsing dot before title */
