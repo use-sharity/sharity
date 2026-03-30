@@ -67,6 +67,11 @@ function FullCalendarWrapperInner({
 			datesSet={onDatesSet}
 			headerToolbar={false}
 			height="auto"
+			eventTimeFormat={{
+				hour: "numeric",
+				minute: "2-digit",
+				meridiem: "short",
+			}}
 			moreLinkContent={(args: { num: number }) => `${args.num} more`}
 		/>
 	);
@@ -126,9 +131,6 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 		}
 
 		const classNames: string[] = [];
-		if (event.needsAction != null) {
-			classNames.push("fc-event-needs-action");
-		}
 		if (event.type === "vacation") {
 			classNames.push("fc-vacation-event");
 		}
@@ -283,17 +285,6 @@ export function EnhancedCalendar() {
 		<div>
 			<UpNextSection events={calendarEvents} locale={locale} />
 
-			<div className="flex justify-end mb-3">
-				<Button
-					size="sm"
-					className="gap-1.5"
-					onClick={() => setShowVacationForm(true)}
-				>
-					<Palmtree className="h-4 w-4" />
-					Add Vacation
-				</Button>
-			</div>
-
 			<Dialog
 				open={showVacationForm}
 				onOpenChange={(open) => {
@@ -355,20 +346,27 @@ export function EnhancedCalendar() {
 
 			<Card>
 				<CardContent className="p-5 md:p-6">
-					{/* Custom toolbar using shadcn buttons */}
-					<div className="flex items-center justify-between mb-3">
-						<div className="flex items-center gap-2">
-							<Button variant="outline" size="icon-sm" onClick={handlePrev}>
-								<ChevronLeft className="h-4 w-4" />
-							</Button>
-							<Button variant="outline" size="icon-sm" onClick={handleNext}>
-								<ChevronRight className="h-4 w-4" />
-							</Button>
-							<Button size="sm" onClick={handleToday}>
-								Today
-							</Button>
-						</div>
-						<span className="text-sm font-semibold">{calendarTitle}</span>
+					{/* Toolbar */}
+					<div className="flex flex-wrap items-center gap-2 mb-3">
+						<Button variant="outline" size="icon-sm" onClick={handlePrev}>
+							<ChevronLeft className="h-4 w-4" />
+						</Button>
+						<span className="text-lg font-bold">{calendarTitle}</span>
+						<Button variant="outline" size="icon-sm" onClick={handleNext}>
+							<ChevronRight className="h-4 w-4" />
+						</Button>
+						<Button variant="outline" size="sm" onClick={handleToday}>
+							Today
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-1.5"
+							onClick={() => setShowVacationForm(true)}
+						>
+							<Palmtree className="h-4 w-4" />
+							<span className="hidden sm:inline">Add Vacation</span>
+						</Button>
 					</div>
 
 					<FullCalendarWrapper

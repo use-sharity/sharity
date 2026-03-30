@@ -183,14 +183,19 @@ function ActionCard({ event, locale }: ActionCardProps) {
 	return (
 		<Link
 			href={href}
-			className="flex-1 min-w-0 rounded-lg border bg-card shadow-sm p-3 flex flex-col gap-2 hover:shadow-md transition-all"
+			className="flex-1 min-w-0 rounded-lg border bg-card shadow-sm p-2.5 flex flex-col gap-1.5 hover:shadow-md transition-all"
 		>
 			{/* Top row: icon + badge + urgency */}
 			<div className="flex items-center gap-1.5">
-				<Icon className={cn("h-3.5 w-3.5 shrink-0", styles.iconClass)} />
+				<Icon
+					className={cn(
+						"h-3.5 w-3.5 shrink-0 hidden sm:block",
+						styles.iconClass,
+					)}
+				/>
 				<span
 					className={cn(
-						"shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide leading-none",
+						"shrink-0 rounded px-1.5 py-0.5 text-[11px] sm:text-[10px] font-semibold tracking-wide leading-none",
 						styles.badgeClass,
 					)}
 				>
@@ -199,7 +204,7 @@ function ActionCard({ event, locale }: ActionCardProps) {
 				{urgency && (
 					<span
 						className={cn(
-							"ml-auto shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] leading-none",
+							"ml-auto shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] leading-none hidden sm:inline",
 							urgency.className,
 						)}
 					>
@@ -208,11 +213,11 @@ function ActionCard({ event, locale }: ActionCardProps) {
 				)}
 			</div>
 
-			{/* Counterparty with initials avatar */}
+			{/* Counterparty with initials avatar — hidden on mobile */}
 			{event.counterpartyName && (
-				<div className="flex items-center gap-2">
+				<div className="hidden sm:flex items-center gap-1.5">
 					{initials && (
-						<span className="shrink-0 h-6 w-6 rounded-full bg-muted text-[10px] font-medium flex items-center justify-center text-muted-foreground">
+						<span className="shrink-0 h-5 w-5 rounded-full bg-muted text-[9px] font-medium flex items-center justify-center text-muted-foreground">
 							{initials}
 						</span>
 					)}
@@ -227,14 +232,25 @@ function ActionCard({ event, locale }: ActionCardProps) {
 					</div>
 				</div>
 			)}
-			{!event.counterpartyName && (
-				<p className="text-sm font-semibold leading-snug line-clamp-2">
-					{itemName}
-				</p>
-			)}
+			{/* Item name shown on mobile (counterparty hidden) or when no counterparty */}
+			<p
+				className={cn(
+					"text-sm sm:text-xs font-semibold leading-snug line-clamp-2",
+					event.counterpartyName ? "sm:hidden" : "",
+				)}
+			>
+				{itemName}
+			</p>
 
-			{/* CTA button */}
-			<span className="mt-auto inline-flex items-center justify-center rounded-md bg-secondary text-secondary-foreground px-3 py-1.5 text-xs font-medium hover:bg-secondary/80 transition-colors">
+			{/* CTA button — solid for urgent, secondary for others */}
+			<span
+				className={cn(
+					"mt-auto inline-flex items-center justify-center rounded-md px-2.5 py-1.5 sm:py-1 text-xs font-medium transition-colors",
+					level === "urgent"
+						? "bg-primary text-primary-foreground hover:bg-primary/90"
+						: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+				)}
+			>
 				{config.actionPhrase}
 			</span>
 		</Link>
@@ -271,8 +287,8 @@ export function UpNextSection({ events, locale }: UpNextSectionProps) {
 				</span>
 			</div>
 
-			{/* Card grid — 3 per row */}
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+			{/* Card grid — 2 on mobile, 3 on desktop */}
+			<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
 				{visibleEvents.map((event) => (
 					<ActionCard key={event.id} event={event} locale={locale} />
 				))}
