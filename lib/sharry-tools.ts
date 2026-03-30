@@ -40,6 +40,7 @@ export function buildTools(
 							name: i.name,
 							description: i.description ?? "",
 							category: i.category ?? "other",
+							mode: i.giveaway ? "giveaway" : "lending",
 						}));
 				} catch {
 					return { error: "Could not fetch your items right now." };
@@ -95,6 +96,7 @@ export function buildTools(
 						name: i.name,
 						description: i.description ?? "",
 						category: i.category ?? "other",
+						mode: i.giveaway ? "giveaway" : "lending",
 						ward: i.location?.ward ?? null,
 					}));
 				} catch {
@@ -126,6 +128,7 @@ export function buildTools(
 						name: item.name,
 						description: item.description ?? "",
 						category: item.category ?? "other",
+						mode: item.giveaway ? "giveaway" : "lending",
 						ownerId: item.ownerId,
 						ownerName: ownerInfo.name ?? "a neighbor",
 						location: item.location?.address ?? null,
