@@ -6,6 +6,7 @@ import type {
 	EventInput,
 } from "@fullcalendar/core";
 import { useMutation, useQuery } from "convex/react";
+import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
@@ -13,6 +14,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Palmtree } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { CalendarEvent } from "@/convex/items";
@@ -157,8 +159,7 @@ export function EnhancedCalendar() {
 	} | null>(null);
 
 	const [showVacationForm, setShowVacationForm] = useState(false);
-	const [vacationStart, setVacationStart] = useState("");
-	const [vacationEnd, setVacationEnd] = useState("");
+	const [vacationRange, setVacationRange] = useState<DateRange | undefined>();
 	const [vacationNote, setVacationNote] = useState("");
 	const [isSavingVacation, setIsSavingVacation] = useState(false);
 	const addVacationRange = useMutation(api.items.addOwnerUnavailabilityRange);
@@ -199,32 +200,29 @@ export function EnhancedCalendar() {
 	}, []);
 
 	const handleSaveVacation = useCallback(async () => {
-		if (!vacationStart || !vacationEnd) return;
+		if (!vacationRange?.from || !vacationRange?.to) return;
 		setIsSavingVacation(true);
 		try {
 			await addVacationRange({
-				startDate: new Date(vacationStart).getTime(),
-				endDate: new Date(vacationEnd).getTime(),
+				startDate: vacationRange.from.getTime(),
+				endDate: vacationRange.to.getTime(),
 				note: vacationNote.trim() || undefined,
 			});
 			setShowVacationForm(false);
-			setVacationStart("");
-			setVacationEnd("");
+			setVacationRange(undefined);
 			setVacationNote("");
 		} finally {
 			setIsSavingVacation(false);
 		}
-	}, [vacationStart, vacationEnd, vacationNote, addVacationRange]);
+	}, [vacationRange, vacationNote, addVacationRange]);
 
 	const handleCancelVacation = useCallback(() => {
 		setShowVacationForm(false);
-		setVacationStart("");
-		setVacationEnd("");
+		setVacationRange(undefined);
 		setVacationNote("");
 	}, []);
 
-	const canSaveVacation =
-		vacationStart && vacationEnd && new Date(vacationEnd) >= new Date(vacationStart);
+	const canSaveVacation = !!vacationRange?.from && !!vacationRange?.to;
 
 	return (
 		<div>
@@ -250,30 +248,18 @@ export function EnhancedCalendar() {
 						<Palmtree className="h-4 w-4 text-red-600" />
 						<span className="font-medium text-sm">Add Vacation</span>
 					</div>
-					<div className="grid grid-cols-2 gap-3 mb-3">
-						<div>
-							<label className="text-xs text-muted-foreground mb-1 block">Start</label>
-							<Input
-								type="date"
-								value={vacationStart}
-								onChange={(e) => setVacationStart(e.target.value)}
-							/>
-						</div>
-						<div>
-							<label className="text-xs text-muted-foreground mb-1 block">End</label>
-							<Input
-								type="date"
-								value={vacationEnd}
-								min={vacationStart}
-								onChange={(e) => setVacationEnd(e.target.value)}
-							/>
-						</div>
-					</div>
+					<Calendar
+						mode="range"
+						selected={vacationRange}
+						onSelect={setVacationRange}
+						numberOfMonths={2}
+						disabled={{ before: new Date() }}
+					/>
 					<Input
 						placeholder="Note (optional)"
 						value={vacationNote}
 						onChange={(e) => setVacationNote(e.target.value)}
-						className="mb-3"
+						className="mt-3 mb-3"
 					/>
 					<div className="flex gap-2 justify-end">
 						<Button
