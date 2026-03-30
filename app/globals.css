@@ -304,37 +304,47 @@
 /* CSS variable bridge */
 .fc {
 	--fc-border-color: var(--border);
-	--fc-today-bg-color: color-mix(in srgb, var(--primary) 8%, transparent);
-	--fc-page-bg-color: var(--background);
-	--fc-neutral-bg-color: var(--muted);
+	--fc-today-bg-color: color-mix(in srgb, var(--primary) 6%, transparent);
+	--fc-page-bg-color: transparent;
+	--fc-neutral-bg-color: transparent;
 	--fc-list-event-hover-bg-color: var(--muted);
-	--fc-button-text-color: var(--primary-foreground);
-	--fc-button-bg-color: var(--primary);
-	--fc-button-border-color: var(--primary);
-	--fc-button-hover-bg-color: color-mix(in srgb, var(--primary) 85%, black);
-	--fc-button-hover-border-color: color-mix(in srgb, var(--primary) 85%, black);
-	--fc-button-active-bg-color: color-mix(in srgb, var(--primary) 75%, black);
-	--fc-button-active-border-color: color-mix(
-		in srgb,
-		var(--primary) 75%,
-		black
-	);
 	--fc-event-bg-color: var(--primary);
 	--fc-event-border-color: var(--primary);
 	--fc-event-text-color: var(--primary-foreground);
-	--fc-highlight-color: color-mix(in srgb, var(--primary) 15%, transparent);
+	--fc-highlight-color: color-mix(in srgb, var(--primary) 12%, transparent);
+
+	border-radius: 12px;
+	overflow: hidden;
+	border: 1px solid var(--border);
 }
 
-/* Toolbar buttons — match shadcn Button style */
+/* Toolbar — compact, outline-style buttons */
+.fc .fc-toolbar {
+	padding: 12px 16px;
+	margin-bottom: 0 !important;
+}
+
+.fc .fc-toolbar-title {
+	font-size: 1rem !important;
+	font-weight: 600;
+}
+
 .fc .fc-button {
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
 	font-weight: 500;
 	border-radius: var(--radius);
-	padding: 0.375rem 0.75rem;
+	padding: 0.25rem 0.625rem;
+	background: transparent;
+	border: 1px solid var(--border);
+	color: var(--foreground);
 	transition:
 		background-color 0.15s,
 		border-color 0.15s;
 	cursor: pointer;
+}
+
+.fc .fc-button:hover {
+	background: var(--muted);
 }
 
 .fc .fc-button:focus-visible {
@@ -344,32 +354,50 @@
 
 .fc .fc-button-primary:not(:disabled):active,
 .fc .fc-button-primary:not(:disabled).fc-button-active {
-	background-color: var(--fc-button-active-bg-color);
-	border-color: var(--fc-button-active-border-color);
+	background: var(--muted);
+	border-color: var(--border);
+	color: var(--foreground);
 }
 
 /* Day-grid cell typography */
 .fc .fc-daygrid-day-number {
 	font-size: 0.8125rem;
 	color: var(--foreground);
-	padding: 4px 6px;
+	padding: 4px 8px;
 }
 
 .fc .fc-col-header-cell-cushion {
-	font-size: 0.75rem;
+	font-size: 0.6875rem;
 	font-weight: 600;
 	color: var(--muted-foreground);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	padding: 4px 6px;
+	padding: 6px 8px;
 }
 
 /* Events */
 .fc .fc-event {
 	border-radius: 4px;
-	font-size: 0.75rem;
+	font-size: 0.6875rem;
 	font-weight: 500;
 	cursor: pointer;
+}
+
+/* Vacation events — striped bar to indicate unavailability */
+.fc-vacation-event {
+	background: repeating-linear-gradient(
+		-45deg,
+		var(--muted),
+		var(--muted) 5px,
+		transparent 5px,
+		transparent 10px
+	) !important;
+	border: 1px dashed var(--muted-foreground) !important;
+	opacity: 0.6;
+}
+
+.fc-vacation-event .fc-event-title {
+	color: var(--muted-foreground) !important;
 }
 
 /* Needs-action indicator: amber pulsing dot before title */

@@ -79,6 +79,14 @@ const FullCalendarWrapper = dynamic(
 // One day in milliseconds
 const ONE_DAY_MS = 86_400_000;
 
+/** Format a Date as YYYY-MM-DD in local timezone (avoids UTC date shifting) */
+function formatLocalDate(d: Date): string {
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
 function getInitialDateRange(): { startDate: number; endDate: number } {
 	const now = new Date();
 	const startDate = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -98,31 +106,39 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 	return events.map((event) => {
 		let backgroundColor: string;
 		let borderColor: string;
-		const textColor = event.type === "vacation" ? "#ef4444" : "#ffffff";
+		let textColor: string;
 
-		if (event.type === "lending") {
-			backgroundColor = "#6366f1";
-			borderColor = "#6366f1";
-		} else if (event.type === "borrowing") {
-			backgroundColor = "#8b5cf6";
-			borderColor = "#8b5cf6";
+		if (event.type === "vacation") {
+			backgroundColor = "transparent";
+			borderColor = "#999999";
+			textColor = "#888888";
+		} else if (event.type === "lending") {
+			// Teal — matches app primary
+			backgroundColor = "#2d6a5e";
+			borderColor = "#2d6a5e";
+			textColor = "#ffffff";
 		} else {
-			// vacation
-			backgroundColor = "rgba(239, 68, 68, 0.25)";
-			borderColor = "#ef4444";
+			// Amber — matches app accent
+			backgroundColor = "#e8a438";
+			borderColor = "#d4922e";
+			textColor = "#3d2a0a";
 		}
 
 		const classNames: string[] = [];
 		if (event.needsAction != null) {
 			classNames.push("fc-event-needs-action");
 		}
+		if (event.type === "vacation") {
+			classNames.push("fc-vacation-event");
+		}
 
 		if (event.isAllDay) {
-			// All-day: use YYYY-MM-DD strings. FullCalendar end is exclusive, so add 1 day.
+			// All-day: use YYYY-MM-DD strings in local time (not UTC, to avoid date shifting).
+			// FullCalendar end is exclusive, so add 1 day.
 			const startDate = new Date(event.startDate);
 			const endDate = new Date(event.endDate + ONE_DAY_MS);
-			const startStr = startDate.toISOString().slice(0, 10);
-			const endStr = endDate.toISOString().slice(0, 10);
+			const startStr = formatLocalDate(startDate);
+			const endStr = formatLocalDate(endDate);
 
 			return {
 				id: event.id,
