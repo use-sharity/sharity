@@ -223,7 +223,7 @@ export function buildMutationTools(
 						: "";
 					return {
 						success: `Updated "${resolved.itemName}".${photoNote}`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update item." };
@@ -250,7 +250,7 @@ export function buildMutationTools(
 					await convex.mutation(api.items.deleteItem, { id: resolved.itemId });
 					return {
 						success: `Deleted "${resolved.itemName}".`,
-						nextStep: `Include this markdown link: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not delete item." };
@@ -302,7 +302,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Approved ${claim.claimerName}'s request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not approve request." };
@@ -351,7 +351,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Rejected ${claim.claimerName}'s request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not reject request." };
@@ -391,7 +391,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Request sent for ${startDate} to ${endDate}. The owner will be notified.`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${asItemId(itemId)})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asItemId(itemId)})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not send request." };
@@ -416,7 +416,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Cancelled your request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not cancel request." };
@@ -461,7 +461,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Pickup proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -473,7 +473,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Pickup proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
 						};
 					}
 					return { error: asOwner.error };
@@ -508,7 +508,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Pickup time approved.",
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -519,7 +519,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Pickup time approved.",
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
 						};
 					}
 					return { error: asOwner.error };
@@ -563,7 +563,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Return proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -575,7 +575,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Return proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
 						};
 					}
 					return { error: asOwner.error };
@@ -610,7 +610,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Return time approved.",
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -621,7 +621,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Return time approved.",
-							nextStep: `Include this markdown link: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
 						};
 					}
 					return { error: asOwner.error };
@@ -656,7 +656,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Marked "${resolved.itemName}" as picked up.`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not mark as picked up." };
@@ -689,7 +689,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Marked "${resolved.itemName}" as returned.`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not mark as returned." };
@@ -729,7 +729,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Reported "${resolved.itemName}" as missing.`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not report as missing." };
@@ -768,7 +768,7 @@ export function buildMutationTools(
 					const photoNote = photoCloudinary ? " Photo attached." : "";
 					return {
 						success: `Submitted ${stars}-star rating.${photoNote}`,
-						nextStep: `Include this markdown link: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not submit rating." };
@@ -856,7 +856,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Vote toggled on "${wishText ?? "wish"}". Check the wishlist to see the updated count!`,
-						nextStep: `Include this markdown link: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not vote on this wish." };
@@ -892,7 +892,7 @@ export function buildMutationTools(
 					const photoNote = imageCloudinary ? " Image updated." : "";
 					return {
 						success: `Updated wish: "${text}".${photoNote}`,
-						nextStep: `Include this markdown link: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update this wish." };
@@ -931,7 +931,7 @@ export function buildMutationTools(
 					const mode = giveaway ? "giveaway" : "lending";
 					return {
 						success: `Switched "${resolved.itemName}" to ${mode} mode.`,
-						nextStep: `Include this markdown link: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not switch item mode." };
@@ -971,7 +971,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Blocked ${startDate} to ${endDate}.${note ? ` Reason: ${note}` : ""}`,
-						nextStep: `Include this markdown link: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not block dates." };
@@ -1030,7 +1030,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: "Profile updated.",
-						nextStep: `Include this markdown link: [View profile](/${locale}/profile)`,
+						nextStep: `Include this markdown link in your response: [View profile](/${locale}/profile)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update profile." };
@@ -1050,7 +1050,7 @@ export function buildMutationTools(
 					await convex.mutation(api.notifications.markAllAsRead);
 					return {
 						success: "All notifications marked as read.",
-						nextStep: `Include this markdown link: [Notifications](/${locale}/notifications)`,
+						nextStep: `Include this markdown link in your response: [Notifications](/${locale}/notifications)`,
 					};
 				} catch (e: any) {
 					return {
@@ -1079,7 +1079,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Deleted wish: "${wishText ?? "wish"}". It's been removed from the wishlist.`,
-						nextStep: `Include this markdown link: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not delete this wish." };
