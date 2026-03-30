@@ -131,11 +131,15 @@ export function CalendarEventPopover({
 			<div className="mx-3 my-2 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
 				<div className="flex flex-col gap-0.5">
 					<span>
-						<span className="font-medium text-foreground">Pickup:</span>{" "}
+						<span className="font-medium text-foreground">
+							{event.type === "vacation" ? "Start:" : "Pickup:"}
+						</span>{" "}
 						{formatEventDate(event.startDate, event.isAllDay)}
 					</span>
 					<span>
-						<span className="font-medium text-foreground">Return:</span>{" "}
+						<span className="font-medium text-foreground">
+							{event.type === "vacation" ? "End:" : "Return:"}
+						</span>{" "}
 						{formatEventDate(event.endDate, event.isAllDay)}
 					</span>
 				</div>
