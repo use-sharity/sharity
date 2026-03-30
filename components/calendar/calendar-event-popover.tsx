@@ -49,6 +49,7 @@ export function CalendarEventPopover({
 	event,
 	position,
 	onClose,
+	locale,
 }: EventPopoverProps) {
 	const handleGoogleCalClick = useCallback(() => {
 		const url = buildGoogleCalendarUrl({
