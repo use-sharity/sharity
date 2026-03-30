@@ -204,8 +204,10 @@ export function EnhancedCalendar() {
 
 	const handleDeleteVacation = useCallback(
 		async (id: string) => {
+			// The query prefixes vacation IDs with "vacation-" to avoid collisions
+			const rawId = id.replace("vacation-", "");
 			await deleteVacationRange({
-				id: id as any,
+				id: rawId as any,
 			});
 		},
 		[deleteVacationRange],
