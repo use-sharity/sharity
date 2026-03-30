@@ -17,6 +17,7 @@ import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -351,29 +352,33 @@ export function EnhancedCalendar() {
 				</DialogContent>
 			</Dialog>
 
-			{/* Custom toolbar using shadcn buttons */}
-			<div className="flex items-center justify-between mb-3">
-				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon-sm" onClick={handlePrev}>
-						<ChevronLeft className="h-4 w-4" />
-					</Button>
-					<Button variant="outline" size="icon-sm" onClick={handleNext}>
-						<ChevronRight className="h-4 w-4" />
-					</Button>
-					<Button size="sm" onClick={handleToday}>
-						Today
-					</Button>
-				</div>
-				<span className="text-sm font-semibold">{calendarTitle}</span>
-			</div>
+			<Card>
+				<CardContent className="p-5 md:p-6">
+					{/* Custom toolbar using shadcn buttons */}
+					<div className="flex items-center justify-between mb-3">
+						<div className="flex items-center gap-2">
+							<Button variant="outline" size="icon-sm" onClick={handlePrev}>
+								<ChevronLeft className="h-4 w-4" />
+							</Button>
+							<Button variant="outline" size="icon-sm" onClick={handleNext}>
+								<ChevronRight className="h-4 w-4" />
+							</Button>
+							<Button size="sm" onClick={handleToday}>
+								Today
+							</Button>
+						</div>
+						<span className="text-sm font-semibold">{calendarTitle}</span>
+					</div>
 
-			<FullCalendarWrapper
-				events={fcEvents}
-				onEventClick={handleEventClick}
-				onDatesSet={handleDatesSet}
-				selectable={false}
-				calendarRef={calendarRef}
-			/>
+					<FullCalendarWrapper
+						events={fcEvents}
+						onEventClick={handleEventClick}
+						onDatesSet={handleDatesSet}
+						selectable={false}
+						calendarRef={calendarRef}
+					/>
+				</CardContent>
+			</Card>
 
 			{popover && (
 				<CalendarEventPopover

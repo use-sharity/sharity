@@ -313,7 +313,6 @@
 	--fc-event-text-color: var(--primary-foreground);
 	--fc-highlight-color: color-mix(in srgb, var(--primary) 12%, transparent);
 
-	border: 1px solid var(--border);
 }
 
 /* Hide FullCalendar's built-in toolbar — we render our own with shadcn buttons */
