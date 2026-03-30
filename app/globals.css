@@ -314,6 +314,46 @@
 	--fc-highlight-color: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
+/* "+N more" popover — list style */
+.fc .fc-popover {
+	background: var(--background) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: var(--radius) !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+	min-width: 200px;
+}
+
+.fc .fc-popover-header {
+	background: var(--background) !important;
+	border-bottom: 1px solid var(--border) !important;
+	padding: 8px 12px !important;
+	font-size: 0.8125rem !important;
+	font-weight: 600 !important;
+}
+
+.fc .fc-popover-body {
+	padding: 4px !important;
+}
+
+/* Events inside popover — list items instead of bars */
+.fc .fc-popover .fc-daygrid-event {
+	border-radius: var(--radius) !important;
+	margin: 2px 0 !important;
+	padding: 4px 8px !important;
+	background: transparent !important;
+	border: none !important;
+	border-left: 3px solid var(--border) !important;
+}
+
+.fc .fc-popover .fc-event-title {
+	font-size: 0.75rem !important;
+	color: var(--foreground) !important;
+}
+
+.fc .fc-popover .fc-daygrid-event:hover {
+	background: var(--muted) !important;
+}
+
 /* Hide FullCalendar's built-in toolbar — we render our own with shadcn buttons */
 .fc .fc-toolbar {
 	display: none !important;
@@ -390,27 +430,23 @@
 
 /* Mobile: hide event text, show only colored bars */
 @media (max-width: 640px) {
-	.fc .fc-daygrid-event {
-		overflow: hidden;
-	}
-
 	.fc .fc-event-title,
 	.fc .fc-event-time {
-		display: none;
+		display: none !important;
 	}
 
 	.fc .fc-daygrid-event {
-		height: 6px;
-		min-height: 6px;
-		border-radius: 3px;
+		height: 12px !important;
+		min-height: 12px !important;
 	}
 
-	.fc .fc-daygrid-day-frame {
-		min-height: 48px;
+	.fc .fc-event {
+		padding: 0 !important;
 	}
 
 	.fc .fc-daygrid-day-number {
-		font-size: 0.75rem;
+		font-size: 0.7rem;
+		padding: 2px 4px;
 	}
 }
 

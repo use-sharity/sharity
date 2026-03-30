@@ -61,12 +61,13 @@ function FullCalendarWrapperInner({
 			plugins={[dayGrid, interaction]}
 			initialView="dayGridMonth"
 			selectable={selectable}
-			dayMaxEvents={3}
+			dayMaxEvents={false}
 			events={events}
 			eventClick={onEventClick}
 			datesSet={onDatesSet}
 			headerToolbar={false}
 			height="auto"
+			moreLinkContent={(args: { num: number }) => `${args.num} more`}
 		/>
 	);
 }
@@ -109,9 +110,9 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 		let textColor: string;
 
 		if (event.type === "vacation") {
-			backgroundColor = "transparent";
-			borderColor = "#999999";
-			textColor = "#888888";
+			backgroundColor = "#d0d0d0";
+			borderColor = "#aaa";
+			textColor = "#555";
 		} else if (event.type === "lending") {
 			// Teal — matches app primary
 			backgroundColor = "#2d6a5e";
