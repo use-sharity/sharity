@@ -266,7 +266,7 @@ export function EnhancedCalendar() {
 						mode="range"
 						selected={vacationRange}
 						onSelect={setVacationRange}
-						numberOfMonths={2}
+						numberOfMonths={1}
 						disabled={{ before: new Date() }}
 						showOutsideDays={false}
 					/>
