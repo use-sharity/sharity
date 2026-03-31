@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@/i18n/routing";
+import Link from "next/link";
 
 import {
 	SignInButton,
@@ -10,14 +10,14 @@ import {
 	UserButton,
 } from "@clerk/nextjs";
 import {
-	ArrowLeftRight,
 	CalendarDays,
-	Heart,
-	Search,
-	User,
+	ListChecks,
+	MessageSquare,
+	Settings,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ShareItemSheet } from "@/components/share-item-sheet";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -82,7 +82,7 @@ export function AppHeader() {
 	const t = useTranslations("AppHeader");
 	return (
 		<header className="w-full flex justify-center">
-			<div className="w-full max-w-4xl flex items-center gap-2 p-4 md:px-8 md:py-5">
+			<div className="w-full max-w-4xl flex items-center gap-2 p-4 md:p-8 md:pb-0">
 				<Link
 					href="/"
 					className="flex-shrink-0 hover:opacity-80 transition-opacity"
@@ -105,17 +105,18 @@ export function AppHeader() {
 				</SignedOut>
 
 				<SignedIn>
-					<nav className="hidden md:flex items-center gap-2 ml-auto mr-8">
-						<Link href="/">
-							<Button variant="ghost" size="sm">
-								<Search className="h-4 w-4 mr-1" />
-								{t("home")}
-							</Button>
-						</Link>
+					<nav className="hidden md:flex items-center gap-2 ml-auto">
+						<ShareItemSheet variant="header" />
 						<Link href="/my-items">
 							<Button variant="ghost" size="sm">
-								<ArrowLeftRight className="h-4 w-4 mr-1" />
+								<ListChecks className="h-4 w-4 mr-1" />
 								{t("myItems")}
+							</Button>
+						</Link>
+						<Link href="/wishlist">
+							<Button variant="ghost" size="sm">
+								<MessageSquare className="h-4 w-4 mr-1" />
+								{t("requests")}
 							</Button>
 						</Link>
 						<Link href="/calendar">
@@ -124,34 +125,38 @@ export function AppHeader() {
 								{t("calendar")}
 							</Button>
 						</Link>
-						<Link href="/wishlist">
+						<Link href="/profile">
 							<Button variant="ghost" size="sm">
-								<Heart className="h-4 w-4 mr-1" />
-								{t("requests")}
+								<Settings className="h-4 w-4 mr-1" />
+								{t("profile")}
 							</Button>
 						</Link>
-					</nav>
-					<div className="hidden md:flex items-center gap-1 ml-auto">
 						<LanguageSwitcher />
 						<NotificationBell />
-						<Link href="/profile">
-							<Button variant="ghost" size="icon">
-								<User className="h-4 w-4" />
-								<span className="sr-only">{t("profile")}</span>
-							</Button>
-						</Link>
 						<UserButton />
-					</div>
+					</nav>
 
 					<div className="flex md:hidden items-center gap-2 ml-auto">
-						<LanguageSwitcher />
-						<NotificationBell />
-						<Link href="/profile">
+						<ShareItemSheet variant="header" />
+						<Link href="/my-items">
 							<Button variant="ghost" size="icon">
-								<User className="h-4 w-4" />
-								<span className="sr-only">{t("profile")}</span>
+								<ListChecks className="h-4 w-4" />
+								<span className="sr-only">{t("myItems")}</span>
 							</Button>
 						</Link>
+						<Link href="/wishlist">
+							<Button variant="ghost" size="icon">
+								<MessageSquare className="h-4 w-4" />
+								<span className="sr-only">{t("requests")}</span>
+							</Button>
+						</Link>
+						<Link href="/calendar">
+							<Button variant="ghost" size="icon">
+								<CalendarDays className="h-4 w-4" />
+								<span className="sr-only">{t("calendar")}</span>
+							</Button>
+						</Link>
+						<NotificationBell />
 						<UserButton />
 					</div>
 				</SignedIn>
