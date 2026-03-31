@@ -136,7 +136,7 @@ export function AppHeader() {
 						<UserButton />
 					</nav>
 
-					<div className="flex md:hidden items-center gap-2 ml-auto">
+					<div className="flex md:hidden items-center gap-1 ml-auto">
 						<ShareItemSheet variant="header" />
 						<Link href="/my-items">
 							<Button variant="ghost" size="icon">
@@ -156,6 +156,13 @@ export function AppHeader() {
 								<span className="sr-only">{t("calendar")}</span>
 							</Button>
 						</Link>
+						<Link href="/profile">
+							<Button variant="ghost" size="icon">
+								<Settings className="h-4 w-4" />
+								<span className="sr-only">{t("profile")}</span>
+							</Button>
+						</Link>
+						<LanguageSwitcher />
 						<NotificationBell />
 						<UserButton />
 					</div>
