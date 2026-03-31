@@ -426,8 +426,62 @@
 	},
 	"Calendar": {
 		"title": "Calendar",
+		"subtitle": "Track pickups, returns, and manage your availability.",
 		"signInMessage": "Please sign in to view your calendar.",
-		"signInButton": "Sign In"
+		"signInButton": "Sign In",
+		"upNext": "Up Next",
+		"more": "{count} more",
+		"showLess": "Show less",
+		"today": "Today",
+		"addVacation": "Add Vacation",
+		"actions": {
+			"respond": "RESPOND",
+			"schedule": "SCHEDULE",
+			"confirm": "CONFIRM",
+			"approveRequest": "Approve request",
+			"approvePickupTime": "Approve pickup time",
+			"approveReturnTime": "Approve return time",
+			"proposePickup": "Propose pickup",
+			"proposeReturn": "Propose return",
+			"confirmPickup": "Confirm pickup",
+			"confirmReturn": "Confirm return"
+		},
+		"urgency": {
+			"overdue": "Overdue",
+			"dueToday": "Due today",
+			"dueTomorrow": "Due tomorrow",
+			"inDays": "In {count} days"
+		},
+		"counterparty": {
+			"to": "to {name}",
+			"from": "from {name}"
+		},
+		"vacation": {
+			"title": "Add Vacation",
+			"description": "Select dates when your items will be unavailable.",
+			"selectEndDate": "select end date",
+			"note": "Note (optional)",
+			"cancel": "Cancel",
+			"save": "Save",
+			"saving": "Saving...",
+			"conflict": "Scheduling conflict",
+			"conflictPickup": "Pickup for {name}",
+			"conflictReturn": "Return for {name}"
+		},
+		"popover": {
+			"lending": "Lending",
+			"borrowing": "Borrowing",
+			"vacation": "Vacation",
+			"pickup": "Pickup:",
+			"return": "Return:",
+			"start": "Start:",
+			"end": "End:",
+			"googleCal": "Google Cal",
+			"downloadIcs": "Download .ics",
+			"deleteVacation": "Delete Vacation",
+			"deleting": "Deleting...",
+			"close": "Close"
+		}
 	},
 	"MyItems": {
 		"title": "My Items",

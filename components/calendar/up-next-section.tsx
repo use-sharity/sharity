@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDistanceToNowStrict, isPast } from "date-fns";
+import { isPast } from "date-fns";
 import {
 	CheckCircle2,
 	ChevronDown,
@@ -9,6 +9,7 @@ import {
 	Inbox,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -30,46 +31,46 @@ type ActionType =
 	| "confirm_return";
 
 interface ActionConfig {
-	label: string;
+	labelKey: string;
 	icon: typeof Inbox;
-	actionPhrase: string;
+	actionKey: string;
 }
 
 const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
 	respond_request: {
-		label: "RESPOND",
+		labelKey: "actions.respond",
 		icon: Inbox,
-		actionPhrase: "Approve request",
+		actionKey: "actions.approveRequest",
 	},
 	respond_pickup: {
-		label: "SCHEDULE",
+		labelKey: "actions.schedule",
 		icon: Clock,
-		actionPhrase: "Approve pickup time",
+		actionKey: "actions.approvePickupTime",
 	},
 	respond_return: {
-		label: "SCHEDULE",
+		labelKey: "actions.schedule",
 		icon: Clock,
-		actionPhrase: "Approve return time",
+		actionKey: "actions.approveReturnTime",
 	},
 	schedule_pickup: {
-		label: "SCHEDULE",
+		labelKey: "actions.schedule",
 		icon: Clock,
-		actionPhrase: "Propose pickup",
+		actionKey: "actions.proposePickup",
 	},
 	schedule_return: {
-		label: "SCHEDULE",
+		labelKey: "actions.schedule",
 		icon: Clock,
-		actionPhrase: "Propose return",
+		actionKey: "actions.proposeReturn",
 	},
 	confirm_pickup: {
-		label: "CONFIRM",
+		labelKey: "actions.confirm",
 		icon: CheckCircle2,
-		actionPhrase: "Confirm pickup",
+		actionKey: "actions.confirmPickup",
 	},
 	confirm_return: {
-		label: "CONFIRM",
+		labelKey: "actions.confirm",
 		icon: CheckCircle2,
-		actionPhrase: "Confirm return",
+		actionKey: "actions.confirmReturn",
 	},
 };
 
@@ -108,16 +109,16 @@ function cleanItemName(title: string): string {
 	return title.replace(/^\[.*?\]\s*/, "").replace(/\s*[←→].*$/, "");
 }
 
-function getUrgencyLabel(endDate: number): {
-	text: string;
-	className: string;
-} | null {
+function getUrgencyLabel(
+	endDate: number,
+	t: ReturnType<typeof useTranslations>,
+): { text: string; className: string } | null {
 	const now = Date.now();
 	const end = new Date(endDate);
 
 	if (isPast(end)) {
 		return {
-			text: "Overdue",
+			text: t("urgency.overdue"),
 			className: "text-orange-700 bg-orange-100 font-semibold animate-pulse",
 		};
 	}
@@ -127,29 +128,27 @@ function getUrgencyLabel(endDate: number): {
 
 	if (msLeft < ONE_DAY) {
 		return {
-			text: "Due today",
+			text: t("urgency.dueToday"),
 			className: "text-orange-700 bg-orange-100 font-semibold animate-pulse",
 		};
 	}
 	if (msLeft < 2 * ONE_DAY) {
 		return {
-			text: "Due tomorrow",
+			text: t("urgency.dueTomorrow"),
 			className: "text-orange-700 bg-orange-100 font-medium",
 		};
 	}
 
-	const ONE_DAY_5 = 5 * ONE_DAY;
-	if (msLeft < ONE_DAY_5) {
-		const days = Math.ceil(msLeft / ONE_DAY);
+	const days = Math.ceil(msLeft / ONE_DAY);
+	if (msLeft < 5 * ONE_DAY) {
 		return {
-			text: `In ${days} days`,
+			text: t("urgency.inDays", { count: days }),
 			className: "text-amber-700 bg-amber-100/80",
 		};
 	}
 
-	const dist = formatDistanceToNowStrict(end);
 	return {
-		text: `In ${dist}`,
+		text: t("urgency.inDays", { count: days }),
 		className: "text-stone-600 bg-stone-200/80",
 	};
 }
@@ -168,12 +167,13 @@ interface ActionCardProps {
 }
 
 function ActionCard({ event, locale }: ActionCardProps) {
+	const t = useTranslations("Calendar");
 	const action = event.needsAction as ActionType;
 	const config = ACTION_CONFIG[action];
 	const Icon = config.icon;
 	const itemName = cleanItemName(event.title);
 	const href = event.itemId ? `/${locale}/item/${event.itemId}` : "#";
-	const urgency = getUrgencyLabel(event.endDate);
+	const urgency = getUrgencyLabel(event.endDate, t);
 	const level = getUrgencyLevel(event.endDate);
 	const styles = URGENCY_STYLES[level];
 	const initials = event.counterpartyName
@@ -199,7 +199,7 @@ function ActionCard({ event, locale }: ActionCardProps) {
 						styles.badgeClass,
 					)}
 				>
-					{config.label}
+					{t(config.labelKey)}
 				</span>
 				{urgency && (
 					<span
@@ -226,8 +226,9 @@ function ActionCard({ event, locale }: ActionCardProps) {
 							{itemName}
 						</p>
 						<p className="text-xs text-muted-foreground">
-							{event.type === "lending" ? "to" : "from"}{" "}
-							{event.counterpartyName}
+							{event.type === "lending"
+								? t("counterparty.to", { name: event.counterpartyName })
+								: t("counterparty.from", { name: event.counterpartyName })}
 						</p>
 					</div>
 				</div>
@@ -251,13 +252,14 @@ function ActionCard({ event, locale }: ActionCardProps) {
 						: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
 				)}
 			>
-				{config.actionPhrase}
+				{t(config.actionKey)}
 			</span>
 		</Link>
 	);
 }
 
 export function UpNextSection({ events, locale }: UpNextSectionProps) {
+	const t = useTranslations("Calendar");
 	const [expanded, setExpanded] = useState(false);
 
 	const actionEvents = useMemo(() => {
@@ -281,7 +283,7 @@ export function UpNextSection({ events, locale }: UpNextSectionProps) {
 		<div className="mb-4">
 			{/* Section header */}
 			<div className="flex items-center gap-2 mb-2">
-				<h2 className="text-sm font-semibold text-foreground">Up Next</h2>
+				<h2 className="text-sm font-semibold text-foreground">{t("upNext")}</h2>
 				<span className="inline-flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-medium px-2 py-0.5 min-w-[1.25rem]">
 					{actionEvents.length}
 				</span>
@@ -305,11 +307,13 @@ export function UpNextSection({ events, locale }: UpNextSectionProps) {
 					>
 						{expanded ? (
 							<>
-								Show less <ChevronUp className="h-3 w-3" />
+								{t("showLess")} <ChevronUp className="h-3 w-3" />
 							</>
 						) : (
 							<>
-								{actionEvents.length - CARDS_PER_ROW} more{" "}
+								{t("more", {
+									count: actionEvents.length - CARDS_PER_ROW,
+								})}{" "}
 								<ChevronDown className="h-3 w-3" />
 							</>
 						)}

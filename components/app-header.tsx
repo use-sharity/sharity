@@ -9,7 +9,12 @@ import {
 	SignedOut,
 	UserButton,
 } from "@clerk/nextjs";
-import { CalendarDays, ListChecks, MessageSquare, Settings } from "lucide-react";
+import {
+	CalendarDays,
+	ListChecks,
+	MessageSquare,
+	Settings,
+} from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ShareItemSheet } from "@/components/share-item-sheet";
