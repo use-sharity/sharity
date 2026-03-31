@@ -61,11 +61,7 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 					{t("shareButton")}
 				</Button>
 			) : (
-				<Button
-					onClick={() => setOpen(true)}
-					size="sm"
-					className="gap-1"
-				>
+				<Button onClick={() => setOpen(true)} size="sm" className="gap-1">
 					<Plus className="h-4 w-4" />
 					{t("shareLabel")}
 				</Button>
