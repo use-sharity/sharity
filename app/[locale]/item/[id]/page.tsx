@@ -280,7 +280,7 @@ export default function ItemDetailPage({
 					<CarouselContent>
 						{imageUrls.map((url, index) => (
 							<CarouselItem key={index}>
-								<div className="aspect-square relative">
+								<div className="aspect-[4/3] relative">
 									<CloudinaryImage
 										src={url}
 										alt={tDetail("imageAlt", {
@@ -304,9 +304,7 @@ export default function ItemDetailPage({
 				</Carousel>
 			</div>
 		) : (
-			<div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-				{tDetail("noImages")}
-			</div>
+			null
 		);
 
 	const detailsSection = (
@@ -586,26 +584,23 @@ export default function ItemDetailPage({
 	);
 
 	return (
-		<div className="container mx-auto px-3 sm:px-4 lg:px-6 py-8 max-w-7xl">
-			<Button
-				variant="ghost"
-				className="mb-6 gap-2"
-				onClick={() => router.back()}
-			>
-				<ArrowLeft className="h-4 w-4" /> {tDetail("backToItems")}
-			</Button>
+		<main className="min-h-screen bg-gray-50/50">
+			<div className="max-w-2xl mx-auto px-4 pb-4 pt-0 md:px-8 md:pb-8 md:pt-2 space-y-5">
+				<div className="flex items-center justify-between gap-3">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="gap-1"
+						onClick={() => router.back()}
+					>
+						<ArrowLeft className="h-4 w-4" /> {tDetail("backToItems")}
+					</Button>
+				</div>
 
-			{item.isOwner ? (
-				<div className="grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8">
-					{leftColumn}
-					{ownerRightColumn}
-				</div>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8">
-					{leftColumn}
-					{borrowerRightColumn}
-				</div>
-			)}
-		</div>
+				{leftColumn}
+
+				{item.isOwner ? ownerRightColumn : borrowerRightColumn}
+			</div>
+		</main>
 	);
 }
