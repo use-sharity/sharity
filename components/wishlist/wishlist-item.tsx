@@ -170,8 +170,8 @@ export function WishlistItem({ item, compact }: WishlistItemProps) {
 
 	return (
 		<>
-			<Card className="w-full gap-0 py-2">
-				<div className="flex items-center gap-3 px-4">
+			<Card className="w-full gap-0 py-2 overflow-hidden">
+				<div className="flex items-center gap-2 sm:gap-3 px-4">
 					{/* Image thumbnail */}
 					{cloudImages.length > 0 && (
 						<button
@@ -196,50 +196,52 @@ export function WishlistItem({ item, compact }: WishlistItemProps) {
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-medium">{item.text}</div>
 					</div>
-					{item.matchCount > 0 && (
-						<Link
-							href={`/?q=${query}`}
-							className="inline-flex items-center gap-1 rounded-md border bg-green-50 px-2 py-1 text-xs text-green-700 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						>
-							<CheckCircle2 className="h-3.5 w-3.5" />
-							<span className="whitespace-nowrap">
-								{t("item.matches", { count: item.matchCount })}
-							</span>
-						</Link>
-					)}
-					{item.isOwner && (
+					<div className="flex items-center gap-1 shrink-0">
+						{item.matchCount > 0 && (
+							<Link
+								href={`/?q=${query}`}
+								className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-green-50 px-2 py-1 text-xs text-green-700 transition-colors hover:bg-green-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
+								<CheckCircle2 className="h-3.5 w-3.5" />
+								<span className="whitespace-nowrap">
+									{t("item.matches", { count: item.matchCount })}
+								</span>
+							</Link>
+						)}
+						{item.isOwner && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-8 w-8 p-0"
+								onClick={handleEditOpen}
+							>
+								<Pencil className="h-4 w-4" />
+							</Button>
+						)}
 						<Button
-							variant="ghost"
+							variant={item.isLiked ? "secondary" : "ghost"}
 							size="sm"
-							className="h-8 w-8 p-0"
-							onClick={handleEditOpen}
+							className={`h-8 gap-1 px-2 ${
+								item.isLiked
+									? "bg-orange-100 hover:bg-orange-200 text-orange-700"
+									: ""
+							}`}
+							onClick={handleVote}
 						>
-							<Pencil className="h-4 w-4" />
+							<ArrowBigUp
+								className={`h-4 w-4 ${item.isLiked ? "fill-orange-700" : ""}`}
+							/>
+							<span className="text-xs">{item.votes.length}</span>
 						</Button>
-					)}
-					<Button
-						variant={item.isLiked ? "secondary" : "ghost"}
-						size="sm"
-						className={`h-8 gap-1 px-2 ${
-							item.isLiked
-								? "bg-orange-100 hover:bg-orange-200 text-orange-700"
-								: ""
-						}`}
-						onClick={handleVote}
-					>
-						<ArrowBigUp
-							className={`h-4 w-4 ${item.isLiked ? "fill-orange-700" : ""}`}
-						/>
-						<span className="text-xs">{item.votes.length}</span>
-					</Button>
-					{!compact && (
-						<span className="text-xs text-muted-foreground whitespace-nowrap">
-							{formatDistanceToNow(item.createdAt, {
-								addSuffix: true,
-								locale: dateLocale,
-							})}
-						</span>
-					)}
+						{!compact && (
+							<span className="hidden sm:inline text-xs text-muted-foreground whitespace-nowrap">
+								{formatDistanceToNow(item.createdAt, {
+									addSuffix: true,
+									locale: dateLocale,
+								})}
+							</span>
+						)}
+					</div>
 				</div>
 			</Card>
 
