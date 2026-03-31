@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 
 interface AddItemFormProps {
 	hideMyItemsLink?: boolean;
-	onSuccess?: () => void;
+	onSuccess?: (itemId?: string) => void;
 }
 
 export function AddItemForm({
@@ -30,8 +30,8 @@ export function AddItemForm({
 					<CardContent>
 						<ItemForm
 							onSubmit={async (values) => {
-								await createItem(values);
-								onSuccess?.();
+								const itemId = await createItem(values);
+								onSuccess?.(itemId);
 							}}
 							submitLabel={t("submit")}
 							enableModeSwitch

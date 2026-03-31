@@ -17,6 +17,7 @@ import { ItemCard } from "./item-card";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { SharePrompt } from "@/components/share-prompt";
 import { WishlistEmptyCard } from "@/components/wishlist/wishlist-empty-card";
 import { useTranslations } from "next-intl";
 
@@ -128,6 +129,8 @@ export function ItemList({
 					</Button>
 				</div>
 			</div>
+
+			<SharePrompt />
 
 			{viewMode === "map" ? (
 				<div className="space-y-2">

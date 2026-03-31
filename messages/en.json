@@ -40,6 +40,7 @@
 		"subtitle": "Borrow and lend useful items in Da Lat.",
 		"shareButton": "Share an item",
 		"shareLabel": "Share",
+		"sharePrompt": "Got something to share?",
 		"tabs": {
 			"share": "Share",
 			"request": "Request",

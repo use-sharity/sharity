@@ -543,6 +543,8 @@ export const create = mutation({
 			actorId: ownerId,
 			createdAt: Date.now(),
 		});
+
+		return itemId;
 	},
 });
 

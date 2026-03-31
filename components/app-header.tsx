@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { ShareItemSheet } from "@/components/share-item-sheet";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -83,7 +82,7 @@ export function AppHeader() {
 	const t = useTranslations("AppHeader");
 	return (
 		<header className="w-full flex justify-center">
-			<div className="w-full max-w-4xl flex items-center gap-2 p-4 md:p-8 md:pb-0">
+			<div className="w-full max-w-4xl flex items-center gap-2 p-4 md:px-8 md:py-5">
 				<Link
 					href="/"
 					className="flex-shrink-0 hover:opacity-80 transition-opacity"
@@ -106,7 +105,7 @@ export function AppHeader() {
 				</SignedOut>
 
 				<SignedIn>
-					<nav className="hidden md:flex items-center gap-2 ml-auto">
+					<nav className="hidden md:flex items-center gap-2 ml-auto mr-8">
 						<Link href="/">
 							<Button variant="ghost" size="sm">
 								<Search className="h-4 w-4 mr-1" />
@@ -119,7 +118,6 @@ export function AppHeader() {
 								{t("calendar")}
 							</Button>
 						</Link>
-						<ShareItemSheet variant="header" />
 						<Link href="/my-items">
 							<Button variant="ghost" size="sm">
 								<ArrowLeftRight className="h-4 w-4 mr-1" />
@@ -132,18 +130,18 @@ export function AppHeader() {
 								{t("requests")}
 							</Button>
 						</Link>
-						<div className="flex items-center gap-1 ml-2 pl-2 border-l">
-							<LanguageSwitcher />
-							<NotificationBell />
-							<Link href="/profile">
-								<Button variant="ghost" size="icon">
-									<User className="h-4 w-4" />
-									<span className="sr-only">{t("profile")}</span>
-								</Button>
-							</Link>
-							<UserButton />
-						</div>
 					</nav>
+					<div className="hidden md:flex items-center gap-1 ml-auto">
+						<LanguageSwitcher />
+						<NotificationBell />
+						<Link href="/profile">
+							<Button variant="ghost" size="icon">
+								<User className="h-4 w-4" />
+								<span className="sr-only">{t("profile")}</span>
+							</Button>
+						</Link>
+						<UserButton />
+					</div>
 
 					<div className="flex md:hidden items-center gap-2 ml-auto">
 						<LanguageSwitcher />

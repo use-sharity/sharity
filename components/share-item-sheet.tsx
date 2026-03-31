@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/routing";
 
 import { AddItemForm } from "@/components/add-item-form";
 import { Button } from "@/components/ui/button";
@@ -15,25 +16,27 @@ import {
 } from "@/components/ui/dialog";
 
 interface ShareItemSheetProps {
-	variant?: "header" | "fab" | "tab";
+	variant?: "header" | "fab" | "tab" | "prompt";
 }
 
 export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 	const [open, setOpen] = useState(false);
 	const t = useTranslations("Home");
+	const router = useRouter();
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			{variant === "header" ? (
-				<Button
+			{variant === "prompt" ? (
+				<button
 					onClick={() => setOpen(true)}
-					variant="outline"
-					size="sm"
-					className="gap-1.5"
+					type="button"
+					className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-[#2d6a5e]/20 hover:bg-[#2d6a5e]/25 transition-colors"
 				>
-					<Plus className="h-4 w-4" />
-					{t("shareButton")}
-				</Button>
+					<Plus className="h-5 w-5 text-[#1a4a3f]" />
+					<span className="text-sm font-semibold text-[#1a4a3f]">
+						{t("sharePrompt")}
+					</span>
+				</button>
 			) : variant === "tab" ? (
 				<button
 					onClick={() => setOpen(true)}
@@ -47,7 +50,7 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 						{t("shareLabel")}
 					</span>
 				</button>
-			) : (
+			) : variant === "fab" ? (
 				<Button
 					onClick={() => setOpen(true)}
 					variant="outline"
@@ -56,6 +59,15 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 				>
 					<Plus className="h-4 w-4" />
 					{t("shareButton")}
+				</Button>
+			) : (
+				<Button
+					onClick={() => setOpen(true)}
+					size="sm"
+					className="gap-1"
+				>
+					<Plus className="h-4 w-4" />
+					{t("shareLabel")}
 				</Button>
 			)}
 
@@ -66,7 +78,15 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 						{t("shareButton")}
 					</DialogDescription>
 				</DialogHeader>
-				<AddItemForm hideMyItemsLink onSuccess={() => setOpen(false)} />
+				<AddItemForm
+					hideMyItemsLink
+					onSuccess={(itemId) => {
+						if (itemId) {
+							router.push(`/item/${itemId}`);
+						}
+						setOpen(false);
+					}}
+				/>
 			</DialogContent>
 		</Dialog>
 	);

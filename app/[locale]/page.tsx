@@ -2,6 +2,7 @@
 
 import { ItemList } from "@/components/item-list";
 import { OnboardingCarousel } from "@/components/onboarding-carousel";
+import { SharePrompt } from "@/components/share-prompt";
 
 import { ClaimButton } from "@/components/claim-button";
 import { ClaimItemBack } from "@/components/claim-item-back";
