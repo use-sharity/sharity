@@ -18,7 +18,9 @@ import {
 	Palmtree,
 } from "lucide-react";
 
+import type { Locale } from "date-fns";
 import { format } from "date-fns";
+import { enUS, ru, vi } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -80,7 +82,6 @@ function FullCalendarWrapperInner({
 				minute: "2-digit",
 				meridiem: "short",
 			}}
-			moreLinkContent={(args: { num: number }) => `${args.num} more`}
 		/>
 	);
 }
@@ -92,6 +93,11 @@ const FullCalendarWrapper = dynamic(
 
 // One day in milliseconds
 const ONE_DAY_MS = 86_400_000;
+
+const DATE_LOCALES: Record<string, Locale> = { en: enUS, ru, vi };
+function getDateLocale(locale: string): Locale {
+	return DATE_LOCALES[locale] ?? enUS;
+}
 
 /** Format a Date as YYYY-MM-DD in local timezone (avoids UTC date shifting) */
 function formatLocalDate(d: Date): string {
@@ -184,6 +190,7 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 export function EnhancedCalendar() {
 	const locale = useLocale();
 	const t = useTranslations("Calendar");
+	const dateLocale = getDateLocale(locale);
 	const calendarRef = useRef<any>(null);
 	const [calendarTitle, setCalendarTitle] = useState("");
 
@@ -211,7 +218,8 @@ export function EnhancedCalendar() {
 		endDate: dateRange.endDate,
 	});
 
-	// Separate wide-range query for Up Next — always shows actionable items
+	// Wide-range query for Up Next — independent of visible month.
+	// useState keeps args referentially stable so Convex doesn't re-subscribe on every render.
 	const [upNextRange] = useState(() => ({
 		startDate: Date.now() - 30 * 86_400_000,
 		endDate: Date.now() + 90 * 86_400_000,
@@ -344,10 +352,12 @@ export function EnhancedCalendar() {
 
 					{vacationRange?.from && (
 						<p className="text-sm font-medium">
-							{format(vacationRange.from, "MMM d, yyyy")}
+							{format(vacationRange.from, "MMM d, yyyy", {
+								locale: dateLocale,
+							})}
 							{vacationRange.to
-								? ` – ${format(vacationRange.to, "MMM d, yyyy")}`
-								: " – select end date"}
+								? ` – ${format(vacationRange.to, "MMM d, yyyy", { locale: dateLocale })}`
+								: ` – ${t("vacation.selectEndDate")}`}
 						</p>
 					)}
 

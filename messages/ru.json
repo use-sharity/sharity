@@ -459,6 +459,7 @@
 		"vacation": {
 			"title": "Добавить отпуск",
 			"description": "Выбери даты, когда твои вещи будут недоступны.",
+			"selectEndDate": "выбери конец",
 			"note": "Заметка (необязательно)",
 			"cancel": "Отмена",
 			"save": "Сохранить",
@@ -468,8 +469,8 @@
 			"conflictReturn": "Возврат: {name}"
 		},
 		"popover": {
-			"lending": "Выдача",
-			"borrowing": "Аренда",
+			"lending": "Моя вещь",
+			"borrowing": "Берёшь",
 			"vacation": "Отпуск",
 			"pickup": "Выдача:",
 			"return": "Возврат:",
@@ -478,7 +479,8 @@
 			"googleCal": "Google Cal",
 			"downloadIcs": "Скачать .ics",
 			"deleteVacation": "Удалить отпуск",
-			"deleting": "Удаляем..."
+			"deleting": "Удаляем...",
+			"close": "Закрыть"
 		}
 	},
 	"MyItems": {

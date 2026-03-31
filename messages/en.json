@@ -459,6 +459,7 @@
 		"vacation": {
 			"title": "Add Vacation",
 			"description": "Select dates when your items will be unavailable.",
+			"selectEndDate": "select end date",
 			"note": "Note (optional)",
 			"cancel": "Cancel",
 			"save": "Save",
@@ -478,7 +479,8 @@
 			"googleCal": "Google Cal",
 			"downloadIcs": "Download .ics",
 			"deleteVacation": "Delete Vacation",
-			"deleting": "Deleting..."
+			"deleting": "Deleting...",
+			"close": "Close"
 		}
 	},
 	"MyItems": {

@@ -164,10 +164,10 @@ function getInitials(name: string): string {
 interface ActionCardProps {
 	event: CalendarEvent;
 	locale: string;
-	t: ReturnType<typeof useTranslations>;
 }
 
-function ActionCard({ event, locale, t }: ActionCardProps) {
+function ActionCard({ event, locale }: ActionCardProps) {
+	const t = useTranslations("Calendar");
 	const action = event.needsAction as ActionType;
 	const config = ACTION_CONFIG[action];
 	const Icon = config.icon;
@@ -292,7 +292,7 @@ export function UpNextSection({ events, locale }: UpNextSectionProps) {
 			{/* Card grid — 2 on mobile, 3 on desktop */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
 				{visibleEvents.map((event) => (
-					<ActionCard key={event.id} event={event} locale={locale} t={t} />
+					<ActionCard key={event.id} event={event} locale={locale} />
 				))}
 			</div>
 

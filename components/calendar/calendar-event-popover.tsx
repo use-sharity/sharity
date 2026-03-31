@@ -1,6 +1,8 @@
 "use client";
 
+import type { Locale } from "date-fns";
 import { format } from "date-fns";
+import { enUS, ru, vi as viLocale } from "date-fns/locale";
 import { Calendar, Download, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -34,11 +36,20 @@ const TYPE_BADGE_COLORS: Record<CalendarEvent["type"], string> = {
 	vacation: "bg-muted text-muted-foreground",
 };
 
-function formatEventDate(timestamp: number, isAllDay: boolean): string {
+const DATE_LOCALES: Record<string, Locale> = { en: enUS, ru, vi: viLocale };
+
+function formatEventDate(
+	timestamp: number,
+	isAllDay: boolean,
+	locale: string,
+): string {
+	const dateLoc = DATE_LOCALES[locale] ?? enUS;
 	if (isAllDay) {
-		return format(timestamp, "MMM d, yyyy");
+		return format(timestamp, "MMM d, yyyy", { locale: dateLoc });
 	}
-	return format(timestamp, "MMM d, h:mm a");
+	// 24h format for non-English locales
+	const timeFormat = locale === "en" ? "MMM d, h:mm a" : "MMM d, HH:mm";
+	return format(timestamp, timeFormat, { locale: dateLoc });
 }
 
 export function CalendarEventPopover({
@@ -109,7 +120,7 @@ export function CalendarEventPopover({
 					size="icon-sm"
 					className="shrink-0 h-6 w-6"
 					onClick={onClose}
-					aria-label="Close"
+					aria-label={t("close")}
 				>
 					<X className="h-3.5 w-3.5" />
 				</Button>
@@ -149,13 +160,13 @@ export function CalendarEventPopover({
 						<span className="font-medium text-foreground">
 							{event.type === "vacation" ? t("start") : t("pickup")}
 						</span>{" "}
-						{formatEventDate(event.startDate, event.isAllDay)}
+						{formatEventDate(event.startDate, event.isAllDay, locale)}
 					</span>
 					<span>
 						<span className="font-medium text-foreground">
 							{event.type === "vacation" ? t("end") : t("return")}
 						</span>{" "}
-						{formatEventDate(event.endDate, event.isAllDay)}
+						{formatEventDate(event.endDate, event.isAllDay, locale)}
 					</span>
 				</div>
 			</div>

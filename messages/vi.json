@@ -459,6 +459,7 @@
 		"vacation": {
 			"title": "Thêm nghỉ phép",
 			"description": "Chọn ngày mà đồ của bạn không có sẵn.",
+			"selectEndDate": "chọn ngày kết thúc",
 			"note": "Ghi chú (tuỳ chọn)",
 			"cancel": "Huỷ",
 			"save": "Lưu",
@@ -478,7 +479,8 @@
 			"googleCal": "Google Cal",
 			"downloadIcs": "Tải .ics",
 			"deleteVacation": "Xoá nghỉ phép",
-			"deleting": "Đang xoá..."
+			"deleting": "Đang xoá...",
+			"close": "Đóng"
 		}
 	},
 	"MyItems": {
