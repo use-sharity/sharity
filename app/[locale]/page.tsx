@@ -61,7 +61,7 @@ export default function Home() {
 				open={shouldShowOnboarding}
 				onClose={() => setHasSeenOnboarding(true)}
 			/>
-			<div className="w-full max-w-6xl p-4 md:p-8 space-y-8">
+			<div className="w-full max-w-2xl p-4 md:p-8 space-y-8">
 				<div className="text-center space-y-2">
 					<h1 className="text-4xl font-bold tracking-tight">{t("title")}</h1>
 					<p className="text-xl text-gray-600 mt-2">{t("subtitle")}</p>
