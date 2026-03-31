@@ -76,11 +76,7 @@ const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
 		],
 	},
 	has_pending_claims: {
-		en: [
-			"Show my pending requests",
-			"Approve all requests",
-			"Any updates?",
-		],
+		en: ["Show my pending requests", "Approve all requests", "Any updates?"],
 		vi: [
 			"Xem y\u00EAu c\u1EA7u ch\u1EDD duy\u1EC7t",
 			"Duy\u1EC7t t\u1EA5t c\u1EA3",
@@ -418,15 +414,22 @@ export function ChatWidget() {
 
 	const handleClearChat = useCallback(async () => {
 		previewUrls.forEach(URL.revokeObjectURL);
-		await clearMessages();
+		if (isSignedIn) {
+			try {
+				await clearMessages();
+			} catch {
+				/* ignore if not authed */
+			}
+		}
 		setMessages([]);
 		setPendingFiles([]);
 		setUploadedRefs([]);
 		setPreviewUrls([]);
 		setIsUploading(false);
+		savedContentRef.current.clear();
 		hasSeeded.current = true;
 		lastSavedIndexRef.current = 0;
-	}, [clearMessages, setMessages, previewUrls]);
+	}, [clearMessages, setMessages, previewUrls, isSignedIn]);
 
 	const processFiles = useCallback(
 		async (selected: File[]) => {

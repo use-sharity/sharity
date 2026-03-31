@@ -518,6 +518,7 @@
 }
 .chat-markdown li {
 	margin: 0;
+	display: list-item !important;
 }
 .chat-markdown strong {
 	font-weight: 600;
