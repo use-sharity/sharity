@@ -167,6 +167,9 @@ export function ItemList({
 							/>
 						))
 					)}
+					{onEmptyMakeRequest && filteredItems && filteredItems.length > 0 && (
+						<WishlistEmptyCard onMakeRequest={onEmptyMakeRequest} />
+					)}
 				</div>
 			)}
 		</div>

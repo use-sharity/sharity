@@ -412,14 +412,14 @@ export function EnhancedCalendar() {
 			</Dialog>
 
 			<Card>
-				<CardContent className="p-5 md:p-6">
+				<CardContent className="px-2 pt-1 pb-2 sm:p-5 md:p-6">
 					{/* Toolbar */}
-					<div className="flex flex-wrap items-center gap-2 mb-3">
+					<div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3">
 						<Button variant="outline" size="icon-sm" onClick={handlePrev}>
 							<ChevronLeft className="h-4 w-4" />
 						</Button>
-						<span className="text-lg font-bold capitalize">
-							{calendarTitle}
+						<span className="text-sm sm:text-lg font-bold">
+							{calendarTitle.charAt(0).toUpperCase() + calendarTitle.slice(1)}
 						</span>
 						<Button variant="outline" size="icon-sm" onClick={handleNext}>
 							<ChevronRight className="h-4 w-4" />

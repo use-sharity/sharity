@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import "../globals.css";
 import { ConvexClientProvider } from "../ConvexClientProvider";
 import { AppHeader } from "@/components/app-header";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { PostHogIdentify } from "@/components/posthog-identify";
 import { Toaster } from "@/components/ui/sonner";
 import { ProfileProvider } from "@/components/profile-provider";
@@ -82,7 +83,8 @@ export default async function RootLayout({
 							<PostHogIdentify />
 							<ProfileProvider>
 								<AppHeader />
-								{children}
+								<div className="pb-20 md:pb-0">{children}</div>
+								<MobileTabBar />
 								<Toaster />
 							</ProfileProvider>
 						</ConvexClientProvider>

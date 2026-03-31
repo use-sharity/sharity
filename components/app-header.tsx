@@ -136,32 +136,7 @@ export function AppHeader() {
 						<UserButton />
 					</nav>
 
-					<div className="flex md:hidden items-center gap-1 ml-auto">
-						<ShareItemSheet variant="header" />
-						<Link href="/my-items">
-							<Button variant="ghost" size="icon">
-								<ListChecks className="h-4 w-4" />
-								<span className="sr-only">{t("myItems")}</span>
-							</Button>
-						</Link>
-						<Link href="/wishlist">
-							<Button variant="ghost" size="icon">
-								<MessageSquare className="h-4 w-4" />
-								<span className="sr-only">{t("requests")}</span>
-							</Button>
-						</Link>
-						<Link href="/calendar">
-							<Button variant="ghost" size="icon">
-								<CalendarDays className="h-4 w-4" />
-								<span className="sr-only">{t("calendar")}</span>
-							</Button>
-						</Link>
-						<Link href="/profile">
-							<Button variant="ghost" size="icon">
-								<Settings className="h-4 w-4" />
-								<span className="sr-only">{t("profile")}</span>
-							</Button>
-						</Link>
+					<div className="flex md:hidden items-center gap-2 ml-auto">
 						<LanguageSwitcher />
 						<NotificationBell />
 						<UserButton />

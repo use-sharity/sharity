@@ -29,9 +29,10 @@
 	"AppHeader": {
 		"signIn": "Sign In",
 		"signUp": "Sign Up",
+		"home": "Browse",
 		"profile": "Profile",
 		"myItems": "My Items",
-		"requests": "Requests",
+		"requests": "Wishlist",
 		"calendar": "Calendar"
 	},
 	"Home": {
@@ -43,14 +44,8 @@
 			"request": "Request",
 			"browse": "Browse"
 		},
-		"topRequests": "Top requests",
-		"sortBy": "Sort by",
-		"sortOptions": {
-			"recent": "Most Recent",
-			"upvoted": "Most Upvoted"
-		},
-		"noRequests": "No requests yet.",
-		"seeFullWishlist": "See full wishlist",
+		"cantFind": "Can't find what you need? Check the community wishlist.",
+		"goToWishlist": "Go to Wishlist",
 		"onboarding": {
 			"title": "How Sharity works",
 			"subtitle": "Quick overview of the full lending timeline.",
@@ -610,8 +605,8 @@
 	},
 	"Wishlist": {
 		"title": "Wishlist",
-		"subtitle": "Request items you can't find and vote on others' requests.",
-		"inputPlaceholder": "Search requests...",
+		"subtitle": "Post items you're looking for and upvote others' wishes.",
+		"inputPlaceholder": "Search wishes...",
 		"sortBy": "Sort by",
 		"sortOptions": {
 			"recent": "Most Recent",
@@ -622,12 +617,12 @@
 		"noItems": "No items found.",
 		"emptyCard": {
 			"title": "Can't find what you're looking for?",
-			"description": "Check the community wishlist to see what others need, or make a request yourself.",
-			"seeFull": "See full wishlist",
-			"makeRequest": "Make a Request"
+			"description": "Check what others are looking for, or make a wish yourself.",
+			"seeFull": "See all wishes",
+			"makeRequest": "Make a Wish"
 		},
 		"draftCard": {
-			"title": "Make a Request",
+			"title": "Make a Wish",
 			"label": "What do you need?",
 			"placeholder": "e.g. Power Drill, Camping Tent...",
 			"photoLabel": "Photos (optional)",
@@ -635,28 +630,28 @@
 			"dragAndDrop": "or drag and drop",
 			"uploadLimit": "Up to 5 images",
 			"matchFound": "We found {count, plural, one {# match} other {# matches}}. Submitting will ask you to confirm.",
-			"addRequest": "Add Request",
+			"addRequest": "Add Wish",
 			"searchItems": "Search Items",
-			"success": "Request added to wishlist!",
-			"failed": "Failed to add request: {error}"
+			"success": "Wish added!",
+			"failed": "Failed to add wish: {error}"
 		},
 		"item": {
 			"matches": "{count, plural, one {# match} other {# matches}}",
-			"edit": "Edit Request",
-			"editTitle": "Edit Request",
+			"edit": "Edit Wish",
+			"editTitle": "Edit Wish",
 			"currentPhotos": "Current photos",
 			"addMorePhotos": "Add more photos",
 			"cancel": "Cancel",
 			"save": "Save",
 			"saving": "Saving...",
-			"updated": "Request updated!",
+			"updated": "Wish updated!",
 			"failedUpdate": "Failed to update: {error}",
 			"failedVote": "Failed to vote",
 			"close": "Close"
 		},
 		"alerts": {
 			"similarTitle": "Similar items found!",
-			"similarDesc": "We found {count} items that match your request. Would you like to view them instead?",
+			"similarDesc": "We found {count} items that match your wish. Would you like to view them instead?",
 			"viewItems": "View Items",
 			"postAnyway": "Post Request Anyway"
 		}

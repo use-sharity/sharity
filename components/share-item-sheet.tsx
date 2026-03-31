@@ -50,11 +50,12 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 			) : (
 				<Button
 					onClick={() => setOpen(true)}
-					size="icon"
-					className="md:hidden fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg"
+					variant="outline"
+					size="sm"
+					className="w-full gap-1.5"
 				>
-					<Plus className="h-6 w-6" />
-					<span className="sr-only">{t("shareButton")}</span>
+					<Plus className="h-4 w-4" />
+					{t("shareButton")}
 				</Button>
 			)}
 
