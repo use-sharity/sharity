@@ -426,8 +426,60 @@
 	},
 	"Calendar": {
 		"title": "Lịch",
+		"subtitle": "Theo dõi lịch nhận, trả đồ và quản lý thời gian rảnh.",
 		"signInMessage": "Đăng nhập để xem lịch.",
-		"signInButton": "Đăng nhập"
+		"signInButton": "Đăng nhập",
+		"upNext": "Sắp tới",
+		"more": "Thêm {count}",
+		"showLess": "Thu gọn",
+		"today": "Hôm nay",
+		"addVacation": "Nghỉ phép",
+		"actions": {
+			"respond": "TRẢ LỜI",
+			"schedule": "ĐẶT LỊCH",
+			"confirm": "XÁC NHẬN",
+			"approveRequest": "Duyệt yêu cầu",
+			"approvePickupTime": "Duyệt giờ nhận",
+			"approveReturnTime": "Duyệt giờ trả",
+			"proposePickup": "Đề xuất nhận",
+			"proposeReturn": "Đề xuất trả",
+			"confirmPickup": "Xác nhận nhận",
+			"confirmReturn": "Xác nhận trả"
+		},
+		"urgency": {
+			"overdue": "Quá hạn",
+			"dueToday": "Hôm nay",
+			"dueTomorrow": "Ngày mai",
+			"inDays": "Còn {count} ngày"
+		},
+		"counterparty": {
+			"to": "cho {name}",
+			"from": "từ {name}"
+		},
+		"vacation": {
+			"title": "Thêm nghỉ phép",
+			"description": "Chọn ngày mà đồ của bạn không có sẵn.",
+			"note": "Ghi chú (tuỳ chọn)",
+			"cancel": "Huỷ",
+			"save": "Lưu",
+			"saving": "Đang lưu...",
+			"conflict": "Trùng lịch",
+			"conflictPickup": "Nhận: {name}",
+			"conflictReturn": "Trả: {name}"
+		},
+		"popover": {
+			"lending": "Cho mượn",
+			"borrowing": "Đang mượn",
+			"vacation": "Nghỉ phép",
+			"pickup": "Nhận:",
+			"return": "Trả:",
+			"start": "Bắt đầu:",
+			"end": "Kết thúc:",
+			"googleCal": "Google Cal",
+			"downloadIcs": "Tải .ics",
+			"deleteVacation": "Xoá nghỉ phép",
+			"deleting": "Đang xoá..."
+		}
 	},
 	"MyItems": {
 		"title": "Đồ của tôi",

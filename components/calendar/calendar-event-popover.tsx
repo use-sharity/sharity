@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { Calendar, Download, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -20,12 +21,6 @@ interface EventPopoverProps {
 	onDeleteVacation?: (id: string) => Promise<void>;
 	locale: string;
 }
-
-const TYPE_LABELS: Record<CalendarEvent["type"], string> = {
-	lending: "Lending",
-	borrowing: "Borrowing",
-	vacation: "Vacation",
-};
 
 const TYPE_DOT_COLORS: Record<CalendarEvent["type"], string> = {
 	lending: "bg-[#2d6a5e]",
@@ -53,6 +48,8 @@ export function CalendarEventPopover({
 	onDeleteVacation,
 	locale,
 }: EventPopoverProps) {
+	const t = useTranslations("Calendar.popover");
+	const tCal = useTranslations("Calendar");
 	const ref = useRef<HTMLDivElement>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 
@@ -87,6 +84,8 @@ export function CalendarEventPopover({
 		});
 	}, [event]);
 
+	const typeLabel = t(event.type);
+
 	return (
 		<div
 			ref={ref}
@@ -102,7 +101,7 @@ export function CalendarEventPopover({
 					<span
 						className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${TYPE_BADGE_COLORS[event.type]}`}
 					>
-						{TYPE_LABELS[event.type]}
+						{typeLabel}
 					</span>
 				</div>
 				<Button
@@ -132,8 +131,8 @@ export function CalendarEventPopover({
 				{event.counterpartyName && (
 					<p className="text-xs text-muted-foreground mt-0.5">
 						{event.type === "lending"
-							? `to ${event.counterpartyName}`
-							: `from ${event.counterpartyName}`}
+							? tCal("counterparty.to", { name: event.counterpartyName })
+							: tCal("counterparty.from", { name: event.counterpartyName })}
 					</p>
 				)}
 				{event.vacationNote && (
@@ -148,13 +147,13 @@ export function CalendarEventPopover({
 				<div className="flex flex-col gap-0.5">
 					<span>
 						<span className="font-medium text-foreground">
-							{event.type === "vacation" ? "Start:" : "Pickup:"}
+							{event.type === "vacation" ? t("start") : t("pickup")}
 						</span>{" "}
 						{formatEventDate(event.startDate, event.isAllDay)}
 					</span>
 					<span>
 						<span className="font-medium text-foreground">
-							{event.type === "vacation" ? "End:" : "Return:"}
+							{event.type === "vacation" ? t("end") : t("return")}
 						</span>{" "}
 						{formatEventDate(event.endDate, event.isAllDay)}
 					</span>
@@ -170,7 +169,7 @@ export function CalendarEventPopover({
 					onClick={handleGoogleCalClick}
 				>
 					<Calendar className="h-3.5 w-3.5 shrink-0" />
-					Google Cal
+					{t("googleCal")}
 				</Button>
 				<Button
 					variant="outline"
@@ -179,7 +178,7 @@ export function CalendarEventPopover({
 					onClick={handleIcsDownload}
 				>
 					<Download className="h-3.5 w-3.5 shrink-0" />
-					Download .ics
+					{t("downloadIcs")}
 				</Button>
 			</div>
 
@@ -202,7 +201,7 @@ export function CalendarEventPopover({
 						}}
 					>
 						<Trash2 className="h-3.5 w-3.5 shrink-0" />
-						{isDeleting ? "Deleting..." : "Delete Vacation"}
+						{isDeleting ? t("deleting") : t("deleteVacation")}
 					</Button>
 				</div>
 			)}

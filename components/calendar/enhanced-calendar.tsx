@@ -8,7 +8,7 @@ import type {
 import { useMutation, useQuery } from "convex/react";
 import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
@@ -44,6 +44,7 @@ interface FullCalendarWrapperProps {
 	onDatesSet: (arg: DatesSetArg) => void;
 	selectable: boolean;
 	calendarRef: React.RefObject<any>;
+	locale: string;
 }
 
 function FullCalendarWrapperInner({
@@ -52,6 +53,7 @@ function FullCalendarWrapperInner({
 	onDatesSet,
 	selectable,
 	calendarRef,
+	locale,
 }: FullCalendarWrapperProps) {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const FullCalendarComponent = require("@fullcalendar/react").default;
@@ -70,6 +72,7 @@ function FullCalendarWrapperInner({
 			events={events}
 			eventClick={onEventClick}
 			datesSet={onDatesSet}
+			locale={locale}
 			headerToolbar={false}
 			height="auto"
 			eventTimeFormat={{
@@ -180,6 +183,7 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 
 export function EnhancedCalendar() {
 	const locale = useLocale();
+	const t = useTranslations("Calendar");
 	const calendarRef = useRef<any>(null);
 	const [calendarTitle, setCalendarTitle] = useState("");
 
@@ -207,11 +211,24 @@ export function EnhancedCalendar() {
 		endDate: dateRange.endDate,
 	});
 
+	// Separate wide-range query for Up Next — always shows actionable items
+	const [upNextRange] = useState(() => ({
+		startDate: Date.now() - 30 * 86_400_000,
+		endDate: Date.now() + 90 * 86_400_000,
+	}));
+	const upNextEvents = useQuery(api.items.getCalendarEvents, upNextRange);
+
 	const calendarEvents: CalendarEvent[] = rawEvents ?? [];
 
+	const vacationLabel = t("popover.vacation");
 	const fcEvents = useMemo(
-		() => toEventInputs(calendarEvents),
-		[calendarEvents],
+		() =>
+			toEventInputs(
+				calendarEvents.map((e) =>
+					e.type === "vacation" ? { ...e, title: vacationLabel } : e,
+				),
+			),
+		[calendarEvents, vacationLabel],
 	);
 
 	const handleEventClick = useCallback((arg: EventClickArg) => {
@@ -308,7 +325,7 @@ export function EnhancedCalendar() {
 
 	return (
 		<div>
-			<UpNextSection events={calendarEvents} locale={locale} />
+			<UpNextSection events={upNextEvents ?? []} locale={locale} />
 
 			<Dialog
 				open={showVacationForm}
@@ -320,11 +337,9 @@ export function EnhancedCalendar() {
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<Palmtree className="h-4 w-4" />
-							Add Vacation
+							{t("vacation.title")}
 						</DialogTitle>
-						<DialogDescription>
-							Select dates when your items will be unavailable.
-						</DialogDescription>
+						<DialogDescription>{t("vacation.description")}</DialogDescription>
 					</DialogHeader>
 
 					{vacationRange?.from && (
@@ -345,7 +360,7 @@ export function EnhancedCalendar() {
 						showOutsideDays={false}
 					/>
 					<Input
-						placeholder="Note (optional)"
+						placeholder={t("vacation.note")}
 						value={vacationNote}
 						onChange={(e) => setVacationNote(e.target.value)}
 					/>
@@ -353,12 +368,13 @@ export function EnhancedCalendar() {
 						<div className="flex gap-2 rounded-md bg-yellow-50/50 border border-yellow-200 p-3 text-sm text-foreground">
 							<AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-yellow-500" />
 							<div>
-								<p className="font-medium">Scheduling conflict</p>
+								<p className="font-medium">{t("vacation.conflict")}</p>
 								<ul className="mt-1 text-xs space-y-0.5">
 									{vacationConflicts.map((c, i) => (
 										<li key={i}>
-											{c.type === "pickup" ? "Pickup" : "Return"} for{" "}
-											<span className="font-medium">{c.itemName}</span>
+											{c.type === "pickup"
+												? t("vacation.conflictPickup", { name: c.itemName })
+												: t("vacation.conflictReturn", { name: c.itemName })}
 										</li>
 									))}
 								</ul>
@@ -372,14 +388,14 @@ export function EnhancedCalendar() {
 							onClick={handleCancelVacation}
 							disabled={isSavingVacation}
 						>
-							Cancel
+							{t("vacation.cancel")}
 						</Button>
 						<Button
 							size="sm"
 							onClick={handleSaveVacation}
 							disabled={!canSaveVacation || isSavingVacation}
 						>
-							{isSavingVacation ? "Saving..." : "Save"}
+							{isSavingVacation ? t("vacation.saving") : t("vacation.save")}
 						</Button>
 					</div>
 				</DialogContent>
@@ -392,12 +408,14 @@ export function EnhancedCalendar() {
 						<Button variant="outline" size="icon-sm" onClick={handlePrev}>
 							<ChevronLeft className="h-4 w-4" />
 						</Button>
-						<span className="text-lg font-bold">{calendarTitle}</span>
+						<span className="text-lg font-bold capitalize">
+							{calendarTitle}
+						</span>
 						<Button variant="outline" size="icon-sm" onClick={handleNext}>
 							<ChevronRight className="h-4 w-4" />
 						</Button>
 						<Button variant="outline" size="sm" onClick={handleToday}>
-							Today
+							{t("today")}
 						</Button>
 						<Button
 							variant="outline"
@@ -406,7 +424,7 @@ export function EnhancedCalendar() {
 							onClick={() => setShowVacationForm(true)}
 						>
 							<Palmtree className="h-4 w-4" />
-							<span className="hidden sm:inline">Add Vacation</span>
+							<span className="hidden sm:inline">{t("addVacation")}</span>
 						</Button>
 					</div>
 
@@ -416,6 +434,7 @@ export function EnhancedCalendar() {
 						onDatesSet={handleDatesSet}
 						selectable={false}
 						calendarRef={calendarRef}
+						locale={locale}
 					/>
 				</CardContent>
 			</Card>
