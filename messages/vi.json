@@ -126,7 +126,7 @@
 		"dragAndDrop": "hoặc kéo thả",
 		"uploadLimit": "Tối đa 5 ảnh",
 		"uploadLimitReached": "Đủ 5 ảnh rồi. Xóa bớt để thêm.",
-		"uploadingExample": "Còn thêm được {count} ảnh{s}",
+		"uploadingExample": "Còn thêm được {count} ảnh",
 		"uploadingSaving": "Đang tải & lưu...",
 		"myItems": "Đồ của tôi",
 		"validation": {

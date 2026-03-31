@@ -126,7 +126,7 @@
 		"dragAndDrop": "or drag and drop",
 		"uploadLimit": "Up to 5 images",
 		"uploadLimitReached": "Limit of 5 images reached. Remove some to add new ones.",
-		"uploadingExample": "You can add {count} more image{s}",
+		"uploadingExample": "You can add {count, plural, one {# more image} other {# more images}}",
 		"uploadingSaving": "Uploading & Saving...",
 		"myItems": "My Items",
 		"validation": {
@@ -175,7 +175,7 @@
 	"BorrowedItemCard": {
 		"overdue": "Overdue by {time}",
 		"dueToday": "Due today",
-		"dueInDays": "Due in {count} day{s}",
+		"dueInDays": "Due in {count, plural, one {# day} other {# days}}",
 		"dueOn": "Due {date}",
 		"viewDetails": "View Details",
 		"borrowedFrom": "Borrowed from {name}",
@@ -208,7 +208,7 @@
 		},
 		"open": "Open",
 		"receivedFrom": "Received from <user></user>",
-		"pendingRequests": "{count} pending request{s}",
+		"pendingRequests": "{count, plural, one {# pending request} other {# pending requests}}",
 		"awaitingApproval": "Awaiting approval",
 		"reject": "Reject",
 		"approve": "Approve"
@@ -573,7 +573,7 @@
 	},
 	"Ratings": {
 		"pendingTitle": "Rate Your Transactions",
-		"pendingDesc": "You have {count} transaction{s} to rate.",
+		"pendingDesc": "You have {count, plural, one {# transaction} other {# transactions}} to rate.",
 		"lender": "lender",
 		"borrower": "borrower",
 		"asLender": "As lender",
@@ -634,14 +634,14 @@
 			"clickToUpload": "Click to upload",
 			"dragAndDrop": "or drag and drop",
 			"uploadLimit": "Up to 5 images",
-			"matchFound": "We found {count} match{es}. Submitting will ask you to confirm.",
+			"matchFound": "We found {count, plural, one {# match} other {# matches}}. Submitting will ask you to confirm.",
 			"addRequest": "Add Request",
 			"searchItems": "Search Items",
 			"success": "Request added to wishlist!",
 			"failed": "Failed to add request: {error}"
 		},
 		"item": {
-			"matches": "{count} match{es}",
+			"matches": "{count, plural, one {# match} other {# matches}}",
 			"edit": "Edit Request",
 			"editTitle": "Edit Request",
 			"currentPhotos": "Current photos",
@@ -672,7 +672,7 @@
 		"loading": "Loading...",
 		"noRatings": "No ratings",
 		"noRatingsYet": "No ratings yet",
-		"ratingCount": "{count} rating{s}",
+		"ratingCount": "{count, plural, one {# rating} other {# ratings}}",
 		"asLender": "As Lender",
 		"asBorrower": "As Borrower"
 	},
