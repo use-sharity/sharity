@@ -10,10 +10,11 @@ import {
 	UserButton,
 } from "@clerk/nextjs";
 import {
+	ArrowLeftRight,
 	CalendarDays,
-	ListChecks,
-	MessageSquare,
-	Settings,
+	Heart,
+	Search,
+	User,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
@@ -106,17 +107,10 @@ export function AppHeader() {
 
 				<SignedIn>
 					<nav className="hidden md:flex items-center gap-2 ml-auto">
-						<ShareItemSheet variant="header" />
-						<Link href="/my-items">
+						<Link href="/">
 							<Button variant="ghost" size="sm">
-								<ListChecks className="h-4 w-4 mr-1" />
-								{t("myItems")}
-							</Button>
-						</Link>
-						<Link href="/wishlist">
-							<Button variant="ghost" size="sm">
-								<MessageSquare className="h-4 w-4 mr-1" />
-								{t("requests")}
+								<Search className="h-4 w-4 mr-1" />
+								{t("home")}
 							</Button>
 						</Link>
 						<Link href="/calendar">
@@ -125,20 +119,41 @@ export function AppHeader() {
 								{t("calendar")}
 							</Button>
 						</Link>
-						<Link href="/profile">
+						<ShareItemSheet variant="header" />
+						<Link href="/my-items">
 							<Button variant="ghost" size="sm">
-								<Settings className="h-4 w-4 mr-1" />
-								{t("profile")}
+								<ArrowLeftRight className="h-4 w-4 mr-1" />
+								{t("myItems")}
 							</Button>
 						</Link>
-						<LanguageSwitcher />
-						<NotificationBell />
-						<UserButton />
+						<Link href="/wishlist">
+							<Button variant="ghost" size="sm">
+								<Heart className="h-4 w-4 mr-1" />
+								{t("requests")}
+							</Button>
+						</Link>
+						<div className="flex items-center gap-1 ml-2 pl-2 border-l">
+							<LanguageSwitcher />
+							<NotificationBell />
+							<Link href="/profile">
+								<Button variant="ghost" size="icon">
+									<User className="h-4 w-4" />
+									<span className="sr-only">{t("profile")}</span>
+								</Button>
+							</Link>
+							<UserButton />
+						</div>
 					</nav>
 
 					<div className="flex md:hidden items-center gap-2 ml-auto">
 						<LanguageSwitcher />
 						<NotificationBell />
+						<Link href="/profile">
+							<Button variant="ghost" size="icon">
+								<User className="h-4 w-4" />
+								<span className="sr-only">{t("profile")}</span>
+							</Button>
+						</Link>
 						<UserButton />
 					</div>
 				</SignedIn>

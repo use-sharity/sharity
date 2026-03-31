@@ -7,20 +7,23 @@ import {
 	ArrowLeftRight,
 	CalendarDays,
 	Heart,
+	Plus,
 	Search,
-	User,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { ShareItemSheet } from "@/components/share-item-sheet";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+const NAV_TABS = [
 	{ href: "/", icon: Search, labelKey: "home" as const },
 	{ href: "/calendar", icon: CalendarDays, labelKey: "calendar" as const },
+] as const;
+
+const NAV_TABS_RIGHT = [
 	{ href: "/my-items", icon: ArrowLeftRight, labelKey: "myItems" as const },
 	{ href: "/wishlist", icon: Heart, labelKey: "requests" as const },
-	{ href: "/profile", icon: User, labelKey: "profile" as const },
-];
+] as const;
 
 export function MobileTabBar() {
 	const pathname = usePathname();
@@ -29,30 +32,43 @@ export function MobileTabBar() {
 	// Strip locale prefix for matching (e.g., /en/calendar → /calendar)
 	const cleanPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
 
+	const renderTab = ({
+		href,
+		icon: Icon,
+		labelKey,
+	}: (typeof NAV_TABS)[number] | (typeof NAV_TABS_RIGHT)[number]) => {
+		const isActive =
+			href === "/" ? cleanPath === "/" : cleanPath.startsWith(href);
+
+		return (
+			<Link
+				key={href}
+				href={href}
+				className={cn(
+					"flex flex-col items-center gap-1 px-3 pt-2.5 pb-1.5 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px",
+					isActive && "text-foreground border-t-foreground",
+				)}
+			>
+				<Icon className="h-6 w-6" />
+				<span
+					className={cn(
+						"text-[11px] leading-none",
+						isActive ? "font-semibold" : "font-medium",
+					)}
+				>
+					{t(labelKey)}
+				</span>
+			</Link>
+		);
+	};
+
 	return (
 		<SignedIn>
-			<nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-sm">
-				<div className="flex items-center justify-around px-2 pt-2.5 pb-4">
-					{TABS.map(({ href, icon: Icon, labelKey }) => {
-						const isActive =
-							href === "/" ? cleanPath === "/" : cleanPath.startsWith(href);
-
-						return (
-							<Link
-								key={href}
-								href={href}
-								className={cn(
-									"flex flex-col items-center gap-1 px-3 py-1.5 rounded-md text-muted-foreground transition-colors",
-									isActive && "text-primary font-semibold",
-								)}
-							>
-								<Icon className="h-6 w-6" />
-								<span className="text-[11px] leading-none font-medium">
-									{t(labelKey)}
-								</span>
-							</Link>
-						);
-					})}
+			<nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+				<div className="flex items-center justify-around px-2 pb-4">
+					{NAV_TABS.map(renderTab)}
+					<ShareItemSheet variant="tab" />
+					{NAV_TABS_RIGHT.map(renderTab)}
 				</div>
 			</nav>
 		</SignedIn>

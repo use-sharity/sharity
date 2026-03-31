@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Gift, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AddItemForm } from "@/components/add-item-form";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface ShareItemSheetProps {
-	variant?: "header" | "fab";
+	variant?: "header" | "fab" | "tab";
 }
 
 export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
@@ -25,28 +25,28 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			{variant === "header" ? (
-				<>
-					{/* Desktop: icon + text */}
-					<Button
-						onClick={() => setOpen(true)}
-						variant="ghost"
-						size="sm"
-						className="hidden md:inline-flex"
-					>
-						<Gift className="h-4 w-4 mr-1" />
-						{t("shareButton")}
-					</Button>
-					{/* Mobile: icon only */}
-					<Button
-						onClick={() => setOpen(true)}
-						variant="ghost"
-						size="icon"
-						className="md:hidden"
-					>
-						<Gift className="h-4 w-4" />
-						<span className="sr-only">{t("shareButton")}</span>
-					</Button>
-				</>
+				<Button
+					onClick={() => setOpen(true)}
+					variant="outline"
+					size="sm"
+					className="gap-1.5"
+				>
+					<Plus className="h-4 w-4" />
+					{t("shareButton")}
+				</Button>
+			) : variant === "tab" ? (
+				<button
+					onClick={() => setOpen(true)}
+					type="button"
+					className="flex flex-col items-center gap-1 px-3 pt-2 pb-1.5 text-muted-foreground transition-colors"
+				>
+					<span className="flex items-center justify-center h-6 w-6 rounded-md border-2 border-current">
+						<Plus className="h-4 w-4 stroke-[2.5]" />
+					</span>
+					<span className="text-[11px] leading-none font-medium">
+						{t("shareLabel")}
+					</span>
+				</button>
 			) : (
 				<Button
 					onClick={() => setOpen(true)}

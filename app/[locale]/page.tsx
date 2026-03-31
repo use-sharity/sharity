@@ -5,8 +5,6 @@ import { OnboardingCarousel } from "@/components/onboarding-carousel";
 
 import { ClaimButton } from "@/components/claim-button";
 import { ClaimItemBack } from "@/components/claim-item-back";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -30,19 +28,18 @@ export default function Home() {
 	const shouldShowOnboarding = isClient && !hasSeenOnboarding;
 
 	return (
-		<main className="min-h-screen flex flex-col items-center bg-gray-50/50">
+		<main className="min-h-screen bg-gray-50/50">
 			<OnboardingCarousel
 				open={shouldShowOnboarding}
 				onClose={() => setHasSeenOnboarding(true)}
 			/>
-			<div className="w-full max-w-2xl p-4 md:p-8 space-y-8">
-				<div className="text-center space-y-2">
-					<h1 className="text-4xl font-bold tracking-tight">{t("title")}</h1>
-					<p className="text-xl text-gray-600 mt-2">{t("subtitle")}</p>
+			<div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+				<div className="space-y-1">
+					<h1 className="text-xl font-semibold">{t("title")}</h1>
+					<p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 				</div>
 
-				{/* Browse — full width */}
-				<Suspense fallback={<div className="w-full max-w-2xl">Loading…</div>}>
+				<Suspense fallback={<div>Loading…</div>}>
 					<ItemList
 						action={(item) => <ClaimButton item={item} />}
 						actionBack={(item) => <ClaimItemBack item={item} />}

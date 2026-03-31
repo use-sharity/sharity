@@ -39,6 +39,7 @@
 		"title": "Sharity",
 		"subtitle": "Делись и находи нужное в Далате.",
 		"shareButton": "Поделиться вещью",
+		"shareLabel": "Поделиться",
 		"tabs": {
 			"share": "Поделиться",
 			"request": "Запросить",
