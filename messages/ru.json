@@ -31,7 +31,8 @@
 		"signUp": "Регистрация",
 		"profile": "Профиль",
 		"myItems": "Мои вещи",
-		"requests": "Запросы"
+		"requests": "Запросы",
+		"calendar": "Календарь"
 	},
 	"Home": {
 		"title": "Sharity",
@@ -422,6 +423,11 @@
 		"pickPickupDay": "Выбери день получения",
 		"giveawayNote": "Подарок: возврат не нужен. Вещь станет твоей после получения.",
 		"request": "Запросить"
+	},
+	"Calendar": {
+		"title": "Календарь",
+		"signInMessage": "Войди, чтобы увидеть свой календарь.",
+		"signInButton": "Войти"
 	},
 	"MyItems": {
 		"title": "Мои вещи",

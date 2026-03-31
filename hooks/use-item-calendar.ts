@@ -39,7 +39,7 @@ export type BorrowerCalendarConfig = {
 
 type OwnerRequestBase = {
 	_id: Id<"claims">;
-	status: "pending" | "approved" | "rejected";
+	status: "pending" | "approved" | "rejected" | "expired";
 	startDate: number;
 	endDate: number;
 };

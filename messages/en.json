@@ -31,7 +31,8 @@
 		"signUp": "Sign Up",
 		"profile": "Profile",
 		"myItems": "My Items",
-		"requests": "Requests"
+		"requests": "Requests",
+		"calendar": "Calendar"
 	},
 	"Home": {
 		"title": "Sharity",
@@ -422,6 +423,11 @@
 		"pickPickupDay": "Pick a pickup day",
 		"giveawayNote": "Giveaway: no return needed. Ownership transfers after pickup.",
 		"request": "Request"
+	},
+	"Calendar": {
+		"title": "Calendar",
+		"signInMessage": "Please sign in to view your calendar.",
+		"signInButton": "Sign In"
 	},
 	"MyItems": {
 		"title": "My Items",

@@ -9,10 +9,9 @@ import {
 	SignedOut,
 	UserButton,
 } from "@clerk/nextjs";
-import { ListChecks, MessageSquare, Settings } from "lucide-react";
+import { CalendarDays, ListChecks, MessageSquare, Settings } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { OwnerUnavailabilityButton } from "@/components/owner-unavailability-button";
 import { ShareItemSheet } from "@/components/share-item-sheet";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
@@ -115,7 +114,12 @@ export function AppHeader() {
 								{t("requests")}
 							</Button>
 						</Link>
-						<OwnerUnavailabilityButton variant="ghost" size="sm" />
+						<Link href="/calendar">
+							<Button variant="ghost" size="sm">
+								<CalendarDays className="h-4 w-4 mr-1" />
+								{t("calendar")}
+							</Button>
+						</Link>
 						<Link href="/profile">
 							<Button variant="ghost" size="sm">
 								<Settings className="h-4 w-4 mr-1" />
@@ -141,7 +145,12 @@ export function AppHeader() {
 								<span className="sr-only">{t("requests")}</span>
 							</Button>
 						</Link>
-						<OwnerUnavailabilityButton variant="ghost" size="sm" />
+						<Link href="/calendar">
+							<Button variant="ghost" size="icon">
+								<CalendarDays className="h-4 w-4" />
+								<span className="sr-only">{t("calendar")}</span>
+							</Button>
+						</Link>
 						<NotificationBell />
 						<UserButton />
 					</div>

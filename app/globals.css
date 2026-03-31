@@ -297,6 +297,170 @@
 	z-index: 9998 !important;
 }
 
+/* =====================================================
+   FullCalendar theme overrides — matches shadcn/ui
+   ===================================================== */
+
+/* CSS variable bridge */
+.fc {
+	--fc-border-color: var(--border);
+	--fc-today-bg-color: color-mix(in srgb, var(--primary) 6%, transparent);
+	--fc-page-bg-color: transparent;
+	--fc-neutral-bg-color: transparent;
+	--fc-list-event-hover-bg-color: var(--muted);
+	--fc-event-bg-color: var(--primary);
+	--fc-event-border-color: var(--primary);
+	--fc-event-text-color: var(--primary-foreground);
+	--fc-highlight-color: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* "+N more" popover — list style */
+.fc .fc-popover {
+	background: var(--background) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: var(--radius) !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+	min-width: 200px;
+}
+
+.fc .fc-popover-header {
+	background: var(--background) !important;
+	border-bottom: 1px solid var(--border) !important;
+	padding: 8px 12px !important;
+	font-size: 0.8125rem !important;
+	font-weight: 600 !important;
+}
+
+.fc .fc-popover-body {
+	padding: 4px !important;
+}
+
+/* Events inside popover — list items instead of bars */
+.fc .fc-popover .fc-daygrid-event {
+	border-radius: var(--radius) !important;
+	margin: 2px 0 !important;
+	padding: 4px 8px !important;
+	background: transparent !important;
+	border: none !important;
+	border-left: 3px solid var(--border) !important;
+}
+
+.fc .fc-popover .fc-event-title {
+	font-size: 0.75rem !important;
+	color: var(--foreground) !important;
+}
+
+.fc .fc-popover .fc-daygrid-event:hover {
+	background: var(--muted) !important;
+}
+
+/* Hide FullCalendar's built-in toolbar — we render our own with shadcn buttons */
+.fc .fc-toolbar {
+	display: none !important;
+}
+
+/* Day-grid cell typography */
+.fc .fc-daygrid-day-number {
+	font-size: 0.8125rem;
+	color: var(--foreground);
+	padding: 4px 8px;
+}
+
+.fc .fc-col-header-cell-cushion {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--muted-foreground);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 6px 8px;
+}
+
+/* Events */
+.fc .fc-event {
+	font-size: 0.6875rem !important;
+	font-weight: 500 !important;
+	cursor: pointer;
+	padding: 2px 6px !important;
+}
+
+/* Vacation events — striped bar to indicate unavailability */
+.fc-vacation-event {
+	background: repeating-linear-gradient(
+		-45deg,
+		#ccc,
+		#ccc 16px,
+		#eee 16px,
+		#eee 32px
+	) !important;
+	border: 1px solid #bbb !important;
+	padding: 1px 3px !important;
+}
+
+.fc-vacation-event .fc-event-title {
+	color: #555 !important;
+}
+
+/* Needs-action indicator: amber pulsing dot before title */
+.fc-event-needs-action .fc-event-title::before {
+	content: "";
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: #f59e0b;
+	box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+	animation: fc-needs-action-pulse 1.8s ease-in-out infinite;
+	margin-right: 4px;
+	vertical-align: middle;
+	position: relative;
+	top: -1px;
+}
+
+@keyframes fc-needs-action-pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+	}
+	70% {
+		box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+	}
+}
+
+/* Mobile: hide event text, show only colored bars */
+@media (max-width: 640px) {
+	.fc .fc-event-title,
+	.fc .fc-event-time {
+		display: none !important;
+	}
+
+	.fc .fc-daygrid-event {
+		height: 12px !important;
+		min-height: 12px !important;
+	}
+
+	.fc .fc-event {
+		padding: 0 !important;
+	}
+
+	.fc .fc-daygrid-day-number {
+		font-size: 0.7rem;
+		padding: 2px 4px;
+	}
+}
+
+/* Vacation selection mode — crosshair cursor and highlighted border */
+.fc-vacation-mode .fc .fc-daygrid-day {
+	cursor: crosshair;
+}
+
+.fc-vacation-mode .fc {
+	outline: 2px dashed rgba(239, 68, 68, 0.4);
+	outline-offset: 2px;
+	border-radius: 8px;
+}
+
 [data-radix-dialog-content] {
 	z-index: 9999 !important;
 }

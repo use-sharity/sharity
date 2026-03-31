@@ -31,7 +31,8 @@
 		"signUp": "Đăng ký",
 		"profile": "Hồ sơ",
 		"myItems": "Đồ của tôi",
-		"requests": "Nhu cầu"
+		"requests": "Nhu cầu",
+		"calendar": "Lịch"
 	},
 	"Home": {
 		"title": "Sharity",
@@ -422,6 +423,11 @@
 		"pickPickupDay": "Chọn ngày nhận",
 		"giveawayNote": "Tặng luôn, không cần trả lại.",
 		"request": "Gửi yêu cầu"
+	},
+	"Calendar": {
+		"title": "Lịch",
+		"signInMessage": "Đăng nhập để xem lịch.",
+		"signInButton": "Đăng nhập"
 	},
 	"MyItems": {
 		"title": "Đồ của tôi",

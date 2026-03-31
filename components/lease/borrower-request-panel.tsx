@@ -342,7 +342,7 @@ export function BorrowerRequestActions() {
 						{myRequests
 							.filter((req) => {
 								if (showInactive) return true;
-								if (req.status === "pending") return true;
+								if (req.status === "pending") return !req.expiredAt;
 								if (req.status === "approved") {
 									return (
 										!req.returnedAt &&
@@ -553,7 +553,7 @@ export function GiveawayBorrowerRequestPanel({
 						{myRequests
 							.filter((req) => {
 								if (showInactive) return true;
-								if (req.status === "pending") return true;
+								if (req.status === "pending") return !req.expiredAt;
 								if (req.status === "approved") {
 									return (
 										!req.returnedAt &&
