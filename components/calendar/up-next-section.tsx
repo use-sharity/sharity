@@ -244,14 +244,7 @@ function ActionCard({ event, locale }: ActionCardProps) {
 			</p>
 
 			{/* CTA button — solid for urgent, secondary for others */}
-			<span
-				className={cn(
-					"mt-auto inline-flex items-center justify-center rounded-md px-2.5 py-1.5 sm:py-1 text-xs font-medium transition-colors",
-					level === "urgent"
-						? "bg-primary text-primary-foreground hover:bg-primary/90"
-						: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-				)}
-			>
+			<span className="mt-auto inline-flex items-center justify-center rounded-md px-2.5 py-1.5 sm:py-1 text-xs font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90">
 				{t(config.actionKey)}
 			</span>
 		</Link>

@@ -9,7 +9,7 @@ import { useMutation, useQuery } from "convex/react";
 import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
 	AlertTriangle,
@@ -64,11 +64,35 @@ function FullCalendarWrapperInner({
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const interaction = require("@fullcalendar/interaction").default;
 
+	const [isMobile, setIsMobile] = useState(
+		typeof window !== "undefined" ? window.innerWidth < 640 : false,
+	);
+	useEffect(() => {
+		const check = () => {
+			const mobile = window.innerWidth < 640;
+			setIsMobile(mobile);
+			const api = calendarRef.current?.getApi?.();
+			if (api) {
+				const target = mobile ? "dayGrid3Day" : "dayGridMonth";
+				if (api.view.type !== target) api.changeView(target);
+			}
+		};
+		check();
+		window.addEventListener("resize", check);
+		return () => window.removeEventListener("resize", check);
+	}, [calendarRef]);
+
 	return (
 		<FullCalendarComponent
 			ref={calendarRef}
 			plugins={[dayGrid, interaction]}
-			initialView="dayGridMonth"
+			initialView={isMobile ? "dayGrid3Day" : "dayGridMonth"}
+			views={{
+				dayGrid3Day: {
+					type: "dayGrid",
+					duration: { days: 3 },
+				},
+			}}
 			selectable={selectable}
 			dayMaxEvents={false}
 			events={events}
@@ -139,9 +163,9 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 			textColor = "#ffffff";
 		} else {
 			// Amber — matches app accent
-			backgroundColor = "#e8a438";
-			borderColor = "#d4922e";
-			textColor = "#3d2a0a";
+			backgroundColor = "#6b9e95";
+			borderColor = "#5a8d84";
+			textColor = "#ffffff";
 		}
 
 		const classNames: string[] = [];
@@ -412,14 +436,14 @@ export function EnhancedCalendar() {
 			</Dialog>
 
 			<Card>
-				<CardContent className="p-5 md:p-6">
+				<CardContent className="px-2 pt-1 pb-2 sm:p-5 md:p-6">
 					{/* Toolbar */}
-					<div className="flex flex-wrap items-center gap-2 mb-3">
+					<div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3">
 						<Button variant="outline" size="icon-sm" onClick={handlePrev}>
 							<ChevronLeft className="h-4 w-4" />
 						</Button>
-						<span className="text-lg font-bold capitalize">
-							{calendarTitle}
+						<span className="text-sm sm:text-lg font-bold">
+							{calendarTitle.charAt(0).toUpperCase() + calendarTitle.slice(1)}
 						</span>
 						<Button variant="outline" size="icon-sm" onClick={handleNext}>
 							<ChevronRight className="h-4 w-4" />

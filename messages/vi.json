@@ -29,28 +29,25 @@
 	"AppHeader": {
 		"signIn": "Đăng nhập",
 		"signUp": "Đăng ký",
+		"home": "Tìm đồ",
 		"profile": "Hồ sơ",
 		"myItems": "Đồ của tôi",
-		"requests": "Nhu cầu",
+		"requests": "Ước muốn",
 		"calendar": "Lịch"
 	},
 	"Home": {
 		"title": "Sharity",
 		"subtitle": "Mượn/cho mượn đồ ở Đà Lạt.",
 		"shareButton": "Chia sẻ đồ",
+		"shareLabel": "Chia sẻ",
+		"sharePrompt": "Có đồ muốn chia sẻ?",
 		"tabs": {
 			"share": "Đồ đang có",
 			"request": "Đồ cần",
 			"browse": "Khám phá"
 		},
-		"topRequests": "Nhu cầu nổi bật",
-		"sortBy": "Sắp xếp theo",
-		"sortOptions": {
-			"recent": "Mới nhất",
-			"upvoted": "Nhiều vote"
-		},
-		"noRequests": "Chưa có nhu cầu.",
-		"seeFullWishlist": "Xem hết đồ cần",
+		"cantFind": "Không tìm thấy? Xem wishlist cộng đồng.",
+		"goToWishlist": "Xem Wishlist",
 		"onboarding": {
 			"title": "Cách Sharity hoạt động",
 			"subtitle": "Xem nhanh toàn bộ timeline mượn đồ.",
@@ -126,7 +123,7 @@
 		"dragAndDrop": "hoặc kéo thả",
 		"uploadLimit": "Tối đa 5 ảnh",
 		"uploadLimitReached": "Đủ 5 ảnh rồi. Xóa bớt để thêm.",
-		"uploadingExample": "Còn thêm được {count} ảnh{s}",
+		"uploadingExample": "Còn thêm được {count} ảnh",
 		"uploadingSaving": "Đang tải & lưu...",
 		"myItems": "Đồ của tôi",
 		"validation": {
@@ -609,9 +606,9 @@
 		}
 	},
 	"Wishlist": {
-		"title": "Đồ cần",
-		"subtitle": "Đăng đồ bạn đang thiếu và vote nhu cầu của người khác.",
-		"inputPlaceholder": "Tìm nhu cầu...",
+		"title": "Ước muốn",
+		"subtitle": "Đăng đồ bạn đang tìm và vote cho người khác.",
+		"inputPlaceholder": "Tìm ước muốn...",
 		"sortBy": "Sắp xếp theo",
 		"sortOptions": {
 			"recent": "Mới nhất",
@@ -622,12 +619,12 @@
 		"noItems": "Không thấy gì.",
 		"emptyCard": {
 			"title": "Không tìm thấy món bạn cần?",
-			"description": "Xem mọi người đang cần gì, hoặc đăng nhu cầu của bạn.",
-			"seeFull": "Xem hết đồ cần",
-			"makeRequest": "Đăng nhu cầu"
+			"description": "Xem mọi người đang tìm gì, hoặc thêm ước muốn của bạn.",
+			"seeFull": "Xem tất cả",
+			"makeRequest": "Thêm ước muốn"
 		},
 		"draftCard": {
-			"title": "Đăng nhu cầu",
+			"title": "Thêm ước muốn",
 			"label": "Bạn đang cần gì?",
 			"placeholder": "VD: Máy khoan, lều cắm trại...",
 			"photoLabel": "Ảnh (tuỳ chọn)",
@@ -637,7 +634,7 @@
 			"matchFound": "Thấy {count} món giống. Bạn sẽ xác nhận trước khi đăng.",
 			"addRequest": "Đăng",
 			"searchItems": "Tìm đồ",
-			"success": "Đã đăng vào Đồ cần!",
+			"success": "Đã thêm ước muốn!",
 			"failed": "Đăng thất bại: {error}"
 		},
 		"item": {

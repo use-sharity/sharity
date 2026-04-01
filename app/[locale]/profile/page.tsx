@@ -19,7 +19,7 @@ import { PendingRatings } from "@/components/pending-ratings";
 import { ContactInfo } from "@/components/contact-info";
 import { CloudinaryImage } from "@/components/cloudinary-image";
 import { User, MapPin, Settings, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -75,36 +75,40 @@ export default function ProfilePage() {
 						>
 							<ArrowLeft className="h-5 w-5" />
 						</Link>
-						<h1 className="flex-1 text-xl font-semibold">{t("title")}</h1>
-						<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-							<DialogTrigger asChild>
-								<Button variant="outline" size="sm">
-									<Settings className="h-4 w-4 mr-1" />
-									{t("edit")}
-								</Button>
-							</DialogTrigger>
-							<DialogContent className="max-h-[90vh] overflow-y-auto">
-								<DialogHeader>
-									<DialogTitle>{t("editTitle")}</DialogTitle>
-								</DialogHeader>
-								<ProfileForm
-									initialValues={{
-										name: profile?.name,
-										avatarUrl: profile?.avatarUrl,
-										address: profile?.address,
-										bio: profile?.bio,
-										contacts: profile?.contacts,
-									}}
-									onSuccess={() => setIsEditOpen(false)}
-								/>
-							</DialogContent>
-						</Dialog>
+						<h1 className="text-xl font-semibold">{t("title")}</h1>
 					</div>
 					<p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 				</div>
 
 				{/* Profile Header */}
-				<Card className="py-4 gap-4">
+				<Card className="py-4 gap-4 relative">
+					<Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+						<DialogTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="absolute top-3 right-3"
+							>
+								<Settings className="h-4 w-4" />
+								<span className="sr-only">{t("edit")}</span>
+							</Button>
+						</DialogTrigger>
+						<DialogContent className="max-h-[90vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>{t("editTitle")}</DialogTitle>
+							</DialogHeader>
+							<ProfileForm
+								initialValues={{
+									name: profile?.name,
+									avatarUrl: profile?.avatarUrl,
+									address: profile?.address,
+									bio: profile?.bio,
+									contacts: profile?.contacts,
+								}}
+								onSuccess={() => setIsEditOpen(false)}
+							/>
+						</DialogContent>
+					</Dialog>
 					<CardContent className="px-4 md:px-6">
 						<div className="flex items-start gap-4">
 							<div className="relative h-20 w-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 shrink-0">

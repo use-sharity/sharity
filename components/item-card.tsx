@@ -127,8 +127,8 @@ export function ItemCard({
 				>
 					{/* Front Face */}
 					<div className="relative w-full backface-hidden" ref={frontRef}>
-						<Card>
-							<CardHeader>
+						<Card className="gap-3 py-7">
+							<CardHeader className="gap-3">
 								{imageUrls.length > 0 && (
 									<div
 										className={cn(

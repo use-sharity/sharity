@@ -612,13 +612,13 @@ export function NotificationFeed() {
 	});
 
 	return (
-		<div className="flex flex-col max-h-[400px]">
-			<div className="p-2 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-				<span className="font-semibold text-sm">{t("title")}</span>
+		<div className="flex flex-col flex-1 min-h-0 bg-popover overflow-hidden">
+			<div className="p-2 border-b flex justify-between items-center gap-2 sticky top-0 bg-popover z-10">
+				<span className="font-semibold text-sm shrink-0">{t("title")}</span>
 				<Button
 					variant="ghost"
 					size="sm"
-					className="text-xs h-7"
+					className="text-xs h-7 shrink-0"
 					onClick={() => markAllAsRead({})}
 				>
 					{t("markAllRead")} <Check className="ml-1 h-3 w-3" />

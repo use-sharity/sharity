@@ -6,8 +6,8 @@ import { SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { AddItemForm } from "@/components/add-item-form";
 import { MyItemsList } from "@/components/my-items-list";
+import { ShareItemSheet } from "@/components/share-item-sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserHistory } from "@/components/user-history";
@@ -30,9 +30,8 @@ function MyItemsTabs() {
 			<TabsContent value="borrowing" className="mt-4">
 				<MyItemsList variant="borrowing" />
 			</TabsContent>
-			<TabsContent value="shared" className="mt-4 space-y-4">
+			<TabsContent value="shared" className="mt-4">
 				<MyItemsList variant="shared" />
-				<AddItemForm />
 			</TabsContent>
 			<TabsContent value="history" className="mt-4">
 				<UserHistory userId={user.id} />
@@ -61,6 +60,7 @@ export default function MyItemsPage() {
 				</div>
 
 				<SignedIn>
+					<ShareItemSheet variant="prompt" />
 					<MyItemsTabs />
 				</SignedIn>
 

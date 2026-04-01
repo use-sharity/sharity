@@ -17,7 +17,8 @@ import { ItemCard } from "./item-card";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { WishlistEmptyCard } from "@/components/wishlist/wishlist-empty-card";
+import { SharePrompt } from "@/components/share-prompt";
+import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
 import { useTranslations } from "next-intl";
 
 // Dynamic import to avoid SSR hydration issues with Leaflet
@@ -129,6 +130,8 @@ export function ItemList({
 				</div>
 			</div>
 
+			<SharePrompt />
+
 			{viewMode === "map" ? (
 				<div className="space-y-2">
 					{items === undefined ? (
@@ -149,9 +152,9 @@ export function ItemList({
 					{items === undefined ? (
 						<p>{t("loading")}</p>
 					) : items.length === 0 ? (
-						<WishlistEmptyCard onMakeRequest={onEmptyMakeRequest} />
+						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
 					) : filteredItems?.length === 0 ? (
-						<WishlistEmptyCard onMakeRequest={onEmptyMakeRequest} />
+						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
 					) : (
 						filteredItems?.map((item) => (
 							<ItemCard
@@ -166,6 +169,9 @@ export function ItemList({
 								}
 							/>
 						))
+					)}
+					{onEmptyMakeRequest && filteredItems && filteredItems.length > 0 && (
+						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
 					)}
 				</div>
 			)}

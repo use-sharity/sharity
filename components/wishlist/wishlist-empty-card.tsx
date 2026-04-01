@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-type WishlistEmptyCardProps = {
+type WishlistPromptCardProps = {
 	onMakeRequest?: () => void;
 };
 
-export function WishlistEmptyCard({ onMakeRequest }: WishlistEmptyCardProps) {
+export function WishlistPromptCard({ onMakeRequest }: WishlistPromptCardProps) {
 	const t = useTranslations("Wishlist");
 
 	return (

@@ -21,9 +21,11 @@ export function LanguageSwitcher() {
 
 	return (
 		<Select value={locale} onValueChange={onSelectChange}>
-			<SelectTrigger className="w-fit gap-2 border-none bg-transparent focus:ring-0 px-2 lg:px-3 focus:ring-offset-0">
+			<SelectTrigger className="w-fit gap-2 border-none shadow-none bg-transparent focus:ring-0 px-1 sm:px-2 lg:px-3 focus:ring-offset-0 sm:[&>svg:last-child]:block [&>svg:last-child]:hidden">
 				<Globe className="h-4 w-4 text-muted-foreground" />
-				<span className="text-sm font-medium">{locale.toUpperCase()}</span>
+				<span className="hidden sm:inline text-sm font-medium">
+					{locale.toUpperCase()}
+				</span>
 			</SelectTrigger>
 			<SelectContent position="popper" align="end">
 				<SelectItem value="en">English</SelectItem>

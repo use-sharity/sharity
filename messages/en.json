@@ -29,28 +29,25 @@
 	"AppHeader": {
 		"signIn": "Sign In",
 		"signUp": "Sign Up",
+		"home": "Browse",
 		"profile": "Profile",
 		"myItems": "My Items",
-		"requests": "Requests",
+		"requests": "Wishlist",
 		"calendar": "Calendar"
 	},
 	"Home": {
 		"title": "Sharity",
 		"subtitle": "Borrow and lend useful items in Da Lat.",
 		"shareButton": "Share an item",
+		"shareLabel": "Share",
+		"sharePrompt": "Got something to share?",
 		"tabs": {
 			"share": "Share",
 			"request": "Request",
 			"browse": "Browse"
 		},
-		"topRequests": "Top requests",
-		"sortBy": "Sort by",
-		"sortOptions": {
-			"recent": "Most Recent",
-			"upvoted": "Most Upvoted"
-		},
-		"noRequests": "No requests yet.",
-		"seeFullWishlist": "See full wishlist",
+		"cantFind": "Can't find what you need? Check the community wishlist.",
+		"goToWishlist": "Go to Wishlist",
 		"onboarding": {
 			"title": "How Sharity works",
 			"subtitle": "Quick overview of the full lending timeline.",
@@ -126,7 +123,7 @@
 		"dragAndDrop": "or drag and drop",
 		"uploadLimit": "Up to 5 images",
 		"uploadLimitReached": "Limit of 5 images reached. Remove some to add new ones.",
-		"uploadingExample": "You can add {count} more image{s}",
+		"uploadingExample": "You can add {count, plural, one {# more image} other {# more images}}",
 		"uploadingSaving": "Uploading & Saving...",
 		"myItems": "My Items",
 		"validation": {
@@ -175,7 +172,7 @@
 	"BorrowedItemCard": {
 		"overdue": "Overdue by {time}",
 		"dueToday": "Due today",
-		"dueInDays": "Due in {count} day{s}",
+		"dueInDays": "Due in {count, plural, one {# day} other {# days}}",
 		"dueOn": "Due {date}",
 		"viewDetails": "View Details",
 		"borrowedFrom": "Borrowed from {name}",
@@ -208,7 +205,7 @@
 		},
 		"open": "Open",
 		"receivedFrom": "Received from <user></user>",
-		"pendingRequests": "{count} pending request{s}",
+		"pendingRequests": "{count, plural, one {# pending request} other {# pending requests}}",
 		"awaitingApproval": "Awaiting approval",
 		"reject": "Reject",
 		"approve": "Approve"
@@ -573,7 +570,7 @@
 	},
 	"Ratings": {
 		"pendingTitle": "Rate Your Transactions",
-		"pendingDesc": "You have {count} transaction{s} to rate.",
+		"pendingDesc": "You have {count, plural, one {# transaction} other {# transactions}} to rate.",
 		"lender": "lender",
 		"borrower": "borrower",
 		"asLender": "As lender",
@@ -610,8 +607,8 @@
 	},
 	"Wishlist": {
 		"title": "Wishlist",
-		"subtitle": "Request items you can't find and vote on others' requests.",
-		"inputPlaceholder": "Search requests...",
+		"subtitle": "Post items you're looking for and upvote others' wishes.",
+		"inputPlaceholder": "Search wishes...",
 		"sortBy": "Sort by",
 		"sortOptions": {
 			"recent": "Most Recent",
@@ -622,41 +619,41 @@
 		"noItems": "No items found.",
 		"emptyCard": {
 			"title": "Can't find what you're looking for?",
-			"description": "Check the community wishlist to see what others need, or make a request yourself.",
-			"seeFull": "See full wishlist",
-			"makeRequest": "Make a Request"
+			"description": "Check what others are looking for, or make a wish yourself.",
+			"seeFull": "See all wishes",
+			"makeRequest": "Make a Wish"
 		},
 		"draftCard": {
-			"title": "Make a Request",
+			"title": "Make a Wish",
 			"label": "What do you need?",
 			"placeholder": "e.g. Power Drill, Camping Tent...",
 			"photoLabel": "Photos (optional)",
 			"clickToUpload": "Click to upload",
 			"dragAndDrop": "or drag and drop",
 			"uploadLimit": "Up to 5 images",
-			"matchFound": "We found {count} match{es}. Submitting will ask you to confirm.",
-			"addRequest": "Add Request",
+			"matchFound": "We found {count, plural, one {# match} other {# matches}}. Submitting will ask you to confirm.",
+			"addRequest": "Add Wish",
 			"searchItems": "Search Items",
-			"success": "Request added to wishlist!",
-			"failed": "Failed to add request: {error}"
+			"success": "Wish added!",
+			"failed": "Failed to add wish: {error}"
 		},
 		"item": {
-			"matches": "{count} match{es}",
-			"edit": "Edit Request",
-			"editTitle": "Edit Request",
+			"matches": "{count, plural, one {# match} other {# matches}}",
+			"edit": "Edit Wish",
+			"editTitle": "Edit Wish",
 			"currentPhotos": "Current photos",
 			"addMorePhotos": "Add more photos",
 			"cancel": "Cancel",
 			"save": "Save",
 			"saving": "Saving...",
-			"updated": "Request updated!",
+			"updated": "Wish updated!",
 			"failedUpdate": "Failed to update: {error}",
 			"failedVote": "Failed to vote",
 			"close": "Close"
 		},
 		"alerts": {
 			"similarTitle": "Similar items found!",
-			"similarDesc": "We found {count} items that match your request. Would you like to view them instead?",
+			"similarDesc": "We found {count} items that match your wish. Would you like to view them instead?",
 			"viewItems": "View Items",
 			"postAnyway": "Post Request Anyway"
 		}
@@ -672,7 +669,7 @@
 		"loading": "Loading...",
 		"noRatings": "No ratings",
 		"noRatingsYet": "No ratings yet",
-		"ratingCount": "{count} rating{s}",
+		"ratingCount": "{count, plural, one {# rating} other {# ratings}}",
 		"asLender": "As Lender",
 		"asBorrower": "As Borrower"
 	},

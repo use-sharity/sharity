@@ -75,7 +75,7 @@ export function WishlistPageClient({
 						value={sortBy}
 						onValueChange={(v) => setSortBy(v as "recent" | "upvoted")}
 					>
-						<SelectTrigger className="h-8 w-[140px]">
+						<SelectTrigger className="h-8 w-auto">
 							<SelectValue placeholder={t("sortBy")} />
 						</SelectTrigger>
 						<SelectContent>

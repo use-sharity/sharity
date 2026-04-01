@@ -280,7 +280,7 @@ export default function ItemDetailPage({
 					<CarouselContent>
 						{imageUrls.map((url, index) => (
 							<CarouselItem key={index}>
-								<div className="aspect-square relative">
+								<div className="aspect-[4/3] relative">
 									<CloudinaryImage
 										src={url}
 										alt={tDetail("imageAlt", {
@@ -303,16 +303,12 @@ export default function ItemDetailPage({
 					)}
 				</Carousel>
 			</div>
-		) : (
-			<div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-				{tDetail("noImages")}
-			</div>
-		);
+		) : null;
 
 	const detailsSection = (
 		<div>
 			<div className="flex justify-between items-start">
-				<h1 className="text-3xl font-bold mb-2">{item.name}</h1>
+				<h1 className="text-xl md:text-2xl font-bold mb-2">{item.name}</h1>
 				{item.isOwner && (
 					<Badge variant="outline">{tDetail("youOwnThis")}</Badge>
 				)}
@@ -333,7 +329,7 @@ export default function ItemDetailPage({
 					</span>
 				)}
 			</div>
-			<p className="text-lg text-gray-700 leading-relaxed">
+			<p className="text-sm md:text-base text-muted-foreground leading-relaxed">
 				{item.description}
 			</p>
 		</div>
@@ -486,7 +482,7 @@ export default function ItemDetailPage({
 		<div className="space-y-6">
 			<div>
 				<div className="flex justify-between items-center mb-4">
-					<h3 className="text-xl font-semibold">
+					<h3 className="text-base font-semibold">
 						{tDetail("requests", { count: item.requests?.length || 0 })}
 					</h3>
 					<Toggle
@@ -539,13 +535,13 @@ export default function ItemDetailPage({
 
 	const ownerRightColumn = (
 		<div className="space-y-6">
-			<h2 className="text-2xl font-semibold">
+			<h2 className="text-lg font-semibold">
 				{tDetail("availabilityAndRequests")}
 			</h2>
 			{ownerCalendar}
 			<div>{ownerActionsSection}</div>
 			<div className="border-t pt-6">
-				<h3 className="text-xl font-semibold mb-3">{tDetail("activity")}</h3>
+				<h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
 				<ItemActivityTimeline
 					events={activity}
 					isGiveaway={Boolean(item.giveaway)}
@@ -556,7 +552,7 @@ export default function ItemDetailPage({
 
 	const borrowerRightColumn = (
 		<div className="space-y-6">
-			<h2 className="text-2xl font-semibold">
+			<h2 className="text-lg font-semibold">
 				{tDetail("checkAvailabilityAndRequest")}
 			</h2>
 			{!item.giveaway && (item.minLeaseDays || item.maxLeaseDays) ? (
@@ -576,7 +572,7 @@ export default function ItemDetailPage({
 			) : null}
 			<BorrowerRequestPanel item={item} fullWidth />
 			<div className="border-t pt-6">
-				<h3 className="text-xl font-semibold mb-3">{tDetail("activity")}</h3>
+				<h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
 				<ItemActivityTimeline
 					events={activity}
 					isGiveaway={Boolean(item.giveaway)}
@@ -586,26 +582,23 @@ export default function ItemDetailPage({
 	);
 
 	return (
-		<div className="container mx-auto px-3 sm:px-4 lg:px-6 py-8 max-w-7xl">
-			<Button
-				variant="ghost"
-				className="mb-6 gap-2"
-				onClick={() => router.back()}
-			>
-				<ArrowLeft className="h-4 w-4" /> {tDetail("backToItems")}
-			</Button>
+		<main className="min-h-screen bg-gray-50/50">
+			<div className="max-w-2xl mx-auto px-4 pb-4 pt-0 md:px-8 md:pb-8 md:pt-2 space-y-5">
+				<div className="flex items-center justify-between gap-3">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="gap-1"
+						onClick={() => router.back()}
+					>
+						<ArrowLeft className="h-4 w-4" /> {tDetail("backToItems")}
+					</Button>
+				</div>
 
-			{item.isOwner ? (
-				<div className="grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8">
-					{leftColumn}
-					{ownerRightColumn}
-				</div>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8">
-					{leftColumn}
-					{borrowerRightColumn}
-				</div>
-			)}
-		</div>
+				{leftColumn}
+
+				{item.isOwner ? ownerRightColumn : borrowerRightColumn}
+			</div>
+		</main>
 	);
 }
