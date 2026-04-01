@@ -303,9 +303,7 @@ export default function ItemDetailPage({
 					)}
 				</Carousel>
 			</div>
-		) : (
-			null
-		);
+		) : null;
 
 	const detailsSection = (
 		<div>
