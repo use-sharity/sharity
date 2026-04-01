@@ -60,7 +60,7 @@ export default function MyItemsPage() {
 				</div>
 
 				<SignedIn>
-					<ShareItemSheet variant="fab" />
+					<ShareItemSheet variant="prompt" />
 					<MyItemsTabs />
 				</SignedIn>
 
