@@ -45,14 +45,16 @@ export function MobileTabBar() {
 				key={href}
 				href={href}
 				className={cn(
-					"flex flex-col items-center gap-1 px-3 pt-2.5 pb-1.5 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px",
+					"flex-1 flex flex-col items-center gap-1 px-1 pt-2.5 pb-1.5 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px",
 					isActive && "text-foreground border-t-foreground",
 				)}
 			>
-				<Icon className="h-6 w-6" />
+				<span className="flex items-center justify-center h-7 w-7">
+					<Icon className="h-6 w-6" />
+				</span>
 				<span
 					className={cn(
-						"text-[11px] leading-none",
+						"text-[10px] leading-none text-center truncate max-w-[64px]",
 						isActive ? "font-semibold" : "font-medium",
 					)}
 				>

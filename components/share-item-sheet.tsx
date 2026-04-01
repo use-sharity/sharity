@@ -41,12 +41,14 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 				<button
 					onClick={() => setOpen(true)}
 					type="button"
-					className="flex flex-col items-center gap-1 px-3 pt-2 pb-1.5 text-muted-foreground transition-colors"
+					className="flex-1 flex flex-col items-center gap-1 px-1 pt-2.5 pb-1.5 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px"
 				>
-					<span className="flex items-center justify-center h-6 w-6 rounded-md border-2 border-current">
-						<Plus className="h-4 w-4 stroke-[2.5]" />
+					<span className="flex items-center justify-center h-7 w-7">
+						<span className="flex items-center justify-center h-5 w-5 rounded border-[1.5px] border-current">
+							<Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+						</span>
 					</span>
-					<span className="text-[11px] leading-none font-medium">
+					<span className="text-[10px] leading-none font-medium truncate max-w-[64px] text-center">
 						{t("shareLabel")}
 					</span>
 				</button>
