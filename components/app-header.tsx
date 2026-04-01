@@ -112,16 +112,16 @@ export function AppHeader() {
 								{t("home")}
 							</Button>
 						</Link>
-						<Link href="/calendar">
-							<Button variant="ghost" size="sm">
-								<CalendarDays className="h-4 w-4 mr-1" />
-								{t("calendar")}
-							</Button>
-						</Link>
 						<Link href="/my-items">
 							<Button variant="ghost" size="sm">
 								<ArrowLeftRight className="h-4 w-4 mr-1" />
 								{t("myItems")}
+							</Button>
+						</Link>
+						<Link href="/calendar">
+							<Button variant="ghost" size="sm">
+								<CalendarDays className="h-4 w-4 mr-1" />
+								{t("calendar")}
 							</Button>
 						</Link>
 						<Link href="/wishlist">

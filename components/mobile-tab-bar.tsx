@@ -17,11 +17,11 @@ import { cn } from "@/lib/utils";
 
 const NAV_TABS = [
 	{ href: "/", icon: Search, labelKey: "home" as const },
-	{ href: "/calendar", icon: CalendarDays, labelKey: "calendar" as const },
+	{ href: "/my-items", icon: ArrowLeftRight, labelKey: "myItems" as const },
 ] as const;
 
 const NAV_TABS_RIGHT = [
-	{ href: "/my-items", icon: ArrowLeftRight, labelKey: "myItems" as const },
+	{ href: "/calendar", icon: CalendarDays, labelKey: "calendar" as const },
 	{ href: "/wishlist", icon: Heart, labelKey: "requests" as const },
 ] as const;
 
