@@ -308,7 +308,7 @@ export default function ItemDetailPage({
 	const detailsSection = (
 		<div>
 			<div className="flex justify-between items-start">
-				<h1 className="text-3xl font-bold mb-2">{item.name}</h1>
+				<h1 className="text-xl md:text-2xl font-bold mb-2">{item.name}</h1>
 				{item.isOwner && (
 					<Badge variant="outline">{tDetail("youOwnThis")}</Badge>
 				)}
@@ -329,7 +329,7 @@ export default function ItemDetailPage({
 					</span>
 				)}
 			</div>
-			<p className="text-lg text-gray-700 leading-relaxed">
+			<p className="text-sm md:text-base text-muted-foreground leading-relaxed">
 				{item.description}
 			</p>
 		</div>
@@ -482,7 +482,7 @@ export default function ItemDetailPage({
 		<div className="space-y-6">
 			<div>
 				<div className="flex justify-between items-center mb-4">
-					<h3 className="text-xl font-semibold">
+					<h3 className="text-base font-semibold">
 						{tDetail("requests", { count: item.requests?.length || 0 })}
 					</h3>
 					<Toggle
@@ -535,13 +535,13 @@ export default function ItemDetailPage({
 
 	const ownerRightColumn = (
 		<div className="space-y-6">
-			<h2 className="text-2xl font-semibold">
+			<h2 className="text-lg font-semibold">
 				{tDetail("availabilityAndRequests")}
 			</h2>
 			{ownerCalendar}
 			<div>{ownerActionsSection}</div>
 			<div className="border-t pt-6">
-				<h3 className="text-xl font-semibold mb-3">{tDetail("activity")}</h3>
+				<h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
 				<ItemActivityTimeline
 					events={activity}
 					isGiveaway={Boolean(item.giveaway)}
@@ -552,7 +552,7 @@ export default function ItemDetailPage({
 
 	const borrowerRightColumn = (
 		<div className="space-y-6">
-			<h2 className="text-2xl font-semibold">
+			<h2 className="text-lg font-semibold">
 				{tDetail("checkAvailabilityAndRequest")}
 			</h2>
 			{!item.giveaway && (item.minLeaseDays || item.maxLeaseDays) ? (
@@ -572,7 +572,7 @@ export default function ItemDetailPage({
 			) : null}
 			<BorrowerRequestPanel item={item} fullWidth />
 			<div className="border-t pt-6">
-				<h3 className="text-xl font-semibold mb-3">{tDetail("activity")}</h3>
+				<h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
 				<ItemActivityTimeline
 					events={activity}
 					isGiveaway={Boolean(item.giveaway)}

@@ -428,20 +428,27 @@
 	}
 }
 
-/* Mobile: hide event text, show only colored bars */
+/* Mobile: show event names in weekly view */
 @media (max-width: 640px) {
-	.fc .fc-event-title,
+	.fc .fc-event {
+		font-size: 0.75rem !important;
+		padding: 3px 5px !important;
+	}
+
 	.fc .fc-event-time {
 		display: none !important;
 	}
 
-	.fc .fc-daygrid-event {
-		height: 12px !important;
-		min-height: 12px !important;
+	.fc .fc-event-title {
+		display: block !important;
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
+		white-space: nowrap !important;
 	}
 
-	.fc .fc-event {
-		padding: 0 !important;
+	.fc .fc-daygrid-event {
+		min-height: auto !important;
+		height: auto !important;
 	}
 
 	.fc .fc-daygrid-day-number {

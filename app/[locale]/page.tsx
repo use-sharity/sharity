@@ -35,9 +35,9 @@ export default function Home() {
 				onClose={() => setHasSeenOnboarding(true)}
 			/>
 			<div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
-				<div className="space-y-1">
-					<h1 className="text-xl font-semibold">{t("title")}</h1>
-					<p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+				<div className="text-center space-y-1">
+					<h1 className="text-2xl font-bold">{t("title")}</h1>
+					<p className="text-muted-foreground">{t("subtitle")}</p>
 				</div>
 
 				<Suspense fallback={<div>Loading…</div>}>

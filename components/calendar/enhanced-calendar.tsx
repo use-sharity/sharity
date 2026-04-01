@@ -64,11 +64,19 @@ function FullCalendarWrapperInner({
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const interaction = require("@fullcalendar/interaction").default;
 
+	const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+
 	return (
 		<FullCalendarComponent
 			ref={calendarRef}
 			plugins={[dayGrid, interaction]}
-			initialView="dayGridMonth"
+			initialView={isMobile ? "dayGrid3Day" : "dayGridMonth"}
+			views={{
+				dayGrid3Day: {
+					type: "dayGrid",
+					duration: { days: 3 },
+				},
+			}}
 			selectable={selectable}
 			dayMaxEvents={false}
 			events={events}
