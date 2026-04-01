@@ -163,9 +163,9 @@ function toEventInputs(events: CalendarEvent[]): EventInput[] {
 			textColor = "#ffffff";
 		} else {
 			// Amber — matches app accent
-			backgroundColor = "#e8a438";
-			borderColor = "#d4922e";
-			textColor = "#3d2a0a";
+			backgroundColor = "#6b9e95";
+			borderColor = "#5a8d84";
+			textColor = "#ffffff";
 		}
 
 		const classNames: string[] = [];

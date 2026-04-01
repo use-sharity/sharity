@@ -26,13 +26,13 @@ interface EventPopoverProps {
 
 const TYPE_DOT_COLORS: Record<CalendarEvent["type"], string> = {
 	lending: "bg-[#2d6a5e]",
-	borrowing: "bg-[#e8a438]",
+	borrowing: "bg-[#2d6a5e]/50",
 	vacation: "bg-muted-foreground",
 };
 
 const TYPE_BADGE_COLORS: Record<CalendarEvent["type"], string> = {
 	lending: "bg-[#2d6a5e]/10 text-[#2d6a5e]",
-	borrowing: "bg-[#e8a438]/15 text-[#b07a1e]",
+	borrowing: "bg-[#2d6a5e]/10 text-[#2d6a5e]",
 	vacation: "bg-muted text-muted-foreground",
 };
 
