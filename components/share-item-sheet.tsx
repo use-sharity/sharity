@@ -30,7 +30,7 @@ export function ShareItemSheet({ variant = "header" }: ShareItemSheetProps) {
 				<button
 					onClick={() => setOpen(true)}
 					type="button"
-					className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-[#2d6a5e]/20 hover:bg-[#2d6a5e]/25 transition-colors"
+					className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-[#2d6a5e]/20 hover:bg-[#2d6a5e]/25 transition-colors"
 				>
 					<Plus className="h-5 w-5 text-[#1a4a3f]" />
 					<span className="text-sm font-semibold text-[#1a4a3f]">
