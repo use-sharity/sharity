@@ -7,11 +7,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-	Dialog,
-	DialogContent,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { NotificationFeed } from "./notification-feed";
@@ -71,9 +67,7 @@ export function NotificationBell() {
 
 	return (
 		<Popover>
-			<PopoverTrigger asChild>
-				{bellButton}
-			</PopoverTrigger>
+			<PopoverTrigger asChild>{bellButton}</PopoverTrigger>
 			<PopoverContent
 				className="w-96 max-h-[400px] p-0 rounded-xl overflow-hidden flex flex-col"
 				align="end"

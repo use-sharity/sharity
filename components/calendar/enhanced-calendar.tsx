@@ -9,7 +9,7 @@ import { useMutation, useQuery } from "convex/react";
 import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
 	AlertTriangle,
@@ -64,7 +64,23 @@ function FullCalendarWrapperInner({
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const interaction = require("@fullcalendar/interaction").default;
 
-	const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+	const [isMobile, setIsMobile] = useState(
+		typeof window !== "undefined" ? window.innerWidth < 640 : false,
+	);
+	useEffect(() => {
+		const check = () => {
+			const mobile = window.innerWidth < 640;
+			setIsMobile(mobile);
+			const api = calendarRef.current?.getApi?.();
+			if (api) {
+				const target = mobile ? "dayGrid3Day" : "dayGridMonth";
+				if (api.view.type !== target) api.changeView(target);
+			}
+		};
+		check();
+		window.addEventListener("resize", check);
+		return () => window.removeEventListener("resize", check);
+	}, [calendarRef]);
 
 	return (
 		<FullCalendarComponent
