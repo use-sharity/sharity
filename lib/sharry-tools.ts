@@ -20,11 +20,32 @@ function stringParam(description: string) {
 	return { type: "string" as const, description };
 }
 
+export function mdLink(text: string, path: string, locale: string) {
+	return `[${text}](/${locale}${path})`;
+}
+
+export function itemMdLink(name: string, id: string, locale: string) {
+	return mdLink(name, `/item/${id}`, locale);
+}
+
+export function pageMdLink(name: string, page: string, locale: string) {
+	const paths: Record<string, string> = {
+		"my-items": "/my-items",
+		wishlist: "/wishlist",
+		profile: "/profile",
+		notifications: "/notifications",
+	};
+	return mdLink(name, paths[page] ?? `/${page}`, locale);
+}
+
 export function buildTools(
 	convex: ConvexHttpClient,
 	locale: string,
 	attachedImageRefs: CloudinaryRef[] = [],
 ) {
+	const itemLink = (name: string, id: string) =>
+		mdLink(name, `/item/${id}`, locale);
+	const pageLink = (name: string, path: string) => mdLink(name, path, locale);
 	return {
 		getMyItems: tool({
 			description:
@@ -44,7 +65,7 @@ export function buildTools(
 							minLeaseDays: i.minLeaseDays ?? null,
 							maxLeaseDays: i.maxLeaseDays ?? null,
 							location: i.location?.address ?? null,
-							markdownLink: `[${i.name}](/${locale}/item/${i._id})`,
+							markdownLink: itemLink(i.name, i._id),
 						}));
 				} catch {
 					return { error: "Could not fetch your items right now." };
@@ -73,6 +94,7 @@ export function buildTools(
 						pickedUpAt: i.claim.pickedUpAt
 							? new Date(i.claim.pickedUpAt).toLocaleDateString(locale)
 							: null,
+						markdownLink: itemLink(i.name, i._id),
 					}));
 				} catch {
 					return { error: "Could not fetch your borrowed items right now." };
@@ -115,7 +137,7 @@ export function buildTools(
 						ward: i.location?.ward ?? null,
 						minLeaseDays: i.minLeaseDays ?? null,
 						maxLeaseDays: i.maxLeaseDays ?? null,
-						markdownLink: `[${i.name}](/${locale}/item/${i._id})`,
+						markdownLink: itemLink(i.name, i._id),
 					}));
 				} catch {
 					return { error: "Could not search items right now." };
@@ -153,6 +175,7 @@ export function buildTools(
 						ward: item.location?.ward ?? null,
 						minLeaseDays: item.minLeaseDays ?? null,
 						maxLeaseDays: item.maxLeaseDays ?? null,
+						markdownLink: itemLink(item.name, itemId),
 					};
 				} catch {
 					return { error: "Could not fetch item details right now." };
