@@ -524,6 +524,7 @@
 	font-weight: 600;
 }
 .chat-markdown a {
-	color: var(--primary);
-	text-decoration: underline;
+	color: var(--primary) !important;
+	text-decoration: underline !important;
+	font-weight: 500;
 }

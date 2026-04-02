@@ -104,7 +104,7 @@ export function buildTools(
 
 		browseItems: tool({
 			description:
-				"Search available items from other neighbors. Filter by name/keyword and/or category. Use when the user wants to find something to borrow.",
+				"Search available items from other neighbors. Filter by name/keyword and/or category. Use when the user wants to find something to borrow. IMPORTANT: The result includes a pre-formatted 'summary' field with clickable markdown links. Copy it into your response verbatim.",
 			inputSchema: jsonSchema<{ query?: string; category?: string }>({
 				type: "object",
 				properties: {
@@ -128,7 +128,7 @@ export function buildTools(
 					if (category) {
 						items = items.filter((i) => i.category === category);
 					}
-					return items.slice(0, 10).map((i) => ({
+					const results = items.slice(0, 10).map((i) => ({
 						id: i._id,
 						name: i.name,
 						description: i.description ?? "",
@@ -139,6 +139,15 @@ export function buildTools(
 						maxLeaseDays: i.maxLeaseDays ?? null,
 						markdownLink: itemLink(i.name, i._id),
 					}));
+					if (results.length === 0) return { items: [], summary: "No items found." };
+					const lines = results.map(
+						(r) => `- ${r.markdownLink} — ${r.description || r.category}`,
+					);
+					return {
+						items: results,
+						summary: `Found ${results.length} item(s):\n${lines.join("\n")}`,
+						instruction: "Use the summary above in your response. The links are clickable.",
+					};
 				} catch {
 					return { error: "Could not search items right now." };
 				}
