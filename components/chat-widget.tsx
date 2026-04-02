@@ -966,11 +966,11 @@ export function ChatWidget() {
 									type="button"
 									onClick={() => fileInputRef.current?.click()}
 									disabled={isLoading || pendingFiles.length >= 5}
-									className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 disabled:opacity-40"
+									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 disabled:opacity-40 sm:h-9 sm:w-9"
 									aria-label="Attach image"
 								>
 									<ImagePlus
-										className="h-4 w-4"
+										className="h-5 w-5 sm:h-4 sm:w-4"
 										style={{ color: "var(--muted-foreground)" }}
 									/>
 								</button>
