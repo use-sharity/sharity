@@ -37,6 +37,9 @@ yarn-error.log*
 # CLAUDE.md is kept - it's standard project docs readable by any IDE
 .claude/
 
+# Superpowers brainstorming artifacts
+.superpowers/
+
 # clerk configuration (can include secrets)
 /.clerk/
 
@@ -46,3 +49,4 @@ yarn-error.log*
 /blob-report/
 /playwright/.cache/
 playwright/.auth/
+.worktrees

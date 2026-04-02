@@ -119,6 +119,11 @@ pnpm start            # Start production server
 # Качество кода
 pnpm lint             # ESLint
 pnpm format           # Biome formatter
+
+# Evals (Sharry AI assistant)
+./scripts/run-evals.sh          # Run promptfoo evals (requires ANTHROPIC_API_KEY)
+pnpm eval                       # Same via pnpm
+pnpm eval:view                  # Run + open results web UI
 ```
 
 ## Environment Variables

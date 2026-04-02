@@ -497,3 +497,33 @@
 		transform: rotateY(180deg);
 	}
 }
+
+/* Compact markdown styles for chat bubbles */
+.chat-markdown p {
+	margin: 0 0 0.25em;
+}
+.chat-markdown p:last-child {
+	margin-bottom: 0;
+}
+.chat-markdown ul,
+.chat-markdown ol {
+	margin: 0.25em 0;
+	padding-left: 1.25em;
+}
+.chat-markdown ul {
+	list-style-type: disc !important;
+}
+.chat-markdown ol {
+	list-style-type: decimal !important;
+}
+.chat-markdown li {
+	margin: 0;
+	display: list-item !important;
+}
+.chat-markdown strong {
+	font-weight: 600;
+}
+.chat-markdown a {
+	color: var(--primary);
+	text-decoration: underline;
+}

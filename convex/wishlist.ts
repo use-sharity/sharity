@@ -103,6 +103,20 @@ export const toggleVote = mutation({
 	},
 });
 
+export const deleteItem = mutation({
+	args: { id: v.id("wishlist") },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+
+		const item = await ctx.db.get(args.id);
+		if (!item) throw new Error("Wish not found");
+		if (item.userId !== identity.subject) throw new Error("Not authorized");
+
+		await ctx.db.delete(args.id);
+	},
+});
+
 export const update = mutation({
 	args: {
 		id: v.id("wishlist"),
