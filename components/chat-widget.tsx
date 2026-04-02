@@ -146,6 +146,7 @@ export function ChatWidget() {
 	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isDragOver, setIsDragOver] = useState(false);
+	const panelRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { upload: uploadToCloudinary } = useCloudinaryUpload(
 		api.cloudinary.upload,
@@ -302,6 +303,28 @@ export function ChatWidget() {
 			inputRef.current?.focus();
 		}
 	}, [isOpen, scrollToBottom]);
+
+	// Resize chat panel to visual viewport on iOS when keyboard opens/closes
+	useEffect(() => {
+		const vv = window.visualViewport;
+		const panel = panelRef.current;
+		if (!vv || !panel || !isOpen) return;
+		const onResize = () => {
+			// Only apply on mobile (sm breakpoint = 640px)
+			if (window.innerWidth >= 640) return;
+			panel.style.height = `${vv.height}px`;
+			panel.style.top = `${vv.offsetTop}px`;
+		};
+		onResize();
+		vv.addEventListener("resize", onResize);
+		vv.addEventListener("scroll", onResize);
+		return () => {
+			vv.removeEventListener("resize", onResize);
+			vv.removeEventListener("scroll", onResize);
+			panel.style.height = "";
+			panel.style.top = "";
+		};
+	}, [isOpen]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -558,7 +581,8 @@ export function ChatWidget() {
 					onDragOver={handleDragOver}
 					onDragLeave={handleDragLeave}
 					onDrop={handleDrop}
-					className="fixed inset-x-0 top-0 z-50 flex h-[100dvh] flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
+					ref={panelRef}
+					className="fixed inset-0 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
 					style={{
 						backgroundColor: "rgba(255, 255, 255, 0.97)",
 						backdropFilter: "blur(12px)",
