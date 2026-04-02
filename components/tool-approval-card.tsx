@@ -57,7 +57,7 @@ export function ToolApprovalCard({
 	if (decided) {
 		return (
 			<div
-				className="rounded-lg px-3 py-2 text-xs"
+				className="rounded-lg px-3 py-2 text-sm"
 				style={{ color: "#7A7570" }}
 			>
 				{decided === "approved" ? "✓ Approved" : "✗ Denied"}
@@ -85,7 +85,7 @@ export function ToolApprovalCard({
 						setDecided("approved");
 						onApprove(approvalId);
 					}}
-					className="rounded-md px-3 py-1 text-xs font-medium"
+					className="rounded-md px-4 py-1.5 text-sm font-medium"
 					style={{
 						backgroundColor: isHighRisk ? "#B91C1C" : "#2D4A35",
 						color: "#F0EBE0",
@@ -99,7 +99,7 @@ export function ToolApprovalCard({
 						setDecided("denied");
 						onDeny(approvalId);
 					}}
-					className="rounded-md px-3 py-1 text-xs font-medium"
+					className="rounded-md px-4 py-1.5 text-sm font-medium"
 					style={{ backgroundColor: "#E0D9CE", color: "#1C1C1A" }}
 				>
 					{isHighRisk ? "Cancel" : "Deny"}

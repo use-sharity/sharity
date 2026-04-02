@@ -439,6 +439,12 @@ export default function ItemDetailPage({
 									toast.success(tDetail("itemUpdated"));
 								}}
 								submitLabel={tDetail("saveChanges")}
+								hideMyItemsLink
+								footerActions={
+									<Button variant="outline" onClick={() => setIsEditing(false)}>
+										{tDetail("cancel")}
+									</Button>
+								}
 							/>
 						</CardContent>
 					</Card>
@@ -454,7 +460,6 @@ export default function ItemDetailPage({
 				{rateTransactionSection}
 				{!isEditing ? ownerItemActions : null}
 				{editSection}
-				{isEditing ? ownerItemActions : null}
 			</div>
 			<Dialog
 				open={selectedRatingClaim !== null}

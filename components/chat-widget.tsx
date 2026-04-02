@@ -146,6 +146,7 @@ export function ChatWidget() {
 	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
 	const [isDragOver, setIsDragOver] = useState(false);
+	const panelRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { upload: uploadToCloudinary } = useCloudinaryUpload(
 		api.cloudinary.upload,
@@ -272,6 +273,8 @@ export function ChatWidget() {
 		for (const msg of messages) {
 			const text = getMessageText(msg);
 			if (!text) continue;
+			// Skip seeded messages — they're already in the DB
+			if (msg.id.startsWith("persisted-")) continue;
 			// Only save if content is new or changed (tool result added after approval)
 			const prev = savedContentRef.current.get(msg.id);
 			if (prev === text) continue;
@@ -299,6 +302,30 @@ export function ChatWidget() {
 			setTimeout(() => scrollToBottom(true), 50);
 			inputRef.current?.focus();
 		}
+	}, [isOpen, scrollToBottom]);
+
+	// Resize chat panel to visual viewport on iOS when keyboard opens/closes
+	useEffect(() => {
+		const vv = window.visualViewport;
+		const panel = panelRef.current;
+		if (!vv || !panel || !isOpen) return;
+		const onResize = () => {
+			// Only apply on mobile (sm breakpoint = 640px)
+			if (window.innerWidth >= 640) return;
+			panel.style.height = `${vv.height}px`;
+			panel.style.top = `${vv.offsetTop}px`;
+			// Scroll to bottom after keyboard resize so latest message is visible
+			setTimeout(() => scrollToBottom(true), 50);
+		};
+		onResize();
+		vv.addEventListener("resize", onResize);
+		vv.addEventListener("scroll", onResize);
+		return () => {
+			vv.removeEventListener("resize", onResize);
+			vv.removeEventListener("scroll", onResize);
+			panel.style.height = "";
+			panel.style.top = "";
+		};
 	}, [isOpen, scrollToBottom]);
 
 	useEffect(() => {
@@ -537,7 +564,7 @@ export function ChatWidget() {
 				<button
 					type="button"
 					onClick={() => setIsOpen(true)}
-					className="fixed right-4 bottom-20 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6"
+					className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6 ${isSignedIn ? "bottom-24" : "bottom-6"}`}
 					style={{ backgroundColor: "var(--primary)" }}
 					aria-label="Open chat with Sharry"
 				>
@@ -556,11 +583,13 @@ export function ChatWidget() {
 					onDragOver={handleDragOver}
 					onDragLeave={handleDragLeave}
 					onDrop={handleDrop}
+					ref={panelRef}
 					className="fixed inset-0 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
 					style={{
 						backgroundColor: "rgba(255, 255, 255, 0.97)",
 						backdropFilter: "blur(12px)",
 						borderColor: "var(--border)",
+						WebkitTapHighlightColor: "transparent",
 					}}
 				>
 					{/* Drag overlay */}
@@ -586,7 +615,7 @@ export function ChatWidget() {
 					>
 						<div className="flex items-center gap-2">
 							<div
-								className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+								className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold sm:h-7 sm:w-7 sm:text-xs"
 								style={{
 									backgroundColor: "var(--primary)",
 									color: "var(--primary-foreground)",
@@ -595,23 +624,23 @@ export function ChatWidget() {
 								S
 							</div>
 							<span
-								className="font-semibold"
+								className="text-lg font-semibold sm:text-base"
 								style={{ color: "var(--foreground)" }}
 							>
 								Sharry
 							</span>
 						</div>
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-1">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<button
 										type="button"
 										onClick={handleClearChat}
 										aria-label="New chat"
-										className="rounded-md p-1 transition-colors hover:bg-black/5"
+										className="rounded-md p-2.5 transition-colors hover:bg-black/5 sm:p-1"
 									>
 										<RotateCcw
-											className="h-3.5 w-3.5"
+											className="h-4 w-4 sm:h-3.5 sm:w-3.5"
 											style={{ color: "var(--muted-foreground)" }}
 										/>
 									</button>
@@ -624,10 +653,10 @@ export function ChatWidget() {
 										type="button"
 										onClick={() => setIsOpen(false)}
 										aria-label="Close chat"
-										className="rounded-md p-1 transition-colors hover:bg-black/5"
+										className="rounded-md p-2.5 transition-colors hover:bg-black/5 sm:p-1"
 									>
 										<X
-											className="h-4 w-4"
+											className="h-5 w-5 sm:h-4 sm:w-4"
 											style={{ color: "var(--muted-foreground)" }}
 										/>
 									</button>
@@ -638,13 +667,16 @@ export function ChatWidget() {
 					</div>
 
 					{/* Messages */}
-					<div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
+					<div
+						className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+						aria-live="polite"
+					>
 						{messages.length === 0 && (
 							<>
 								{/* Welcome message */}
 								<div className="mb-4 flex gap-2">
 									<div
-										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+										className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-6 sm:w-6 sm:text-[9px]"
 										style={{
 											backgroundColor: "var(--primary)",
 											color: "var(--primary-foreground)",
@@ -653,7 +685,7 @@ export function ChatWidget() {
 										S
 									</div>
 									<div
-										className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
+										className="rounded-lg rounded-tl-none px-3 py-2 text-base sm:text-sm"
 										style={{
 											backgroundColor: "var(--primary-foreground)",
 											color: "var(--foreground)",
@@ -671,7 +703,7 @@ export function ChatWidget() {
 											key={s}
 											type="button"
 											onClick={() => handleSuggestionClick(s)}
-											className="rounded-full border px-3 py-1.5 text-xs transition-colors hover:bg-gray-50"
+											className="rounded-full border px-3 py-1.5 text-sm transition-colors hover:bg-gray-50 sm:text-xs"
 											style={{
 												borderColor: "var(--border)",
 												color: "var(--primary)",
@@ -685,7 +717,6 @@ export function ChatWidget() {
 						)}
 
 						{messages.map((message) => {
-							const text = getMessageText(message);
 							return (
 								<div
 									key={message.id}
@@ -693,7 +724,7 @@ export function ChatWidget() {
 								>
 									{message.role === "assistant" && (
 										<div
-											className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+											className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-6 sm:w-6 sm:text-[9px]"
 											style={{
 												backgroundColor: "var(--primary)",
 												color: "var(--primary-foreground)",
@@ -703,7 +734,7 @@ export function ChatWidget() {
 										</div>
 									)}
 									<div
-										className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+										className={`max-w-[85%] rounded-lg px-3 py-2 text-base sm:text-sm ${
 											message.role === "user"
 												? "rounded-tr-none"
 												: "rounded-tl-none"
@@ -824,7 +855,7 @@ export function ChatWidget() {
 							) && (
 								<div className="mb-3 flex gap-2">
 									<div
-										className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+										className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-6 sm:w-6 sm:text-[9px]"
 										style={{
 											backgroundColor: "var(--primary)",
 											color: "var(--primary-foreground)",
@@ -833,7 +864,7 @@ export function ChatWidget() {
 										S
 									</div>
 									<div
-										className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
+										className="rounded-lg rounded-tl-none px-3 py-2 text-base sm:text-sm"
 										style={{
 											backgroundColor: "var(--primary-foreground)",
 											color: "var(--foreground)",
@@ -864,7 +895,7 @@ export function ChatWidget() {
 						{error && (
 							<div className="mb-3 flex gap-2">
 								<div
-									className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+									className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-6 sm:w-6 sm:text-[9px]"
 									style={{
 										backgroundColor: "var(--primary)",
 										color: "var(--primary-foreground)",
@@ -873,7 +904,7 @@ export function ChatWidget() {
 									S
 								</div>
 								<div
-									className="rounded-lg rounded-tl-none px-3 py-2 text-sm"
+									className="rounded-lg rounded-tl-none px-3 py-2 text-base sm:text-sm"
 									style={{
 										backgroundColor: "var(--primary-foreground)",
 										color: "var(--foreground)",
@@ -929,17 +960,17 @@ export function ChatWidget() {
 							onChange={handleFileSelect}
 						/>
 
-						<div className="flex gap-2">
+						<div className="flex items-center gap-2">
 							{isSignedIn && (
 								<button
 									type="button"
 									onClick={() => fileInputRef.current?.click()}
 									disabled={isLoading || pendingFiles.length >= 5}
-									className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 disabled:opacity-40"
+									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-black/5 disabled:opacity-40 sm:h-9 sm:w-9"
 									aria-label="Attach image"
 								>
 									<ImagePlus
-										className="h-4 w-4"
+										className="h-5 w-5 sm:h-4 sm:w-4"
 										style={{ color: "var(--muted-foreground)" }}
 									/>
 								</button>
@@ -951,7 +982,7 @@ export function ChatWidget() {
 								onChange={(e) => setInput(e.target.value)}
 								placeholder="Ask Sharry anything..."
 								disabled={isLoading}
-								className="flex-1 rounded-full px-4 py-2 text-sm outline-none"
+								className="h-10 flex-1 rounded-full px-4 text-base outline-none sm:h-9 sm:text-sm"
 								style={{
 									backgroundColor: "var(--primary-foreground)",
 									color: "var(--foreground)",
@@ -964,7 +995,7 @@ export function ChatWidget() {
 									isLoading ||
 									isUploading
 								}
-								className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-40"
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
 								style={{ backgroundColor: "var(--primary)" }}
 							>
 								<Send
@@ -975,7 +1006,7 @@ export function ChatWidget() {
 						</div>
 					</form>
 					<p
-						className="px-4 pb-2 text-center text-[10px]"
+						className="px-4 pb-2 text-center text-xs sm:text-[10px]"
 						style={{ color: "var(--muted-foreground)" }}
 					>
 						{disclaimerText}
