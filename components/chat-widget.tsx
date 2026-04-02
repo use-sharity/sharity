@@ -558,7 +558,7 @@ export function ChatWidget() {
 					onDragOver={handleDragOver}
 					onDragLeave={handleDragLeave}
 					onDrop={handleDrop}
-					className="fixed inset-0 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
+					className="fixed inset-x-0 top-0 z-50 flex h-[100dvh] flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
 					style={{
 						backgroundColor: "rgba(255, 255, 255, 0.97)",
 						backdropFilter: "blur(12px)",
