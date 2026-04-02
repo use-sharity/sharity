@@ -60,17 +60,17 @@ const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
 	},
 	has_items_no_activity: {
 		en: [
-			"What's on the wishlist?",
+			"About Sharity",
 			"Find me something to borrow",
 			"Show my items",
 		],
 		vi: [
-			"Xem wishlist",
+			"Pro Sharity",
 			"T\u00ECm \u0111\u1ED3 m\u01B0\u1EE3n",
 			"Xem \u0111\u1ED3 c\u1EE7a t\u00F4i",
 		],
 		ru: [
-			"\u0427\u0442\u043E \u0432 \u0432\u0438\u0448\u043B\u0438\u0441\u0442\u0435?",
+			"\u041F\u0440\u043E Sharity",
 			"\u041D\u0430\u0439\u0434\u0438 \u043C\u043D\u0435 \u0447\u0442\u043E-\u043D\u0438\u0431\u0443\u0434\u044C",
 			"\u041F\u043E\u043A\u0430\u0436\u0438 \u043C\u043E\u0438 \u0432\u0435\u0449\u0438",
 		],
@@ -92,17 +92,17 @@ const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
 		en: [
 			"Any updates?",
 			"Find me something to borrow",
-			"What's on the wishlist?",
+			"About Sharity",
 		],
 		vi: [
 			"C\u00F3 g\u00EC m\u1EDBi kh\u00F4ng?",
 			"T\u00ECm \u0111\u1ED3 m\u01B0\u1EE3n",
-			"Xem wishlist",
+			"Pro Sharity",
 		],
 		ru: [
 			"\u0415\u0441\u0442\u044C \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F?",
 			"\u041D\u0430\u0439\u0434\u0438 \u043C\u043D\u0435 \u0447\u0442\u043E-\u043D\u0438\u0431\u0443\u0434\u044C",
-			"\u0427\u0442\u043E \u0432 \u0432\u0438\u0448\u043B\u0438\u0441\u0442\u0435?",
+			"\u041F\u0440\u043E Sharity",
 		],
 	},
 	logged_out: {

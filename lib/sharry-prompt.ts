@@ -118,7 +118,7 @@ export interface UserContext {
 function buildUserContext(ctx: UserContext): string {
 	const lines = [
 		"## The user's current state",
-		"You have access to this neighbor's live account data. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
+		"This neighbor is SIGNED IN. You have access to their live account data. Never tell them to sign up or sign in — they already are. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
 	];
 	lines.push(
 		`- Items listed (${ctx.itemCount}): ${ctx.itemNames.length > 0 ? ctx.itemNames.join(", ") : "none"}`,
