@@ -44,6 +44,7 @@ export function buildTools(
 							minLeaseDays: i.minLeaseDays ?? null,
 							maxLeaseDays: i.maxLeaseDays ?? null,
 							location: i.location?.address ?? null,
+							link: `/${locale}/item/${i._id}`,
 						}));
 				} catch {
 					return { error: "Could not fetch your items right now." };
@@ -96,7 +97,11 @@ export function buildTools(
 					let items = await convex.query(api.items.get);
 					if (query) {
 						const q = query.toLowerCase();
-						items = items.filter((i) => i.name.toLowerCase().includes(q));
+						items = items.filter(
+							(i) =>
+								i.name.toLowerCase().includes(q) ||
+								(i.description ?? "").toLowerCase().includes(q),
+						);
 					}
 					if (category) {
 						items = items.filter((i) => i.category === category);
@@ -110,6 +115,7 @@ export function buildTools(
 						ward: i.location?.ward ?? null,
 						minLeaseDays: i.minLeaseDays ?? null,
 						maxLeaseDays: i.maxLeaseDays ?? null,
+						link: `/${locale}/item/${i._id}`,
 					}));
 				} catch {
 					return { error: "Could not search items right now." };
