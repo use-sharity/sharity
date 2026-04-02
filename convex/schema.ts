@@ -193,4 +193,10 @@ export default defineSchema({
 		content: v.string(),
 		createdAt: v.number(),
 	}).index("by_user", ["userId", "createdAt"]),
+
+	// Tracks when each user last cleared their chat (soft-delete marker)
+	chat_cleared_at: defineTable({
+		userId: v.string(),
+		clearedAt: v.number(),
+	}).index("by_user", ["userId"]),
 });

@@ -286,11 +286,22 @@ export const resolveMyBorrowedItem = query({
 	},
 });
 
+// Helper: get the timestamp of the user's last chat clear
+async function getClearedAt(ctx: { db: any }, userId: string): Promise<number> {
+	const record = await ctx.db
+		.query("chat_cleared_at")
+		.withIndex("by_user", (q: any) => q.eq("userId", userId))
+		.unique();
+	return record?.clearedAt ?? 0;
+}
+
 export const getMessages = query({
 	handler: async (ctx) => {
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) return null;
 		const userId = identity.subject;
+
+		const clearedAt = await getClearedAt(ctx, userId);
 
 		const messages = await ctx.db
 			.query("chat_messages")
@@ -298,12 +309,15 @@ export const getMessages = query({
 			.order("desc")
 			.take(200);
 
-		// Return in chronological order (oldest first)
-		return messages.reverse().map((m) => ({
-			role: m.role,
-			content: m.content,
-			createdAt: m.createdAt,
-		}));
+		// Return only messages after the last clear, in chronological order
+		return messages
+			.filter((m) => m.createdAt > clearedAt)
+			.reverse()
+			.map((m) => ({
+				role: m.role,
+				content: m.content,
+				createdAt: m.createdAt,
+			}));
 	},
 });
 
@@ -332,13 +346,19 @@ export const clearMessages = mutation({
 		if (!identity) throw new Error("Unauthenticated");
 		const userId = identity.subject;
 
-		const messages = await ctx.db
-			.query("chat_messages")
+		// Soft-delete: mark the clear time instead of deleting messages
+		const existing = await ctx.db
+			.query("chat_cleared_at")
 			.withIndex("by_user", (q) => q.eq("userId", userId))
-			.collect();
+			.unique();
 
-		for (const msg of messages) {
-			await ctx.db.delete(msg._id);
+		if (existing) {
+			await ctx.db.patch(existing._id, { clearedAt: Date.now() });
+		} else {
+			await ctx.db.insert("chat_cleared_at", {
+				userId,
+				clearedAt: Date.now(),
+			});
 		}
 	},
 });
