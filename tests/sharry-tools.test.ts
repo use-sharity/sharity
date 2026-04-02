@@ -40,16 +40,17 @@ describe("buildTools — read tools", () => {
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getMyItems.execute(
+			const result = (await tools.getMyItems.execute!(
 				{} as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(2);
-			expect(result[0]).toHaveProperty("itemId", "item1");
-			expect(result[0]).toHaveProperty("name", "Coffee Grinder");
-			expect(result[0]).toHaveProperty("category", "kitchen");
-			expect(result[1]).toHaveProperty("itemId", "item2");
+			expect(result.items).toHaveLength(2);
+			expect(result.items[0]).toHaveProperty("itemId", "item1");
+			expect(result.items[0]).toHaveProperty("name", "Coffee Grinder");
+			expect(result.items[0]).toHaveProperty("category", "kitchen");
+			expect(result.items[1]).toHaveProperty("itemId", "item2");
+			expect(result.summary).toContain("2 item(s)");
 		});
 
 		it("filters out non-owned items", async () => {
@@ -60,19 +61,19 @@ describe("buildTools — read tools", () => {
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getMyItems.execute(
+			const result = (await tools.getMyItems.execute!(
 				{} as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(1);
-			expect(result[0].name).toBe("Mine");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0].name).toBe("Mine");
 		});
 
 		it("returns error on failure", async () => {
 			const convex = createMockConvex([new Error("Network error")]);
 			const tools = buildTools(convex, "en");
-			const result = await tools.getMyItems.execute({} as any, {} as any);
+			const result = await tools.getMyItems.execute!({} as any, {} as any);
 
 			expect(result).toHaveProperty("error");
 		});
@@ -88,25 +89,30 @@ describe("buildTools — read tools", () => {
 						name: "Keyboard",
 						ownerId: "owner1",
 						owner: { name: "Dmitry" },
-						claim: { endDate: 1711929600000 },
+						claim: {
+							_id: "claim1",
+							startDate: 1711929600000,
+							endDate: 1711929600000,
+						},
 					},
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getMyBorrowedItems.execute(
+			const result = (await tools.getMyBorrowedItems.execute!(
 				{} as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(1);
-			expect(result[0]).toHaveProperty("itemId", "item1");
-			expect(result[0]).toHaveProperty("ownerId", "owner1");
-			expect(result[0]).toHaveProperty("ownerName", "Dmitry");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0]).toHaveProperty("itemId", "item1");
+			expect(result.items[0]).toHaveProperty("ownerId", "owner1");
+			expect(result.items[0]).toHaveProperty("ownerName", "Dmitry");
+			expect(result.summary).toContain("Fostering 1 item(s)");
 		});
 	});
 
 	describe("browseItems", () => {
-		it("returns item id for each result", async () => {
+		it("returns itemId for each result", async () => {
 			const convex = createMockConvex([
 				// api.items.get
 				[
@@ -119,14 +125,14 @@ describe("buildTools — read tools", () => {
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.browseItems.execute(
+			const result = (await tools.browseItems.execute!(
 				{} as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(1);
-			expect(result[0]).toHaveProperty("id", "item1");
-			expect(result[0]).toHaveProperty("name", "Drill");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0]).toHaveProperty("itemId", "item1");
+			expect(result.items[0]).toHaveProperty("name", "Drill");
 		});
 
 		it("filters by query string", async () => {
@@ -137,13 +143,13 @@ describe("buildTools — read tools", () => {
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.browseItems.execute(
+			const result = (await tools.browseItems.execute!(
 				{ query: "drill" } as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(1);
-			expect(result[0].name).toBe("Drill");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0].name).toBe("Drill");
 		});
 	});
 
@@ -163,7 +169,7 @@ describe("buildTools — read tools", () => {
 				{ name: "Dmitry", avatarUrl: null },
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getItemDetails.execute(
+			const result = (await tools.getItemDetails.execute!(
 				{ itemId: "item1" } as any,
 				{} as any,
 			)) as any;
@@ -172,12 +178,13 @@ describe("buildTools — read tools", () => {
 			expect(result).toHaveProperty("ownerName", "Dmitry");
 			expect(result).toHaveProperty("name", "Keyboard");
 			expect(result).toHaveProperty("location", "Da Lat");
+			expect(result).toHaveProperty("itemId", "item1");
 		});
 
 		it("returns error when item not found", async () => {
 			const convex = createMockConvex([null]);
 			const tools = buildTools(convex, "en");
-			const result = await tools.getItemDetails.execute(
+			const result = await tools.getItemDetails.execute!(
 				{ itemId: "nonexistent" } as any,
 				{} as any,
 			);
@@ -205,7 +212,7 @@ describe("buildTools — read tools", () => {
 				},
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getClaimsOnItem.execute(
+			const result = (await tools.getClaimsOnItem.execute!(
 				{ itemName: "coffee" } as any,
 				{} as any,
 			)) as any;
@@ -235,7 +242,7 @@ describe("buildTools — read tools", () => {
 				},
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getClaimsOnItem.execute(
+			const result = (await tools.getClaimsOnItem.execute!(
 				{ itemName: "coffee" } as any,
 				{} as any,
 			)) as any;
@@ -255,7 +262,7 @@ describe("buildTools — read tools", () => {
 				},
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getClaimsOnItem.execute(
+			const result = (await tools.getClaimsOnItem.execute!(
 				{ itemName: "keyboard" } as any,
 				{} as any,
 			)) as any;
@@ -294,7 +301,7 @@ describe("buildTools — read tools", () => {
 				return { averageStars: 4.5, totalRatings: 12 };
 			});
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getUserProfile.execute(
+			const result = (await tools.getUserProfile.execute!(
 				{ userId: "user1" } as any,
 				{} as any,
 			)) as any;
@@ -314,7 +321,7 @@ describe("buildTools — read tools", () => {
 			convex.query = vi.fn(async () => null);
 			// Both getProfile and getRatingSummary return null
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getUserProfile.execute(
+			const result = (await tools.getUserProfile.execute!(
 				{ userId: "unknown" } as any,
 				{} as any,
 			)) as any;
@@ -345,7 +352,7 @@ describe("buildTools — read tools", () => {
 				return { averageStars: null, totalRatings: 0 };
 			});
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getUserProfile.execute(
+			const result = (await tools.getUserProfile.execute!(
 				{ userId: "user1" } as any,
 				{} as any,
 			)) as any;
@@ -360,11 +367,12 @@ describe("buildTools — read tools", () => {
 	});
 
 	describe("getNotifications", () => {
-		it("returns itemId for each notification", async () => {
+		it("returns itemId and summary for each notification", async () => {
 			const convex = createMockConvex([
 				// api.notifications.get
 				[
 					{
+						_id: "notif1",
 						type: "new_request",
 						isRead: false,
 						itemId: "item1",
@@ -374,14 +382,16 @@ describe("buildTools — read tools", () => {
 				],
 			]);
 			const tools = buildTools(convex, "en");
-			const result = (await tools.getNotifications.execute(
+			const result = (await tools.getNotifications.execute!(
 				{} as any,
 				{} as any,
-			)) as any[];
+			)) as any;
 
-			expect(result).toHaveLength(1);
-			expect(result[0]).toHaveProperty("itemId", "item1");
-			expect(result[0]).toHaveProperty("itemName", "Tent");
+			expect(result.items).toHaveLength(1);
+			expect(result.items[0]).toHaveProperty("itemId", "item1");
+			expect(result.items[0]).toHaveProperty("itemName", "Tent");
+			expect(result.items[0]).toHaveProperty("markdownLink");
+			expect(result.summary).toContain("1 notification(s)");
 		});
 	});
 });

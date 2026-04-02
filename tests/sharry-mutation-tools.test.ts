@@ -28,7 +28,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.deleteItem.execute(
+			const result = (await tools.deleteItem.execute!(
 				{ itemName: "coffee" } as any,
 				{} as any,
 			)) as any;
@@ -61,7 +61,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.deleteItem.execute(
+			const result = (await tools.deleteItem.execute!(
 				{ itemName: "coffee" } as any,
 				{} as any,
 			)) as any;
@@ -84,7 +84,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.deleteItem.execute(
+			const result = (await tools.deleteItem.execute!(
 				{ itemName: "keyboard" } as any,
 				{} as any,
 			)) as any;
@@ -107,7 +107,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.deleteItem.execute(
+			const result = (await tools.deleteItem.execute!(
 				{ itemName: "coffee", itemId: "direct-id-123" } as any,
 				{} as any,
 			)) as any;
@@ -127,7 +127,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 		it("returns sign-in error when resolveMyItem returns null", async () => {
 			const convex = createMockConvex([null]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.deleteItem.execute(
+			const result = (await tools.deleteItem.execute!(
 				{ itemName: "coffee" } as any,
 				{} as any,
 			)) as any;
@@ -148,7 +148,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.updateItem.execute(
+			const result = (await tools.updateItem.execute!(
 				{
 					itemName: "grinder",
 					itemId: "specific-id",
@@ -189,7 +189,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.approveClaim.execute(
+			const result = (await tools.approveClaim.execute!(
 				{ itemName: "tent" } as any,
 				{} as any,
 			)) as any;
@@ -211,7 +211,7 @@ describe("resolveOwned (tested via mutation tools)", () => {
 				},
 			]);
 			const tools = buildMutationTools(convex, "en");
-			const result = (await tools.createItem.execute(
+			const result = (await tools.createItem.execute!(
 				{
 					name: "Blender",
 					description: "High speed",

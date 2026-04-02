@@ -27,8 +27,10 @@ const TOOL_SUMMARIES: Record<string, (input: any) => string> = {
 	switchItemMode: (i) =>
 		`Switch "${i.itemName}" to ${i.giveaway ? "giveaway" : "lending"} mode`,
 	blockDates: (i) => `Block calendar: ${i.startDate} – ${i.endDate}`,
+	unblockDates: () => "Remove blocked dates from your calendar",
 	updateProfile: () => "Update your profile",
 	markAllNotificationsRead: () => "Mark all notifications as read",
+	subscribeToAvailability: () => "Toggle availability alerts for this item",
 };
 
 interface ToolApprovalCardProps {

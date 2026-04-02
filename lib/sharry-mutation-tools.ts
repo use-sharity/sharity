@@ -4,14 +4,11 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import type { CloudinaryRef } from "@/lib/cloudinary-ref";
 import { itemMdLink, pageMdLink } from "@/lib/sharry-tools";
-
-function stringParam(description: string) {
-	return { type: "string" as const, description };
-}
-
-function asItemId(id: string) {
-	return id as Id<"items">;
-}
+import {
+	asItemId,
+	stringParam,
+	validateCategory,
+} from "@/lib/sharry-tool-utils";
 
 const ITEM_ID_PARAM = stringParam(
 	"Item ID (use when multiple items share the same name — from a previous disambiguation response)",
@@ -153,7 +150,7 @@ export function buildMutationTools(
 					await convex.mutation(api.items.create, {
 						name,
 						description,
-						category: category as any,
+						category: validateCategory(category),
 						imageCloudinary,
 					});
 					// Resolve the new item to get its ID for a direct link
@@ -212,11 +209,12 @@ export function buildMutationTools(
 					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const imageCloudinary = resolveImageRefs(imageIndices);
+					const validCategory = validateCategory(category);
 					await convex.mutation(api.items.update, {
 						id: resolved.itemId,
 						...(name && { name }),
 						...(description && { description }),
-						...(category && { category: category as any }),
+						...(validCategory && { category: validCategory }),
 						...(imageCloudinary && { imageCloudinary }),
 					});
 					const photoNote = imageCloudinary
@@ -799,7 +797,8 @@ export function buildMutationTools(
 						})),
 						instruction: `Review these existing wishes. If any are similar to "${query}" and the user does NOT own it (isOwner: false), tell them it already exists and offer to vote for it. If they OWN a similar wish (isOwner: true), tell them they already have that wish — don't suggest voting on your own wish. Only proceed with createWishlistItem if nothing similar exists.`,
 					};
-				} catch {
+				} catch (e) {
+					console.error("checkWishlist failed:", e);
 					return { error: "Could not check wishlist right now." };
 				}
 			},
@@ -980,6 +979,35 @@ export function buildMutationTools(
 			},
 		}),
 
+		unblockDates: tool({
+			description:
+				"Remove a vacation/unavailability block from the user's calendar. Call getMyBlockedDates first to get the blockId.",
+			inputSchema: jsonSchema<{ blockId: string }>({
+				type: "object",
+				properties: {
+					blockId: stringParam("The block ID from getMyBlockedDates results"),
+				},
+				required: ["blockId"],
+			}),
+			needsApproval: true,
+			execute: async ({ blockId }) => {
+				try {
+					await convex.mutation(api.items.deleteOwnerUnavailabilityRange, {
+						id: blockId as Id<"owner_unavailability">,
+					});
+					return {
+						success:
+							"Removed the blocked dates. Your items are available again for that period.",
+						nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
+					};
+				} catch (e: any) {
+					return {
+						error: e.message ?? "Could not remove blocked dates.",
+					};
+				}
+			},
+		}),
+
 		updateProfile: tool({
 			description:
 				"Update the user's profile. Can change name, bio, address, or contact methods (telegram, whatsapp, facebook, phone).",
@@ -1046,6 +1074,7 @@ export function buildMutationTools(
 				type: "object",
 				properties: {},
 			}),
+			needsApproval: true,
 			execute: async () => {
 				try {
 					await convex.mutation(api.notifications.markAllAsRead);
@@ -1056,6 +1085,36 @@ export function buildMutationTools(
 				} catch (e: any) {
 					return {
 						error: e.message ?? "Could not mark notifications as read.",
+					};
+				}
+			},
+		}),
+
+		subscribeToAvailability: tool({
+			description:
+				"Toggle availability alerts for an item. When subscribed, the user gets notified when the item becomes available. Use when browsing finds a booked item and the user wants to know when it's free.",
+			inputSchema: jsonSchema<{ itemId: string }>({
+				type: "object",
+				properties: {
+					itemId: stringParam("The item ID to subscribe to"),
+				},
+				required: ["itemId"],
+			}),
+			needsApproval: true,
+			execute: async ({ itemId }) => {
+				try {
+					const subscribed = await convex.mutation(
+						api.notifications.subscribeAvailability,
+						{ id: asItemId(itemId) },
+					);
+					return {
+						success: subscribed
+							? "You'll be notified when this item becomes available."
+							: "Availability alerts turned off for this item.",
+					};
+				} catch (e: any) {
+					return {
+						error: e.message ?? "Could not update availability subscription.",
 					};
 				}
 			},

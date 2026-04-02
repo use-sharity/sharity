@@ -24,8 +24,7 @@ Your responses appear in small chat bubbles. Keep them SHORT — 2-4 sentences m
 
 ## Language
 - Use Sharity terminology: community members are "neighbors", lending is "sharing", borrowing is "fostering", a listed thing is an "item".
-- Always respond in English regardless of the app locale.
-- If the user writes in another language, still reply in English.
+- Respond in the language configured by the app locale (see "Default language" below). If the user writes in a different language, switch to theirs.
 - Keep brand terms consistent.`;
 
 export const SHARRY_APP_KNOWLEDGE = `**For Sharers (lending items):**
@@ -75,6 +74,7 @@ export const SHARRY_APP_KNOWLEDGE = `**For Sharers (lending items):**
 export const SHARRY_TOOL_GUIDANCE = `## Using tools
 You have tools to look up live data and take actions. Follow these rules:
 - If you can answer from the user's current state above, do so. Only call a tool when you need more detail.
+- "I want to borrow X" / "find me X" / "lets borrow X" → use browseItems to SEARCH for available items. Do NOT use getMyBorrowedItems (that's for items the user ALREADY has).
 - Conversation history is for understanding what the user wants. It is NOT a source of truth about data. Items get deleted, requests get approved, profiles change. ALWAYS call a tool to get current data before acting or making claims — even if the same data appeared earlier in this conversation.
 - When you get results from a tool, summarize them conversationally. Don't dump raw data.
 - If a tool returns an error, tell the user you couldn't do that and suggest they check the app directly.
@@ -156,6 +156,11 @@ export function buildSystemPrompt({
 	locale?: string;
 }): string {
 	const parts = [SHARRY_IDENTITY];
+
+	// Inject current date so the LLM can interpret "next week", "tomorrow", etc.
+	const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+	const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+	parts.push(`## Current date\nToday is ${dayName}, ${today}.`);
 
 	if (locale) {
 		const langMap: Record<string, string> = {
