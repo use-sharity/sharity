@@ -314,6 +314,8 @@ export function ChatWidget() {
 			if (window.innerWidth >= 640) return;
 			panel.style.height = `${vv.height}px`;
 			panel.style.top = `${vv.offsetTop}px`;
+			// Scroll to bottom after keyboard resize so latest message is visible
+			setTimeout(() => scrollToBottom(true), 50);
 		};
 		onResize();
 		vv.addEventListener("resize", onResize);
@@ -324,7 +326,7 @@ export function ChatWidget() {
 			panel.style.height = "";
 			panel.style.top = "";
 		};
-	}, [isOpen]);
+	}, [isOpen, scrollToBottom]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
