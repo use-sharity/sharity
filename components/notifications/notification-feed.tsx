@@ -74,6 +74,7 @@ export function NotificationFeed() {
 		const { itemId, claimId, windowStartAt, windowEndAt } =
 			getNotificationActionContext(n);
 
+		// eslint-disable-next-line react-hooks/purity
 		const now = Date.now();
 		const isWindowExpired =
 			typeof windowEndAt === "number" && windowEndAt < now;
@@ -171,6 +172,15 @@ export function NotificationFeed() {
 				message = raterName
 					? t("messages.rating_received_named", { itemName, raterName })
 					: t("messages.rating_received", { itemName });
+				break;
+			case "deposit_sent":
+				message = t("messages.deposit_sent", { itemName });
+				break;
+			case "deposit_received":
+				message = t("messages.deposit_received", { itemName });
+				break;
+			case "deposit_declined":
+				message = t("messages.deposit_declined", { itemName });
 				break;
 			default:
 				message = t("messages.default");
@@ -481,7 +491,10 @@ export function NotificationFeed() {
 				n.type === "pickup_confirmed" ||
 				n.type === "pickup_expired" ||
 				n.type === "return_confirmed" ||
-				n.type === "return_missing"
+				n.type === "return_missing" ||
+				n.type === "deposit_sent" ||
+				n.type === "deposit_received" ||
+				n.type === "deposit_declined"
 			) {
 				return (
 					<Button

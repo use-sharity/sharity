@@ -30,6 +30,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 			profile?.hasProfile === false &&
 			!hasShownModal
 		) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setShowSetupModal(true);
 			setHasShownModal(true);
 		}
@@ -38,6 +39,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 	// Reset hasShownModal when user signs out
 	useEffect(() => {
 		if (isLoaded && !isSignedIn) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setHasShownModal(false);
 		}
 	}, [isLoaded, isSignedIn]);

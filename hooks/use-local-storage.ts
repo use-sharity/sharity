@@ -14,6 +14,8 @@ export function useLocalStorage<T>(
 		try {
 			const item = window.localStorage.getItem(key);
 			if (item) {
+				// We need this to initialize state from localStorage on the client side without hydration mismatch
+				// eslint-disable-next-line react-hooks/set-state-in-effect
 				setStoredValue(JSON.parse(item));
 			}
 		} catch (error) {

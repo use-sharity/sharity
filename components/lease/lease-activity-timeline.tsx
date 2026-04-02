@@ -43,6 +43,12 @@ function FormatEventTitle({ event }: { event: LeaseActivityEvent }) {
 			return t("picked_up");
 		case "lease_returned":
 			return t("returned");
+		case "lease_deposit_sent":
+			return t("deposit_sent");
+		case "lease_deposit_received":
+			return t("deposit_received");
+		case "lease_deposit_declined":
+			return t("deposit_declined");
 		default:
 			return t("default");
 	}

@@ -80,6 +80,7 @@ interface ItemFormProps {
 		giveaway?: boolean;
 		minLeaseDays?: number;
 		maxLeaseDays?: number;
+		deposit?: number;
 	};
 	onSubmit: (values: {
 		name: string;
@@ -91,6 +92,7 @@ interface ItemFormProps {
 		giveaway?: boolean;
 		minLeaseDays?: number;
 		maxLeaseDays?: number;
+		deposit?: number;
 	}) => Promise<void>;
 	submitLabel?: string;
 	enableModeSwitch?: boolean;
@@ -135,6 +137,12 @@ export function ItemForm({
 		if (Boolean(initialValues?.giveaway)) return "";
 		return typeof initialValues?.maxLeaseDays === "number"
 			? String(initialValues.maxLeaseDays)
+			: "";
+	});
+	const [deposit, setDeposit] = useState(() => {
+		if (Boolean(initialValues?.giveaway)) return "";
+		return typeof initialValues?.deposit === "number"
+			? String(initialValues.deposit)
 			: "";
 	});
 	const [pendingGiveaway, setPendingGiveaway] = useState<boolean | null>(null);
@@ -237,6 +245,27 @@ export function ItemForm({
 				? undefined
 				: parseOptionalDays("Max lease length", maxLeaseDays);
 
+			const parseOptionalAmount = (
+				label: string,
+				raw: string,
+			): number | undefined => {
+				const trimmed = raw.trim();
+				if (trimmed.length === 0) return undefined;
+
+				const n = Number(trimmed);
+				if (!Number.isFinite(n) || !Number.isInteger(n)) {
+					throw new Error(t("validation.mustBeValidNumber", { label }));
+				}
+				if (n < 0) {
+					throw new Error(t("validation.cannotBeNegative", { label }));
+				}
+				return n;
+			};
+
+			const depositValue = giveaway
+				? undefined
+				: parseOptionalAmount("Deposit", deposit);
+
 			if (
 				minLeaseDaysValue !== undefined &&
 				maxLeaseDaysValue !== undefined &&
@@ -278,6 +307,7 @@ export function ItemForm({
 				giveaway: enableModeSwitch ? giveaway : undefined,
 				minLeaseDays: minLeaseDaysValue,
 				maxLeaseDays: maxLeaseDaysValue,
+				deposit: depositValue,
 			});
 
 			if (!initialValues) {
@@ -290,6 +320,7 @@ export function ItemForm({
 				setAddress("");
 				setMinLeaseDays("");
 				setMaxLeaseDays("");
+				setDeposit("");
 			}
 		} catch (error) {
 			console.error("Error submitting form:", error);
@@ -350,6 +381,7 @@ export function ItemForm({
 										if (pendingGiveaway) {
 											setMinLeaseDays("");
 											setMaxLeaseDays("");
+											setDeposit("");
 										}
 										setPendingGiveaway(null);
 										setIsModeConfirmOpen(false);
@@ -427,7 +459,26 @@ export function ItemForm({
 							/>
 						</div>
 					</div>
-					<div className="text-xs text-muted-foreground">
+					<div className="flex flex-col gap-2 mt-1">
+						<Label htmlFor="deposit" className="text-xs">
+							{t("depositLabel")}
+						</Label>
+						<Input
+							id="deposit"
+							type="number"
+							step={1000}
+							min={0}
+							placeholder={t("depositPlaceholder")}
+							value={deposit}
+							onChange={(e) => setDeposit(e.target.value)}
+							disabled={isSubmitting}
+							inputMode="numeric"
+						/>
+						<div className="text-xs text-muted-foreground">
+							{t("depositDesc")}
+						</div>
+					</div>
+					<div className="text-xs text-muted-foreground mt-2">
 						{t("sameDayNote")}
 					</div>
 				</div>

@@ -109,9 +109,12 @@
 		"giveawaylimitDesc": "Đồ tặng không áp dụng giới hạn mượn.",
 		"minLeaseDays": "Tối thiểu (tuỳ chọn)",
 		"minLeaseDaysPlaceholder": "VD: 1",
-		"maxLeaseDays": "Tối đa (tuỳ chọn)",
+		"maxLeaseDays": "Số ngày tối đa (không bắt buộc)",
 		"maxLeaseDaysPlaceholder": "VD: 14",
-		"sameDayNote": "Mượn trong ngày tính 1 ngày.",
+		"depositLabel": "Tiền cọc (VNĐ, không bắt buộc)",
+		"depositPlaceholder": "VD: 50000",
+		"depositDesc": "Số tiền cần để mượn vật dụng này",
+		"sameDayNote": "Yêu cầu mượn trong ngày được tính là một phần của ngày.",
 		"category": "Loại",
 		"selectCategory": "Chọn loại",
 		"location": "Vị trí",
@@ -132,8 +135,10 @@
 			"locationError": "Không thể lấy vị trí: {error}",
 			"locationSelected": "Đã chọn vị trí",
 			"mustBeInteger": "{label} phải là số nguyên",
-			"mustBeAtLeastOne": "{label} tối thiểu 1 ngày",
-			"minMaxError": "Tối thiểu phải ≤ tối đa",
+			"mustBeAtLeastOne": "{label} phải lớn hơn hoặc bằng 1",
+			"mustBeValidNumber": "{label} phải là một số hợp lệ",
+			"cannotBeNegative": "{label} không được là số âm",
+			"minMaxError": "Thời gian thuê tối thiểu phải nhỏ hơn hoặc bằng thời gian thuê tối đa",
 			"fileReject": "{message} ({fileName})"
 		}
 	},
@@ -236,7 +241,10 @@
 			"return_missing": "Báo mất \"{itemName}\"",
 			"rate_transaction": "Đánh giá \"{itemName}\"",
 			"rating_received": "Có đánh giá mới: \"{itemName}\"",
-			"rating_received_named": "{raterName} vừa đánh giá bạn: \"{itemName}\"",
+			"rating_received_named": "{raterName} đã đánh giá bạn cho món đồ \"{itemName}\"",
+			"deposit_sent": "Đã chuyển cọc cho món đồ \"{itemName}\"",
+			"deposit_received": "Đã xác nhận nhận cọc cho \"{itemName}\"",
+			"deposit_declined": "Không nhận được cọc cho \"{itemName}\"",
 			"default": "Thông báo mới"
 		},
 		"actions": {
@@ -319,8 +327,20 @@
 			"titleLease": "Từ chối yêu cầu mượn",
 			"descGiveaway": "Bên kia sẽ được báo.",
 			"descLease": "Bên kia sẽ được báo.",
-			"reasonLabel": "Lý do (tuỳ chọn)",
-			"reasonPlaceholder": "Nói ngắn gọn..."
+			"reasonLabel": "Lý do (không bắt buộc, nhưng khuyến khích)",
+			"reasonPlaceholder": "Hãy cho họ biết lý do..."
+		},
+		"deposit": {
+			"title": "Tiền cọc",
+			"received": "Đã xác nhận nhận cọc",
+			"waitingLender": "Đang chờ chủ nhân xác nhận đã nhận cọc...",
+			"markSent": "Đánh dấu đã chuyển cọc",
+			"sentToast": "Đã đánh dấu chuyển cọc",
+			"confirmReceived": "Xác nhận đã nhận cọc",
+			"receivedToast": "Đã xác nhận nhận cọc",
+			"markNotReceived": "Chưa nhận được",
+			"declinedToast": "Đã đánh dấu chưa nhận cọc",
+			"waitingBorrower": "Đang chờ người mượn chuyển cọc..."
 		},
 		"intraday": {
 			"note": "Mượn trong ngày: chốt giờ nhận/trả qua đề xuất và duyệt."
@@ -384,6 +404,9 @@
 			"return_approved": "Duyệt giờ trả",
 			"picked_up": "Đã nhận",
 			"returned": "Đã trả",
+			"deposit_sent": "Chuyển tiền cọc",
+			"deposit_received": "Xác nhận nhận cọc",
+			"deposit_declined": "Không nhận được cọc",
 			"default": "Hoạt động"
 		}
 	},

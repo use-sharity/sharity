@@ -46,6 +46,7 @@ export function BorrowedItemCard({ item }: { item: BorrowedItemData }) {
 		className: string;
 		isOverdue: boolean;
 	} {
+		// eslint-disable-next-line react-hooks/purity
 		const now = Date.now();
 		const endDateObj = new Date(endDate);
 

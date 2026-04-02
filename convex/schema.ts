@@ -10,6 +10,7 @@ export default defineSchema({
 		giveaway: v.optional(v.boolean()),
 		minLeaseDays: v.optional(v.number()),
 		maxLeaseDays: v.optional(v.number()),
+		deposit: v.optional(v.number()),
 		imageStorageIds: v.optional(v.array(v.id("_storage"))),
 		imageCloudinary: v.optional(v.array(vCloudinaryRef)),
 		category: v.optional(
@@ -63,6 +64,9 @@ export default defineSchema({
 			v.literal("lease_pickup_approved"),
 			v.literal("lease_return_proposed"),
 			v.literal("lease_return_approved"),
+			v.literal("lease_deposit_sent"),
+			v.literal("lease_deposit_received"),
+			v.literal("lease_deposit_declined"),
 			v.literal("lease_picked_up"),
 			v.literal("lease_returned"),
 			v.literal("lease_transferred"),
@@ -99,6 +103,8 @@ export default defineSchema({
 		transferredAt: v.optional(v.number()),
 		expiredAt: v.optional(v.number()),
 		missingAt: v.optional(v.number()),
+		depositSentAt: v.optional(v.number()),
+		depositReceivedAt: v.optional(v.number()),
 	})
 		.index("by_item", ["itemId"])
 		.index("by_claimer", ["claimerId"]),
@@ -117,6 +123,9 @@ export default defineSchema({
 			v.literal("return_approved"),
 			v.literal("return_confirmed"),
 			v.literal("return_missing"),
+			v.literal("deposit_sent"),
+			v.literal("deposit_received"),
+			v.literal("deposit_declined"),
 			v.literal("rate_transaction"),
 			v.literal("rating_received"),
 		),

@@ -114,7 +114,6 @@ export function BorrowerRequestProvider(props: {
 	React.useEffect(() => {
 		if (selectionKey === lastSelectionKeyRef.current) return;
 		lastSelectionKeyRef.current = selectionKey;
-
 		setIntradayRange(null);
 		setIntradayDialogOpen(false);
 		setIntradayFixedDate(null);
@@ -367,6 +366,7 @@ export function BorrowerRequestActions() {
 										viewerRole="borrower"
 										isGiveaway={false}
 										ownerId={item.ownerId}
+										itemDeposit={item.deposit}
 										cancelClaim={async ({ claimId }) =>
 											await cancelRequest(claimId)
 										}
@@ -572,6 +572,7 @@ export function GiveawayBorrowerRequestPanel({
 										viewerRole="borrower"
 										isGiveaway
 										ownerId={item.ownerId}
+										itemDeposit={item.deposit}
 										cancelClaim={async ({ claimId }) =>
 											await cancelRequest(claimId)
 										}

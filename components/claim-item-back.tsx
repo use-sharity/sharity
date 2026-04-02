@@ -206,7 +206,7 @@ function LoanBorrowerClaimItemBack({ item }: { item: Doc<"items"> }) {
 	useEffect(() => {
 		if (selectionKey === lastSelectionKeyRef.current) return;
 		lastSelectionKeyRef.current = selectionKey;
-
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setIntradayRange(null);
 		setIntradayDialogOpen(false);
 		setIntradayFixedDate(null);
@@ -286,6 +286,7 @@ function LoanBorrowerClaimItemBack({ item }: { item: Doc<"items"> }) {
 					viewerRole="borrower"
 					layout="embedded"
 					isGiveaway={Boolean(item.giveaway)}
+					itemDeposit={item.deposit}
 					cancelClaim={async ({ claimId }) =>
 						await calendar.cancelRequest(claimId)
 					}
@@ -444,6 +445,7 @@ function OwnerClaimItemBack({ item }: { item: Doc<"items"> }) {
 					viewerRole="owner"
 					layout="embedded"
 					isGiveaway={Boolean(item.giveaway)}
+					itemDeposit={item.deposit}
 					approveClaim={approveClaim}
 					rejectClaim={rejectClaim}
 					markPickedUp={markPickedUp}

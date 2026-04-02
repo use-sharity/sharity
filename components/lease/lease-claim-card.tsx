@@ -103,6 +103,7 @@ export function LeaseClaimCard(props: {
 	viewerRole: ViewerRole;
 	isGiveaway: boolean;
 	ownerId?: string;
+	itemDeposit?: number;
 	layout?: "card" | "embedded";
 	approveClaim?: (args: ApproveClaimArgs) => MutationResult;
 	rejectClaim?: (args: RejectClaimArgs) => MutationResult;
@@ -118,6 +119,7 @@ export function LeaseClaimCard(props: {
 		viewerRole,
 		isGiveaway,
 		ownerId,
+		itemDeposit,
 		layout = "card",
 		approveClaim,
 		rejectClaim,
@@ -159,6 +161,9 @@ export function LeaseClaimCard(props: {
 	const approvePickupWindow = useMutation(api.items.approvePickupWindow);
 	const proposeReturnWindow = useMutation(api.items.proposeReturnWindow);
 	const approveReturnWindow = useMutation(api.items.approveReturnWindow);
+	const markDepositSent = useMutation(api.items.markDepositSent);
+	const markDepositReceived = useMutation(api.items.markDepositReceived);
+	const markDepositDeclined = useMutation(api.items.markDepositDeclined);
 
 	const [isApproving, setIsApproving] = useState(false);
 	const [isRejecting, setIsRejecting] = useState(false);
@@ -311,7 +316,8 @@ export function LeaseClaimCard(props: {
 		isApproved &&
 		!eventTimes.pickedUpAt &&
 		!eventTimes.expiredAt &&
-		!eventTimes.rejectedAt;
+		!eventTimes.rejectedAt &&
+		(!itemDeposit || claim.depositReceivedAt);
 	const canRecordReturn =
 		!isGiveaway &&
 		isApproved &&
@@ -504,12 +510,102 @@ export function LeaseClaimCard(props: {
 
 				{(isOwner || viewerRole === "borrower") &&
 					claim.status === "approved" && (
-						<div className="space-y-2">
+						<div className="space-y-4">
 							{isIntradayLease ? (
 								<div className="text-xs text-muted-foreground">
 									{t("intraday.note")}
 								</div>
 							) : null}
+
+							{itemDeposit ? (
+								<div className="space-y-2 p-3 border rounded-md bg-slate-50">
+									<div className="text-sm font-medium">
+										{t("deposit.title")} - {itemDeposit.toLocaleString()} VND
+									</div>
+									{claim.depositReceivedAt ? (
+										<div className="text-sm text-green-600 flex items-center gap-1">
+											<Check className="h-4 w-4" /> {t("deposit.received")}
+										</div>
+									) : (
+										<>
+											{viewerRole === "borrower" ? (
+												<div className="flex flex-col gap-2">
+													{claim.depositSentAt ? (
+														<div className="text-sm text-muted-foreground">
+															{t("deposit.waitingLender")}
+														</div>
+													) : (
+														<Button
+															size="sm"
+															className="w-full h-8"
+															onClick={async () => {
+																try {
+																	await markDepositSent({
+																		itemId,
+																		claimId: claim._id,
+																	});
+																	toast.success(t("deposit.sentToast"));
+																} catch (err) {
+																	toast.error(toErrorMessage(err));
+																}
+															}}
+														>
+															{t("deposit.markSent")}
+														</Button>
+													)}
+												</div>
+											) : (
+												<div className="flex flex-col gap-2">
+													{claim.depositSentAt ? (
+														<div className="flex gap-2">
+															<Button
+																size="sm"
+																className="flex-1 h-8 bg-green-600 hover:bg-green-700 text-white"
+																onClick={async () => {
+																	try {
+																		await markDepositReceived({
+																			itemId,
+																			claimId: claim._id,
+																		});
+																		toast.success(t("deposit.receivedToast"));
+																	} catch (err) {
+																		toast.error(toErrorMessage(err));
+																	}
+																}}
+															>
+																{t("deposit.confirmReceived")}
+															</Button>
+															<Button
+																size="sm"
+																variant="outline"
+																className="flex-1 h-8 text-destructive hover:text-destructive"
+																onClick={async () => {
+																	try {
+																		await markDepositDeclined({
+																			itemId,
+																			claimId: claim._id,
+																		});
+																		toast.success(t("deposit.declinedToast"));
+																	} catch (err) {
+																		toast.error(toErrorMessage(err));
+																	}
+																}}
+															>
+																{t("deposit.markNotReceived")}
+															</Button>
+														</div>
+													) : (
+														<div className="text-sm text-muted-foreground">
+															{t("deposit.waitingBorrower")}
+														</div>
+													)}
+												</div>
+											)}
+										</>
+									)}
+								</div>
+							) : null}
+
 							{canRecordPickup && (
 								<div className="space-y-2">
 									{pickupProposal ? (

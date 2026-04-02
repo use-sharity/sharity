@@ -111,6 +111,9 @@
 		"minLeaseDaysPlaceholder": "e.g., 1",
 		"maxLeaseDays": "Max days (optional)",
 		"maxLeaseDaysPlaceholder": "e.g., 14",
+		"depositLabel": "Deposit Amount (VND, optional)",
+		"depositPlaceholder": "e.g., 50000",
+		"depositDesc": "Amount required to borrow this item",
 		"sameDayNote": "Same-day requests count as a fraction of a day.",
 		"category": "Category",
 		"selectCategory": "Select a category",
@@ -133,6 +136,8 @@
 			"locationSelected": "Location selected",
 			"mustBeInteger": "{label} must be an integer number of days",
 			"mustBeAtLeastOne": "{label} must be at least 1 day",
+			"mustBeValidNumber": "{label} must be a valid integer number",
+			"cannotBeNegative": "{label} cannot be negative",
 			"minMaxError": "Min lease length must be less than or equal to max lease length",
 			"fileReject": "{message} ({fileName})"
 		}
@@ -237,6 +242,9 @@
 			"rate_transaction": "Rate your experience with \"{itemName}\"",
 			"rating_received": "You received a new review for \"{itemName}\"",
 			"rating_received_named": "{raterName} left you a review for \"{itemName}\"",
+			"deposit_sent": "Deposit sent for \"{itemName}\"",
+			"deposit_received": "Deposit confirmed for \"{itemName}\"",
+			"deposit_declined": "Deposit not received for \"{itemName}\"",
 			"default": "New notification"
 		},
 		"actions": {
@@ -322,6 +330,18 @@
 			"reasonLabel": "Reason (optional, but recommended)",
 			"reasonPlaceholder": "Let them know why..."
 		},
+		"deposit": {
+			"title": "Deposit",
+			"received": "Deposit confirmed",
+			"waitingLender": "Waiting for lender to confirm deposit receipt...",
+			"markSent": "Mark deposit as sent",
+			"sentToast": "Deposit marked as sent",
+			"confirmReceived": "Confirm received",
+			"receivedToast": "Deposit confirmed",
+			"markNotReceived": "Not received yet",
+			"declinedToast": "Deposit marked as not received",
+			"waitingBorrower": "Waiting for borrower to send deposit..."
+		},
 		"intraday": {
 			"note": "Intraday lease: pickup & return happen within the selected hours. Use the pickup and return time proposals below to agree on exact windows."
 		},
@@ -384,7 +404,10 @@
 			"return_approved": "Return time approved",
 			"picked_up": "Picked up",
 			"returned": "Returned",
-			"default": "Lease activity"
+			"deposit_sent": "Deposit sent",
+			"deposit_received": "Deposit confirmed",
+			"deposit_declined": "Deposit not received",
+			"default": "Lease Activity"
 		}
 	},
 	"LeaseProposeWindow": {

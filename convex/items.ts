@@ -502,6 +502,7 @@ export const create = mutation({
 		giveaway: v.optional(v.boolean()),
 		minLeaseDays: v.optional(v.number()),
 		maxLeaseDays: v.optional(v.number()),
+		deposit: v.optional(v.number()),
 		imageStorageIds: v.optional(v.array(v.id("_storage"))),
 		imageCloudinary: v.optional(v.array(vCloudinaryRef)),
 		category: categoryValidator,
@@ -531,6 +532,7 @@ export const create = mutation({
 			giveaway: args.giveaway,
 			minLeaseDays: args.minLeaseDays,
 			maxLeaseDays: args.maxLeaseDays,
+			deposit: args.deposit,
 			imageStorageIds: undefined,
 			imageCloudinary: args.imageCloudinary,
 			category: args.category,
@@ -559,6 +561,7 @@ export const update = mutation({
 		location: locationValidator,
 		minLeaseDays: v.optional(v.number()),
 		maxLeaseDays: v.optional(v.number()),
+		deposit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -2742,5 +2745,133 @@ export const getMyBorrowedItems = query({
 		return result.filter(
 			(item): item is NonNullable<typeof item> => item !== null,
 		);
+	},
+});
+
+export const markDepositSent = mutation({
+	args: {
+		itemId: v.id("items"),
+		claimId: v.id("claims"),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+
+		const item = await ctx.db.get(args.itemId);
+		if (!item) throw new Error("Item not found");
+
+		const claim = await ctx.db.get(args.claimId);
+		if (!claim) throw new Error("Claim not found");
+		if (claim.itemId !== args.itemId) throw new Error("Claim mismatch");
+		if (claim.claimerId !== identity.subject) throw new Error("Unauthorized");
+		if (claim.status !== "approved") throw new Error("Claim must be approved");
+
+		if (claim.depositSentAt) throw new Error("Deposit already sent");
+
+		const now = Date.now();
+		await ctx.db.patch(args.claimId, { depositSentAt: now });
+
+		await ctx.db.insert("lease_activity", {
+			itemId: args.itemId,
+			claimId: args.claimId,
+			type: "lease_deposit_sent",
+			actorId: identity.subject,
+			createdAt: now,
+		});
+
+		await ctx.db.insert("notifications", {
+			recipientId: item.ownerId,
+			type: "deposit_sent",
+			itemId: args.itemId,
+			requestId: args.claimId,
+			isRead: false,
+			createdAt: now,
+		});
+	},
+});
+
+export const markDepositReceived = mutation({
+	args: {
+		itemId: v.id("items"),
+		claimId: v.id("claims"),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+
+		const item = await ctx.db.get(args.itemId);
+		if (!item) throw new Error("Item not found");
+		if (item.ownerId !== identity.subject) throw new Error("Unauthorized");
+
+		const claim = await ctx.db.get(args.claimId);
+		if (!claim) throw new Error("Claim not found");
+		if (claim.itemId !== args.itemId) throw new Error("Claim mismatch");
+		if (claim.status !== "approved") throw new Error("Claim must be approved");
+
+		if (!claim.depositSentAt) throw new Error("Deposit not yet sent");
+		if (claim.depositReceivedAt) throw new Error("Deposit already received");
+
+		const now = Date.now();
+		await ctx.db.patch(args.claimId, { depositReceivedAt: now });
+
+		await ctx.db.insert("lease_activity", {
+			itemId: args.itemId,
+			claimId: args.claimId,
+			type: "lease_deposit_received",
+			actorId: identity.subject,
+			createdAt: now,
+		});
+
+		await ctx.db.insert("notifications", {
+			recipientId: claim.claimerId,
+			type: "deposit_received",
+			itemId: args.itemId,
+			requestId: args.claimId,
+			isRead: false,
+			createdAt: now,
+		});
+	},
+});
+
+export const markDepositDeclined = mutation({
+	args: {
+		itemId: v.id("items"),
+		claimId: v.id("claims"),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new Error("Unauthenticated");
+
+		const item = await ctx.db.get(args.itemId);
+		if (!item) throw new Error("Item not found");
+		if (item.ownerId !== identity.subject) throw new Error("Unauthorized");
+
+		const claim = await ctx.db.get(args.claimId);
+		if (!claim) throw new Error("Claim not found");
+		if (claim.itemId !== args.itemId) throw new Error("Claim mismatch");
+		if (claim.status !== "approved") throw new Error("Claim must be approved");
+
+		if (!claim.depositSentAt) throw new Error("Deposit not sent");
+		if (claim.depositReceivedAt) throw new Error("Deposit already received");
+
+		const now = Date.now();
+		await ctx.db.patch(args.claimId, { depositSentAt: undefined });
+
+		await ctx.db.insert("lease_activity", {
+			itemId: args.itemId,
+			claimId: args.claimId,
+			type: "lease_deposit_declined",
+			actorId: identity.subject,
+			createdAt: now,
+		});
+
+		await ctx.db.insert("notifications", {
+			recipientId: claim.claimerId,
+			type: "deposit_declined",
+			itemId: args.itemId,
+			requestId: args.claimId,
+			isRead: false,
+			createdAt: now,
+		});
 	},
 });

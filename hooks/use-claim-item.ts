@@ -5,16 +5,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useConvexAuth } from "convex/react";
 
-function isSameLocalDay(a: number, b: number): boolean {
-	const da = new Date(a);
-	const db = new Date(b);
-	return (
-		da.getFullYear() === db.getFullYear() &&
-		da.getMonth() === db.getMonth() &&
-		da.getDate() === db.getDate()
-	);
-}
-
 export function useClaimItem(itemId: Id<"items">) {
 	const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
 

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -361,7 +362,7 @@ export const nuclearReset = mutation({
 			const daysAgo = 7 + i * 5; // 7, 12, 17 days ago
 
 			const claimId = await ctx.db.insert("claims", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimerId: USER_B,
 				status: "approved",
 				startDate: now - (daysAgo + 7) * ONE_DAY_MS,
@@ -373,14 +374,14 @@ export const nuclearReset = mutation({
 			claimsBBorrowsFromA.push(claimId);
 
 			await ctx.db.insert("lease_activity", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimId,
 				type: "lease_requested",
 				actorId: USER_B,
 				createdAt: now - (daysAgo + 10) * ONE_DAY_MS,
 			});
 			await ctx.db.insert("lease_activity", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimId,
 				type: "lease_approved",
 				actorId: USER_A,
@@ -396,7 +397,7 @@ export const nuclearReset = mutation({
 			const daysAgo = 5 + i * 4; // 5, 9, 13 days ago
 
 			const claimId = await ctx.db.insert("claims", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimerId: USER_A,
 				status: "approved",
 				startDate: now - (daysAgo + 5) * ONE_DAY_MS,
@@ -408,14 +409,14 @@ export const nuclearReset = mutation({
 			claimsABorrowsFromB.push(claimId);
 
 			await ctx.db.insert("lease_activity", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimId,
 				type: "lease_requested",
 				actorId: USER_A,
 				createdAt: now - (daysAgo + 8) * ONE_DAY_MS,
 			});
 			await ctx.db.insert("lease_activity", {
-				itemId: itemId as any,
+				itemId: itemId as Id<"items">,
 				claimId,
 				type: "lease_approved",
 				actorId: USER_B,
@@ -430,7 +431,7 @@ export const nuclearReset = mutation({
 
 		// Rating 1: User A rates User B as borrower (for first claim where B borrowed from A)
 		await ctx.db.insert("ratings", {
-			claimId: claimsBBorrowsFromA[0] as any,
+			claimId: claimsBBorrowsFromA[0] as Id<"claims">,
 			fromUserId: USER_A,
 			toUserId: USER_B,
 			role: "borrower",
@@ -442,7 +443,7 @@ export const nuclearReset = mutation({
 
 		// Rating 2: User B rates User A as lender (for first claim where B borrowed from A)
 		await ctx.db.insert("ratings", {
-			claimId: claimsBBorrowsFromA[0] as any,
+			claimId: claimsBBorrowsFromA[0] as Id<"claims">,
 			fromUserId: USER_B,
 			toUserId: USER_A,
 			role: "lender",
@@ -454,7 +455,7 @@ export const nuclearReset = mutation({
 
 		// Rating 3: User B rates User A as borrower (for first claim where A borrowed from B)
 		await ctx.db.insert("ratings", {
-			claimId: claimsABorrowsFromB[0] as any,
+			claimId: claimsABorrowsFromB[0] as Id<"claims">,
 			fromUserId: USER_B,
 			toUserId: USER_A,
 			role: "borrower",
@@ -466,7 +467,7 @@ export const nuclearReset = mutation({
 
 		// Rating 4: User A rates User B as lender (for first claim where A borrowed from B)
 		await ctx.db.insert("ratings", {
-			claimId: claimsABorrowsFromB[0] as any,
+			claimId: claimsABorrowsFromB[0] as Id<"claims">,
 			fromUserId: USER_A,
 			toUserId: USER_B,
 			role: "lender",

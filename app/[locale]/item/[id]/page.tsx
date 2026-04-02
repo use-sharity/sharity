@@ -108,6 +108,7 @@ export default function ItemDetailPage({
 			);
 
 			if (pendingRating && !selectedRatingClaim) {
+				// eslint-disable-next-line react-hooks/set-state-in-effect
 				setSelectedRatingClaim({
 					claimId: rateClaimId as Id<"claims">,
 					targetRole,
@@ -516,6 +517,7 @@ export default function ItemDetailPage({
 									claim={claim}
 									viewerRole="owner"
 									isGiveaway={Boolean(item.giveaway)}
+									itemDeposit={item.deposit}
 									approveClaim={approveClaimAction}
 									rejectClaim={rejectClaimAction}
 									markPickedUp={markPickedUpAction}
