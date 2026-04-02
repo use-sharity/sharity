@@ -562,7 +562,7 @@ export function ChatWidget() {
 				<button
 					type="button"
 					onClick={() => setIsOpen(true)}
-					className="fixed right-4 bottom-24 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6"
+					className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6 ${isSignedIn ? "bottom-24" : "bottom-6"}`}
 					style={{ backgroundColor: "var(--primary)" }}
 					aria-label="Open chat with Sharry"
 				>

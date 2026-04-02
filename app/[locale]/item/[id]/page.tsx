@@ -440,40 +440,13 @@ export default function ItemDetailPage({
 								}}
 								submitLabel={tDetail("saveChanges")}
 								hideMyItemsLink
+								footerActions={
+									<Button variant="outline" onClick={() => setIsEditing(false)}>
+										{tDetail("cancel")}
+									</Button>
+								}
 							/>
 						</CardContent>
-						<div className="flex flex-wrap gap-4 px-6 pb-6">
-							<Button variant="outline" onClick={() => setIsEditing(false)}>
-								{tDetail("cancel")}
-							</Button>
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button variant="destructive">{tDetail("deleteItem")}</Button>
-								</AlertDialogTrigger>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											{tDetail("deleteConfirm.title")}
-										</AlertDialogTitle>
-										<AlertDialogDescription>
-											{tDetail("deleteConfirm.description")}
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>{tDetail("cancel")}</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={async () => {
-												await deleteItem({ id: item._id });
-												toast.success(tDetail("itemDeleted"));
-												router.push("/");
-											}}
-										>
-											{tDetail("deleteConfirm.confirm")}
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</div>
 					</Card>
 				</div>
 			</div>

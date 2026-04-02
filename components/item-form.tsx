@@ -95,6 +95,7 @@ interface ItemFormProps {
 	submitLabel?: string;
 	enableModeSwitch?: boolean;
 	hideMyItemsLink?: boolean;
+	footerActions?: React.ReactNode;
 }
 
 export function ItemForm({
@@ -103,6 +104,7 @@ export function ItemForm({
 	submitLabel = "Submit",
 	enableModeSwitch = false,
 	hideMyItemsLink = false,
+	footerActions,
 }: ItemFormProps) {
 	const t = useTranslations("ItemForm");
 	const tCategories = useTranslations("Categories");
@@ -585,30 +587,33 @@ export function ItemForm({
 				)}
 			</div>
 
-			<div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-				<Button
-					type="submit"
-					disabled={isSubmitting}
-					className="w-full sm:w-auto"
-				>
-					{isSubmitting ? t("uploadingSaving") : submitLabel}
-				</Button>
-				{!hideMyItemsLink && (
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-col gap-2 sm:flex-row">{footerActions}</div>
+				<div className="flex flex-col gap-2 sm:flex-row">
 					<Button
-						asChild
-						type="button"
-						variant="secondary"
+						type="submit"
+						disabled={isSubmitting}
 						className="w-full sm:w-auto"
 					>
-						<Link href="/my-items" className="relative">
-							<ListChecks className="h-4 w-4" />
-							{t("myItems")}
-							{hasMyItemsStatus ? (
-								<span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-background" />
-							) : null}
-						</Link>
+						{isSubmitting ? t("uploadingSaving") : submitLabel}
 					</Button>
-				)}
+					{!hideMyItemsLink && (
+						<Button
+							asChild
+							type="button"
+							variant="secondary"
+							className="w-full sm:w-auto"
+						>
+							<Link href="/my-items" className="relative">
+								<ListChecks className="h-4 w-4" />
+								{t("myItems")}
+								{hasMyItemsStatus ? (
+									<span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-background" />
+								) : null}
+							</Link>
+						</Button>
+					)}
+				</div>
 			</div>
 		</form>
 	);
