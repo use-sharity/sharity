@@ -129,12 +129,13 @@ export async function POST(request: Request) {
 
 	const tools = buildTools(convex, locale, attachedImageRefs);
 
-	// Nudge fresh chat after 15+ user messages
+	// Nudge fresh chat after 15+ conversation turns (user+assistant pairs)
 	const FRESH_CHAT_THRESHOLD = 15;
-	const userMessageCount = messages.filter(
-		(m: any) => m.role === "user",
-	).length;
-	if (userMessageCount >= FRESH_CHAT_THRESHOLD) {
+	const turnCount = Math.floor(
+		messages.filter((m: any) => m.role === "user" || m.role === "assistant")
+			.length / 2,
+	);
+	if (turnCount >= FRESH_CHAT_THRESHOLD) {
 		systemPrompt += "\n\n[FRESH_CHAT_HINT]";
 	}
 

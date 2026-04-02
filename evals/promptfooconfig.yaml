@@ -1,5 +1,5 @@
 # evals/promptfooconfig.yaml
-# Sharry AI assistant evaluation suite — 34 test cases
+# Sharry AI assistant evaluation suite — 54 test cases
 
 description: "Sharry chatbot evals"
 
@@ -57,7 +57,7 @@ tests:
         value: |
           const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
           const emojis = (output || '').match(emojiRegex) || [];
-          return emojis.length <= 1;
+          emojis.length <= 1
 
   # ── 2. Sharing Flow (4 tests) ──────────────────────────────
 
@@ -490,3 +490,315 @@ tests:
     assert:
       - type: llm-rubric
         value: "Response should offer to help compose a rating based on the positive feedback."
+
+  # ── 10. Tool Selection — borrow vs browse (5 tests) ──────
+
+  - description: "Tool: 'lets borrow iron' uses browseItems, NOT getMyBorrowedItems"
+    vars:
+      prompt: "lets borrow iron next week"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Telescope"]
+        pendingClaimsOnMyItems: 1
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('browseItems') && !output.includes('getMyBorrowedItems')
+      - type: llm-rubric
+        value: "Response should show search results for an iron item available to borrow, not list items the user already has."
+
+  - description: "Tool: 'find me electronics' uses browseItems"
+    vars:
+      prompt: "find me something in electronics"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Yoga Mat"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('browseItems')
+      - type: llm-rubric
+        value: "Response should list electronics items available to borrow. Should contain clickable links."
+
+  - description: "Tool: 'what am I borrowing' uses getMyBorrowedItems"
+    vars:
+      prompt: "what am I currently fostering?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Telescope"]
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyBorrowedItems') && !output.includes('browseItems')
+      - type: llm-rubric
+        value: "Response should list the Telescope from Alex with return dates."
+
+  - description: "Tool: 'show my items' uses getMyItems"
+    vars:
+      prompt: "show me my items"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyItems')
+      - type: icontains
+        value: "Electric Drill"
+      - type: icontains
+        value: "Camping Tent"
+
+  - description: "Tool: 'show wishlist' uses browseWishlist"
+    vars:
+      prompt: "whats on the wishlist?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('browseWishlist')
+      - type: icontains
+        value: "Standing desk"
+
+  # ── 11. Calendar Tools (4 tests) ─────────────────────────
+
+  - description: "Tool: 'whats my schedule' uses getMyCalendar"
+    vars:
+      prompt: "what's on my schedule this week?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Telescope"]
+        pendingClaimsOnMyItems: 1
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyCalendar')
+      - type: llm-rubric
+        value: "Response should list scheduled events including the Telescope borrowing and/or Drill lending."
+
+  - description: "Tool: 'when am I unavailable' uses getMyBlockedDates"
+    vars:
+      prompt: "when am I marked as unavailable?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyBlockedDates')
+      - type: icontains
+        value: "traveling"
+
+  - description: "Tool: 'when is iron available' uses getItemAvailability"
+    vars:
+      prompt: "when is the waffle iron available?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && (output.includes('browseItems') || output.includes('getItemAvailability'))
+      - type: llm-rubric
+        value: "Response should mention booked dates or availability for the waffle iron."
+
+  - description: "Tool: date awareness — knows today"
+    vars:
+      prompt: "am I free tomorrow?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Telescope"]
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyCalendar')
+      - type: llm-rubric
+        value: "Response should reference a specific date (tomorrow) and check the user's calendar. Should not ask 'what date is tomorrow?'"
+
+  # ── 12. Profile & Ratings Tools (3 tests) ────────────────
+
+  - description: "Tool: 'show my profile' uses getMyProfile"
+    vars:
+      prompt: "show me my profile"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyProfile')
+      - type: icontains
+        value: "Test User"
+
+  - description: "Tool: 'pending ratings' uses getMyPendingRatings"
+    vars:
+      prompt: "do I need to rate anyone?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getMyPendingRatings')
+      - type: llm-rubric
+        value: "Response should mention a pending rating for the Blender with Bob."
+
+  - description: "Tool: 'any notifications' uses getNotifications"
+    vars:
+      prompt: "any notifications?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 1
+        fosteringItemNames: ["Telescope"]
+        pendingClaimsOnMyItems: 1
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.includes('TOOLS_CALLED:') && output.includes('getNotifications')
+      - type: llm-rubric
+        value: "Response should mention the new request notification on the Electric Drill."
+
+  # ── 13. Formatting & Links (3 tests) ─────────────────────
+
+  - description: "Format: browseItems response has markdown links"
+    vars:
+      prompt: "what kitchen items are available?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          /\[.+?\]\(\/.+?\)/.test(output)
+      - type: llm-rubric
+        value: "Response should contain clickable markdown links to items, formatted as a bullet list."
+
+  - description: "Format: response is concise (under 500 chars for simple query)"
+    vars:
+      prompt: "how many items do I have?"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 2
+        itemNames: ["Electric Drill", "Camping Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: javascript
+        value: |
+          output.length < 500
+
+  - description: "Format: no tool narration"
+    vars:
+      prompt: "show me the wishlist"
+      locale: "en"
+      userContext:
+        stage: "active_user"
+        itemCount: 1
+        itemNames: ["Tent"]
+        activeBorrows: 0
+        fosteringItemNames: []
+        pendingClaimsOnMyItems: 0
+        pendingMyRequests: 0
+    assert:
+      - type: not-icontains
+        value: "Let me check"
+      - type: not-icontains
+        value: "Let me look"
+      - type: not-icontains
+        value: "I'll search"
+      - type: not-icontains
+        value: "calling"
+
+  # ── 14. Web app, not mobile app (1 test) ─────────────────
+
+  - description: "Brand: never says download or app store"
+    vars:
+      prompt: "how do I get started with Sharity?"
+      locale: "en"
+    assert:
+      - type: not-icontains
+        value: "download"
+      - type: not-icontains
+        value: "app store"
+      - type: not-icontains
+        value: "play store"
+      - type: not-icontains
+        value: "install"

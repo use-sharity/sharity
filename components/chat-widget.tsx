@@ -59,11 +59,7 @@ const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
 		],
 	},
 	has_items_no_activity: {
-		en: [
-			"About Sharity",
-			"Find me something to borrow",
-			"Show my items",
-		],
+		en: ["About Sharity", "Find me something to borrow", "Show my items"],
 		vi: [
 			"Pro Sharity",
 			"T\u00ECm \u0111\u1ED3 m\u01B0\u1EE3n",
@@ -89,11 +85,7 @@ const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
 		],
 	},
 	active_user: {
-		en: [
-			"Any updates?",
-			"Find me something to borrow",
-			"About Sharity",
-		],
+		en: ["Any updates?", "Find me something to borrow", "About Sharity"],
 		vi: [
 			"C\u00F3 g\u00EC m\u1EDBi kh\u00F4ng?",
 			"T\u00ECm \u0111\u1ED3 m\u01B0\u1EE3n",

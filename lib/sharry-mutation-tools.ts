@@ -3,14 +3,12 @@ import type { ConvexHttpClient } from "convex/browser";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import type { CloudinaryRef } from "@/lib/cloudinary-ref";
-
-function stringParam(description: string) {
-	return { type: "string" as const, description };
-}
-
-function asItemId(id: string) {
-	return id as Id<"items">;
-}
+import { itemMdLink, pageMdLink } from "@/lib/sharry-tools";
+import {
+	asItemId,
+	stringParam,
+	validateCategory,
+} from "@/lib/sharry-tool-utils";
 
 const ITEM_ID_PARAM = stringParam(
 	"Item ID (use when multiple items share the same name — from a previous disambiguation response)",
@@ -152,7 +150,7 @@ export function buildMutationTools(
 					await convex.mutation(api.items.create, {
 						name,
 						description,
-						category: category as any,
+						category: validateCategory(category),
 						imageCloudinary,
 					});
 					// Resolve the new item to get its ID for a direct link
@@ -160,15 +158,15 @@ export function buildMutationTools(
 						itemName: name,
 					});
 					const itemId = resolved?.found === true ? resolved.itemId : null;
-					const link = itemId
-						? `/${locale}/item/${itemId}`
-						: `/${locale}/my-items`;
 					const photoNote = imageCloudinary
 						? `${imageCloudinary.length} photo(s) attached.`
 						: "No photos attached — add them in the app.";
+					const link = itemId
+						? itemMdLink("View your listing", itemId, locale)
+						: pageMdLink("My Items", "my-items", locale);
 					return {
 						success: `Created "${name}". ${photoNote}`,
-						nextStep: `Tell the user to add location if needed. Include this markdown link in your response: [View your listing](${link})`,
+						nextStep: `Tell the user to add location if needed. Include this markdown link in your response: ${link}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not create item." };
@@ -211,11 +209,12 @@ export function buildMutationTools(
 					const resolved = await resolveOwned(convex, itemName, itemId);
 					if (!resolved.ok) return { error: resolved.error };
 					const imageCloudinary = resolveImageRefs(imageIndices);
+					const validCategory = validateCategory(category);
 					await convex.mutation(api.items.update, {
 						id: resolved.itemId,
 						...(name && { name }),
 						...(description && { description }),
-						...(category && { category: category as any }),
+						...(validCategory && { category: validCategory }),
 						...(imageCloudinary && { imageCloudinary }),
 					});
 					const photoNote = imageCloudinary
@@ -223,7 +222,7 @@ export function buildMutationTools(
 						: "";
 					return {
 						success: `Updated "${resolved.itemName}".${photoNote}`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update item." };
@@ -250,7 +249,7 @@ export function buildMutationTools(
 					await convex.mutation(api.items.deleteItem, { id: resolved.itemId });
 					return {
 						success: `Deleted "${resolved.itemName}".`,
-						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not delete item." };
@@ -302,7 +301,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Approved ${claim.claimerName}'s request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not approve request." };
@@ -351,7 +350,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Rejected ${claim.claimerName}'s request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not reject request." };
@@ -391,7 +390,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Request sent for ${startDate} to ${endDate}. The owner will be notified.`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asItemId(itemId)})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not send request." };
@@ -416,7 +415,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Cancelled your request on "${resolved.itemName}".`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not cancel request." };
@@ -461,7 +460,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Pickup proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -473,7 +472,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Pickup proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
 						};
 					}
 					return { error: asOwner.error };
@@ -508,7 +507,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Pickup time approved.",
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -519,7 +518,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Pickup time approved.",
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
 						};
 					}
 					return { error: asOwner.error };
@@ -563,7 +562,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Return proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -575,7 +574,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: `Return proposed for ${dateTime}.`,
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
 						};
 					}
 					return { error: asOwner.error };
@@ -610,7 +609,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Return time approved.",
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asOwner.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
 						};
 					}
 					const asBorrower = await resolveBorrowed(convex, itemName);
@@ -621,7 +620,7 @@ export function buildMutationTools(
 						});
 						return {
 							success: "Return time approved.",
-							nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${asBorrower.itemId})`,
+							nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
 						};
 					}
 					return { error: asOwner.error };
@@ -656,7 +655,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Marked "${resolved.itemName}" as picked up.`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not mark as picked up." };
@@ -689,7 +688,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Marked "${resolved.itemName}" as returned.`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not mark as returned." };
@@ -729,7 +728,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Reported "${resolved.itemName}" as missing.`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not report as missing." };
@@ -768,7 +767,7 @@ export function buildMutationTools(
 					const photoNote = photoCloudinary ? " Photo attached." : "";
 					return {
 						success: `Submitted ${stars}-star rating.${photoNote}`,
-						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not submit rating." };
@@ -798,7 +797,8 @@ export function buildMutationTools(
 						})),
 						instruction: `Review these existing wishes. If any are similar to "${query}" and the user does NOT own it (isOwner: false), tell them it already exists and offer to vote for it. If they OWN a similar wish (isOwner: true), tell them they already have that wish — don't suggest voting on your own wish. Only proceed with createWishlistItem if nothing similar exists.`,
 					};
-				} catch {
+				} catch (e) {
+					console.error("checkWishlist failed:", e);
 					return { error: "Could not check wishlist right now." };
 				}
 			},
@@ -829,7 +829,7 @@ export function buildMutationTools(
 					const photoNote = imageCloudinary ? " Photo attached." : "";
 					return {
 						success: `Added to wishlist: "${text}".${photoNote} Neighbors can see it and might share!`,
-						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not add to wishlist." };
@@ -856,7 +856,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Vote toggled on "${wishText ?? "wish"}". Check the wishlist to see the updated count!`,
-						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not vote on this wish." };
@@ -892,7 +892,7 @@ export function buildMutationTools(
 					const photoNote = imageCloudinary ? " Image updated." : "";
 					return {
 						success: `Updated wish: "${text}".${photoNote}`,
-						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update this wish." };
@@ -931,7 +931,7 @@ export function buildMutationTools(
 					const mode = giveaway ? "giveaway" : "lending";
 					return {
 						success: `Switched "${resolved.itemName}" to ${mode} mode.`,
-						nextStep: `Include this markdown link in your response: [View item](/${locale}/item/${resolved.itemId})`,
+						nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not switch item mode." };
@@ -971,10 +971,39 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Blocked ${startDate} to ${endDate}.${note ? ` Reason: ${note}` : ""}`,
-						nextStep: `Include this markdown link in your response: [My Items](/${locale}/my-items)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not block dates." };
+				}
+			},
+		}),
+
+		unblockDates: tool({
+			description:
+				"Remove a vacation/unavailability block from the user's calendar. Call getMyBlockedDates first to get the blockId.",
+			inputSchema: jsonSchema<{ blockId: string }>({
+				type: "object",
+				properties: {
+					blockId: stringParam("The block ID from getMyBlockedDates results"),
+				},
+				required: ["blockId"],
+			}),
+			needsApproval: true,
+			execute: async ({ blockId }) => {
+				try {
+					await convex.mutation(api.items.deleteOwnerUnavailabilityRange, {
+						id: blockId as Id<"owner_unavailability">,
+					});
+					return {
+						success:
+							"Removed the blocked dates. Your items are available again for that period.",
+						nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
+					};
+				} catch (e: any) {
+					return {
+						error: e.message ?? "Could not remove blocked dates.",
+					};
 				}
 			},
 		}),
@@ -1030,7 +1059,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: "Profile updated.",
-						nextStep: `Include this markdown link in your response: [View profile](/${locale}/profile)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Profile", "profile", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not update profile." };
@@ -1045,16 +1074,47 @@ export function buildMutationTools(
 				type: "object",
 				properties: {},
 			}),
+			needsApproval: true,
 			execute: async () => {
 				try {
 					await convex.mutation(api.notifications.markAllAsRead);
 					return {
 						success: "All notifications marked as read.",
-						nextStep: `Include this markdown link in your response: [Notifications](/${locale}/notifications)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Notifications", "notifications", locale)}`,
 					};
 				} catch (e: any) {
 					return {
 						error: e.message ?? "Could not mark notifications as read.",
+					};
+				}
+			},
+		}),
+
+		subscribeToAvailability: tool({
+			description:
+				"Toggle availability alerts for an item. When subscribed, the user gets notified when the item becomes available. Use when browsing finds a booked item and the user wants to know when it's free.",
+			inputSchema: jsonSchema<{ itemId: string }>({
+				type: "object",
+				properties: {
+					itemId: stringParam("The item ID to subscribe to"),
+				},
+				required: ["itemId"],
+			}),
+			needsApproval: true,
+			execute: async ({ itemId }) => {
+				try {
+					const subscribed = await convex.mutation(
+						api.notifications.subscribeAvailability,
+						{ id: asItemId(itemId) },
+					);
+					return {
+						success: subscribed
+							? "You'll be notified when this item becomes available."
+							: "Availability alerts turned off for this item.",
+					};
+				} catch (e: any) {
+					return {
+						error: e.message ?? "Could not update availability subscription.",
 					};
 				}
 			},
@@ -1079,7 +1139,7 @@ export function buildMutationTools(
 					});
 					return {
 						success: `Deleted wish: "${wishText ?? "wish"}". It's been removed from the wishlist.`,
-						nextStep: `Include this markdown link in your response: [View wishlist](/${locale}/wishlist)`,
+						nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
 					};
 				} catch (e: any) {
 					return { error: e.message ?? "Could not delete this wish." };
