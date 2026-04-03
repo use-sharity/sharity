@@ -45,7 +45,7 @@ export default function Image() {
 					Request and share useful items in Da Lat.
 				</div>
 				<div style={{ fontSize: 24, color: "rgba(15, 23, 42, 0.56)" }}>
-					sharity-dalat.vercel.app
+					sharity-dalat.com
 				</div>
 			</div>
 		</div>,

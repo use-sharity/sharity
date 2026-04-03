@@ -149,9 +149,15 @@ export default defineSchema({
 		imageCloudinary: v.optional(v.array(vCloudinaryRef)),
 	}).index("by_createdAt", ["createdAt"]),
 
+	email_log: defineTable({
+		key: v.string(), // e.g. "lease-approved/{claimId}"
+		sentAt: v.number(),
+	}).index("by_key", ["key"]),
+
 	// User profiles (extends Clerk user data)
 	users: defineTable({
 		clerkId: v.string(), // Clerk user ID (identity.subject)
+		email: v.optional(v.string()), // Synced from Clerk via webhook
 		name: v.optional(v.string()),
 		avatarStorageId: v.optional(v.id("_storage")),
 		avatarCloudinary: v.optional(vCloudinaryRef),

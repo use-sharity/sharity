@@ -1,9 +1,38 @@
 import { v } from "convex/values";
 import { api, components, internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { CloudinaryClient } from "@imaxis/cloudinary-convex";
 import { vCloudinaryRef } from "./mediaTypes";
+import type { Doc } from "./_generated/dataModel";
+
+type ResolvedUser = {
+	email: string;
+	name: string;
+	profile: Doc<"users">;
+};
+
+async function resolveUserEmail(
+	ctx: MutationCtx,
+	clerkId: string,
+	context: string,
+): Promise<ResolvedUser | null> {
+	const profile = await ctx.db
+		.query("users")
+		.withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+		.first();
+
+	if (!profile?.email) {
+		console.warn(
+			`[email skip] ${context}: user ${clerkId} has no email on file. ` +
+				"Run users:backfillEmailsFromClerk or set up the Clerk webhook.",
+		);
+		return null;
+	}
+
+	return { email: profile.email, name: profile.name ?? "there", profile };
+}
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * ONE_HOUR_MS;
@@ -966,6 +995,27 @@ export const approveClaim = mutation({
 			createdAt: now,
 		});
 
+		// Email borrower: lease approved
+		const borrower = await resolveUserEmail(
+			ctx,
+			claim.claimerId,
+			"approveClaim",
+		);
+		if (borrower) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendLeaseApproved, {
+				claimId: args.claimId,
+				borrowerEmail: borrower.email,
+				data: {
+					borrowerName: borrower.name,
+					itemName: item.name,
+					startDate: claim.startDate,
+					endDate: claim.endDate,
+					claimId: args.claimId,
+					itemId: args.id,
+				},
+			});
+		}
+
 		// We no longer set isAvailable to false globally, as it depends on dates.
 
 		// Optionally reject others or leave them pending?
@@ -1289,6 +1339,44 @@ export const approvePickupWindow = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Email both parties: pickup meetup confirmed
+		const [proposer, approver] = await Promise.all([
+			resolveUserEmail(
+				ctx,
+				latestProposal.actorId,
+				"approvePickupWindow/proposer",
+			),
+			resolveUserEmail(ctx, userId, "approvePickupWindow/approver"),
+		]);
+		if (proposer && approver) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupConfirmed, {
+				claimId: args.claimId,
+				meetupType: "pickup",
+				recipient1Email: proposer.email,
+				recipient2Email: approver.email,
+				data1: {
+					recipientName: proposer.name,
+					counterpartyName: approver.name,
+					counterpartyContacts: approver.profile.contacts ?? {},
+					itemName: item.name,
+					windowStartAt: latestProposal.windowStartAt,
+					windowEndAt: latestProposal.windowEndAt,
+					itemId: args.itemId,
+					meetupType: "pickup" as const,
+				},
+				data2: {
+					recipientName: approver.name,
+					counterpartyName: proposer.name,
+					counterpartyContacts: proposer.profile.contacts ?? {},
+					itemName: item.name,
+					windowStartAt: latestProposal.windowStartAt,
+					windowEndAt: latestProposal.windowEndAt,
+					itemId: args.itemId,
+					meetupType: "pickup" as const,
+				},
+			});
+		}
 	},
 });
 
@@ -1387,6 +1475,44 @@ export const approveReturnWindow = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Email both parties: return meetup confirmed
+		const [proposer, approver] = await Promise.all([
+			resolveUserEmail(
+				ctx,
+				latestProposal.actorId,
+				"approveReturnWindow/proposer",
+			),
+			resolveUserEmail(ctx, userId, "approveReturnWindow/approver"),
+		]);
+		if (proposer && approver) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupConfirmed, {
+				claimId: args.claimId,
+				meetupType: "return",
+				recipient1Email: proposer.email,
+				recipient2Email: approver.email,
+				data1: {
+					recipientName: proposer.name,
+					counterpartyName: approver.name,
+					counterpartyContacts: approver.profile.contacts ?? {},
+					itemName: item.name,
+					windowStartAt: latestProposal.windowStartAt,
+					windowEndAt: latestProposal.windowEndAt,
+					itemId: args.itemId,
+					meetupType: "return" as const,
+				},
+				data2: {
+					recipientName: approver.name,
+					counterpartyName: proposer.name,
+					counterpartyContacts: proposer.profile.contacts ?? {},
+					itemName: item.name,
+					windowStartAt: latestProposal.windowStartAt,
+					windowEndAt: latestProposal.windowEndAt,
+					itemId: args.itemId,
+					meetupType: "return" as const,
+				},
+			});
+		}
 	},
 });
 
@@ -1814,6 +1940,38 @@ export const markExpired = mutation({
 				createdAt: now,
 			});
 		}
+
+		// Email both parties: lease expired (pickup never happened)
+		const [owner, borrowerResolved] = await Promise.all([
+			resolveUserEmail(ctx, item.ownerId, "markExpired/owner"),
+			resolveUserEmail(ctx, claim.claimerId, "markExpired/borrower"),
+		]);
+		if (owner && borrowerResolved) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendOverdueAlert, {
+				claimId: args.claimId,
+				alertType: "expired",
+				ownerEmail: owner.email,
+				borrowerEmail: borrowerResolved.email,
+				ownerData: {
+					recipientName: owner.name,
+					itemName: item.name,
+					originalEndDate: claim.startDate,
+					counterpartyName: borrowerResolved.name,
+					counterpartyContacts: borrowerResolved.profile.contacts ?? {},
+					itemId: args.itemId,
+					role: "owner" as const,
+				},
+				borrowerData: {
+					recipientName: borrowerResolved.name,
+					itemName: item.name,
+					originalEndDate: claim.startDate,
+					counterpartyName: owner.name,
+					counterpartyContacts: owner.profile.contacts ?? {},
+					itemId: args.itemId,
+					role: "borrower" as const,
+				},
+			});
+		}
 	},
 });
 
@@ -1881,6 +2039,38 @@ export const markMissing = mutation({
 				requestId: args.claimId,
 				isRead: false,
 				createdAt: now,
+			});
+		}
+
+		// Email both parties: item missing (never returned)
+		const [owner, borrowerResolved] = await Promise.all([
+			resolveUserEmail(ctx, item.ownerId, "markMissing/owner"),
+			resolveUserEmail(ctx, claim.claimerId, "markMissing/borrower"),
+		]);
+		if (owner && borrowerResolved) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendOverdueAlert, {
+				claimId: args.claimId,
+				alertType: "missing",
+				ownerEmail: owner.email,
+				borrowerEmail: borrowerResolved.email,
+				ownerData: {
+					recipientName: owner.name,
+					itemName: item.name,
+					originalEndDate: claim.endDate,
+					counterpartyName: borrowerResolved.name,
+					counterpartyContacts: borrowerResolved.profile.contacts ?? {},
+					itemId: args.itemId,
+					role: "owner" as const,
+				},
+				borrowerData: {
+					recipientName: borrowerResolved.name,
+					itemName: item.name,
+					originalEndDate: claim.endDate,
+					counterpartyName: owner.name,
+					counterpartyContacts: owner.profile.contacts ?? {},
+					itemId: args.itemId,
+					role: "borrower" as const,
+				},
 			});
 		}
 	},
@@ -2086,6 +2276,41 @@ export const resolveOverdueProposals = internalMutation({
 						createdAt: now,
 					});
 				}
+
+				const [ownerExp, borrowerExp] = await Promise.all([
+					resolveUserEmail(ctx, item.ownerId, "resolveOverdue/expired/owner"),
+					resolveUserEmail(
+						ctx,
+						claim.claimerId,
+						"resolveOverdue/expired/borrower",
+					),
+				]);
+				if (ownerExp && borrowerExp) {
+					await ctx.scheduler.runAfter(0, internal.emailSend.sendOverdueAlert, {
+						claimId: claim._id,
+						alertType: "expired",
+						ownerEmail: ownerExp.email,
+						borrowerEmail: borrowerExp.email,
+						ownerData: {
+							recipientName: ownerExp.name,
+							itemName: item.name,
+							originalEndDate: claim.startDate,
+							counterpartyName: borrowerExp.name,
+							counterpartyContacts: borrowerExp.profile.contacts ?? {},
+							itemId: claim.itemId,
+							role: "owner" as const,
+						},
+						borrowerData: {
+							recipientName: borrowerExp.name,
+							itemName: item.name,
+							originalEndDate: claim.startDate,
+							counterpartyName: ownerExp.name,
+							counterpartyContacts: ownerExp.profile.contacts ?? {},
+							itemId: claim.itemId,
+							role: "borrower" as const,
+						},
+					});
+				}
 			} else if (proposal.type === "lease_return_proposed") {
 				if (claim.returnedAt || claim.missingAt) continue;
 				if (events.some((e) => e.type === "lease_returned")) continue;
@@ -2118,6 +2343,41 @@ export const resolveOverdueProposals = internalMutation({
 						requestId: claim._id,
 						isRead: false,
 						createdAt: now,
+					});
+				}
+
+				const [ownerMiss, borrowerMiss] = await Promise.all([
+					resolveUserEmail(ctx, item.ownerId, "resolveOverdue/missing/owner"),
+					resolveUserEmail(
+						ctx,
+						claim.claimerId,
+						"resolveOverdue/missing/borrower",
+					),
+				]);
+				if (ownerMiss && borrowerMiss) {
+					await ctx.scheduler.runAfter(0, internal.emailSend.sendOverdueAlert, {
+						claimId: claim._id,
+						alertType: "missing",
+						ownerEmail: ownerMiss.email,
+						borrowerEmail: borrowerMiss.email,
+						ownerData: {
+							recipientName: ownerMiss.name,
+							itemName: item.name,
+							originalEndDate: claim.endDate,
+							counterpartyName: borrowerMiss.name,
+							counterpartyContacts: borrowerMiss.profile.contacts ?? {},
+							itemId: claim.itemId,
+							role: "owner" as const,
+						},
+						borrowerData: {
+							recipientName: borrowerMiss.name,
+							itemName: item.name,
+							originalEndDate: claim.endDate,
+							counterpartyName: ownerMiss.name,
+							counterpartyContacts: ownerMiss.profile.contacts ?? {},
+							itemId: claim.itemId,
+							role: "borrower" as const,
+						},
 					});
 				}
 			}

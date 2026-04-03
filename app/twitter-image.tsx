@@ -45,7 +45,7 @@ export default function Image() {
 					Foster and share items in Da Lat, Vietnam.
 				</div>
 				<div style={{ fontSize: 24, color: "rgba(15, 23, 42, 0.56)" }}>
-					sharity-dalat.vercel.app
+					sharity-dalat.com
 				</div>
 			</div>
 		</div>,

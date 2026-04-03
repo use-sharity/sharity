@@ -1,4 +1,11 @@
-import { query, mutation } from "./_generated/server";
+import {
+	internalAction,
+	internalMutation,
+	internalQuery,
+	mutation,
+	query,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { vCloudinaryRef } from "./mediaTypes";
 
@@ -281,6 +288,40 @@ export const generateAvatarUploadUrl = mutation({
 });
 
 /**
+ * Internal: upsert user profile from Clerk webhook (email sync)
+ */
+export const upsertFromWebhook = internalMutation({
+	args: {
+		clerkId: v.string(),
+		email: v.union(v.string(), v.null()),
+		name: v.union(v.string(), v.null()),
+	},
+	handler: async (ctx, args) => {
+		const existing = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+			.first();
+
+		const now = Date.now();
+
+		if (existing) {
+			const patch: Record<string, unknown> = { updatedAt: now };
+			if (args.email !== null) patch.email = args.email;
+			if (args.name !== null && !existing.name) patch.name = args.name;
+			await ctx.db.patch(existing._id, patch);
+		} else {
+			await ctx.db.insert("users", {
+				clerkId: args.clerkId,
+				email: args.email ?? undefined,
+				name: args.name ?? undefined,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+	},
+});
+
+/**
  * Get user's lending and borrowing history
  */
 export const getUserHistory = query({
@@ -361,5 +402,84 @@ export const getUserHistory = query({
 				totalBorrowed: borrowingHistory.length,
 			},
 		};
+	},
+});
+
+// ─── One-off migration: backfill emails from Clerk ───────────────────────────
+
+export const listUsersWithoutEmail = internalQuery({
+	args: {},
+	handler: async (ctx) => {
+		const all = await ctx.db.query("users").collect();
+		return all.filter((u) => !u.email).map((u) => u.clerkId);
+	},
+});
+
+interface ClerkUser {
+	id: string;
+	email_addresses: Array<{
+		id: string;
+		email_address: string;
+	}>;
+	primary_email_address_id: string;
+	first_name: string | null;
+	last_name: string | null;
+}
+
+export const backfillEmailsFromClerk = internalAction({
+	args: {},
+	handler: async (ctx) => {
+		const clerkSecret = process.env.CLERK_SECRET_KEY;
+		if (!clerkSecret) throw new Error("CLERK_SECRET_KEY env var not set");
+
+		const clerkIds: string[] = await ctx.runQuery(
+			internal.users.listUsersWithoutEmail,
+			{},
+		);
+
+		if (clerkIds.length === 0) {
+			console.log("backfillEmailsFromClerk: all users already have emails");
+			return;
+		}
+
+		console.log(
+			`backfillEmailsFromClerk: ${clerkIds.length} users missing email`,
+		);
+
+		let updated = 0;
+		let skipped = 0;
+
+		for (const clerkId of clerkIds) {
+			const res = await fetch(`https://api.clerk.com/v1/users/${clerkId}`, {
+				headers: { Authorization: `Bearer ${clerkSecret}` },
+			});
+
+			if (!res.ok) {
+				console.warn(
+					`backfillEmailsFromClerk: failed to fetch ${clerkId}: HTTP ${res.status}`,
+				);
+				skipped++;
+				continue;
+			}
+
+			const user = (await res.json()) as ClerkUser;
+			const primary = user.email_addresses.find(
+				(e) => e.id === user.primary_email_address_id,
+			);
+			const email = primary?.email_address ?? null;
+			const name =
+				[user.first_name, user.last_name].filter(Boolean).join(" ") || null;
+
+			await ctx.runMutation(internal.users.upsertFromWebhook, {
+				clerkId,
+				email,
+				name,
+			});
+			updated++;
+		}
+
+		console.log(
+			`backfillEmailsFromClerk: done — updated ${updated}, skipped ${skipped}`,
+		);
 	},
 });
