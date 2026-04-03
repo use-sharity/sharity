@@ -38,8 +38,14 @@ const SUPPORT_EMAIL = "sharitydalat+support@proton.me";
 
 const AI_DISCLAIMER: Record<string, string> = {
 	en: "Sharry is an AI assistant and can make mistakes.",
-	vi: "Sharry l\u00E0 tr\u1EE3 l\u00FD AI v\u00E0 c\u00F3 th\u1EC3 m\u1EAFc l\u1ED7i.",
-	ru: "Sharry \u2014 \u044D\u0442\u043E \u0418\u0418-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 \u0438 \u043C\u043E\u0436\u0435\u0442 \u043E\u0448\u0438\u0431\u0430\u0442\u044C\u0441\u044F.",
+	vi: "Sharry là trợ lý AI và có thể mắc lỗi.",
+	ru: "Sharry — это ИИ-ассистент и может ошибаться.",
+};
+
+const SUPPORT_LABEL: Record<string, string> = {
+	en: "Questions?",
+	vi: "Câu hỏi?",
+	ru: "Вопросы?",
 };
 
 const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
@@ -369,6 +375,7 @@ export function ChatWidget() {
 	const suggestions = stageData[locale] ?? stageData.en;
 	const welcomeText = WELCOME_MESSAGE[locale] ?? WELCOME_MESSAGE.en;
 	const disclaimerText = AI_DISCLAIMER[locale] ?? AI_DISCLAIMER.en;
+	const supportLabel = SUPPORT_LABEL[locale] ?? SUPPORT_LABEL.en;
 
 	const handleSubmit = useCallback(
 		(e: React.FormEvent) => {
@@ -1007,19 +1014,22 @@ export function ChatWidget() {
 							</button>
 						</div>
 					</form>
-					<p
+					<div
 						className="px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs sm:pb-2 sm:text-[10px]"
 						style={{ color: "var(--muted-foreground)" }}
 					>
-						{disclaimerText}{" "}
-						<a
-							href={`mailto:${SUPPORT_EMAIL}`}
-							className="underline"
-							style={{ color: "var(--muted-foreground)" }}
-						>
-							Contact support
-						</a>
-					</p>
+						<p>{disclaimerText}</p>
+						<p>
+							{supportLabel}{" "}
+							<a
+								href={`mailto:${SUPPORT_EMAIL}`}
+								className="underline"
+								style={{ color: "var(--muted-foreground)" }}
+							>
+								{SUPPORT_EMAIL}
+							</a>
+						</p>
+					</div>
 				</div>
 			)}
 		</>
