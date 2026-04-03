@@ -11,12 +11,23 @@
 import type * as chat from "../chat.js";
 import type * as cloudinary from "../cloudinary.js";
 import type * as crons from "../crons.js";
+import type * as emailSend from "../emailSend.js";
+import type * as emailTemplates__shared from "../emailTemplates/_shared.js";
+import type * as emailTemplates_dailyDigest from "../emailTemplates/dailyDigest.js";
+import type * as emailTemplates_index from "../emailTemplates/index.js";
+import type * as emailTemplates_leaseApproved from "../emailTemplates/leaseApproved.js";
+import type * as emailTemplates_meetupConfirmed from "../emailTemplates/meetupConfirmed.js";
+import type * as emailTemplates_overdueAlert from "../emailTemplates/overdueAlert.js";
+import type * as emailTemplates_welcome from "../emailTemplates/welcome.js";
+import type * as emails from "../emails.js";
+import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as mediaTypes from "../mediaTypes.js";
 import type * as media_migrations from "../media_migrations.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as ratings from "../ratings.js";
+import type * as resendClient from "../resendClient.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 import type * as wishlist from "../wishlist.js";
@@ -31,12 +42,23 @@ declare const fullApi: ApiFromModules<{
   chat: typeof chat;
   cloudinary: typeof cloudinary;
   crons: typeof crons;
+  emailSend: typeof emailSend;
+  "emailTemplates/_shared": typeof emailTemplates__shared;
+  "emailTemplates/dailyDigest": typeof emailTemplates_dailyDigest;
+  "emailTemplates/index": typeof emailTemplates_index;
+  "emailTemplates/leaseApproved": typeof emailTemplates_leaseApproved;
+  "emailTemplates/meetupConfirmed": typeof emailTemplates_meetupConfirmed;
+  "emailTemplates/overdueAlert": typeof emailTemplates_overdueAlert;
+  "emailTemplates/welcome": typeof emailTemplates_welcome;
+  emails: typeof emails;
+  http: typeof http;
   items: typeof items;
   mediaTypes: typeof mediaTypes;
   media_migrations: typeof media_migrations;
   migrations: typeof migrations;
   notifications: typeof notifications;
   ratings: typeof ratings;
+  resendClient: typeof resendClient;
   seed: typeof seed;
   users: typeof users;
   wishlist: typeof wishlist;
@@ -539,6 +561,155 @@ export declare const components: {
           success: boolean;
           width?: number;
         }
+      >;
+    };
+  };
+  resend: {
+    lib: {
+      cancelEmail: FunctionReference<
+        "mutation",
+        "internal",
+        { emailId: string },
+        null
+      >;
+      cleanupAbandonedEmails: FunctionReference<
+        "mutation",
+        "internal",
+        { olderThan?: number },
+        null
+      >;
+      cleanupOldEmails: FunctionReference<
+        "mutation",
+        "internal",
+        { olderThan?: number },
+        null
+      >;
+      createManualEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          replyTo?: Array<string>;
+          subject: string;
+          to: Array<string> | string;
+        },
+        string
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { emailId: string },
+        {
+          bcc?: Array<string>;
+          bounced?: boolean;
+          cc?: Array<string>;
+          clicked?: boolean;
+          complained: boolean;
+          createdAt: number;
+          deliveryDelayed?: boolean;
+          errorMessage?: string;
+          failed?: boolean;
+          finalizedAt: number;
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          html?: string;
+          opened: boolean;
+          replyTo: Array<string>;
+          resendId?: string;
+          segment: number;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+          subject?: string;
+          template?: {
+            id: string;
+            variables?: Record<string, string | number>;
+          };
+          text?: string;
+          to: Array<string>;
+        } | null
+      >;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { emailId: string },
+        {
+          bounced: boolean;
+          clicked: boolean;
+          complained: boolean;
+          deliveryDelayed: boolean;
+          errorMessage: string | null;
+          failed: boolean;
+          opened: boolean;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+        } | null
+      >;
+      handleEmailEvent: FunctionReference<
+        "mutation",
+        "internal",
+        { event: any },
+        null
+      >;
+      sendEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          bcc?: Array<string>;
+          cc?: Array<string>;
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          html?: string;
+          options: {
+            apiKey: string;
+            initialBackoffMs: number;
+            onEmailEvent?: { fnHandle: string };
+            retryAttempts: number;
+            testMode: boolean;
+          };
+          replyTo?: Array<string>;
+          subject?: string;
+          template?: {
+            id: string;
+            variables?: Record<string, string | number>;
+          };
+          text?: string;
+          to: Array<string>;
+        },
+        string
+      >;
+      updateManualEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          emailId: string;
+          errorMessage?: string;
+          resendId?: string;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced"
+            | "failed";
+        },
+        null
       >;
     };
   };

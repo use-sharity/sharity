@@ -36,7 +36,7 @@ export async function generateMetadata({
 	const t = await getTranslations({ locale, namespace: "Layout.metadata" });
 
 	return {
-		metadataBase: new URL("https://sharity-dalat.vercel.app"),
+		metadataBase: new URL("https://sharity-dalat.com"),
 		title: {
 			default: t("title.default"),
 			template: t("title.template"),
