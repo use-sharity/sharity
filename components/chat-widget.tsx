@@ -1006,7 +1006,7 @@ export function ChatWidget() {
 						</div>
 					</form>
 					<p
-						className="px-4 pb-2 text-center text-xs sm:text-[10px]"
+						className="px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs sm:pb-2 sm:text-[10px]"
 						style={{ color: "var(--muted-foreground)" }}
 					>
 						{disclaimerText}

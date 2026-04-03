@@ -740,7 +740,8 @@
 		"clothing": "Clothing",
 		"books": "Books",
 		"sports": "Sports",
-		"other": "Other"
+		"other": "Other",
+		"allCategories": "All categories"
 	},
 	"ClaimButton": {
 		"manageRequest": "Manage Request",

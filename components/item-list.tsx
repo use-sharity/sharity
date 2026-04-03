@@ -16,6 +16,7 @@ import { UserLink } from "@/components/user-link";
 import { ItemCard } from "./item-card";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { SharePrompt } from "@/components/share-prompt";
 import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
@@ -111,22 +112,19 @@ export function ItemList({
 						</Button>
 					</div>
 				</div>
-				<CategoryFilter
-					selected={selectedCategories}
-					onChange={setSelectedCategories}
-				/>
-				<div className="flex flex-wrap gap-2">
-					<Button
-						variant={giveawayOnly ? "default" : "outline"}
-						size="sm"
-						onClick={() => setGiveawayOnly((v) => !v)}
-						className={cn(
-							"h-8 text-xs",
-							giveawayOnly && "bg-primary text-primary-foreground",
-						)}
-					>
+				<div className="flex gap-2 items-center">
+					<CategoryFilter
+						selected={selectedCategories}
+						onChange={setSelectedCategories}
+					/>
+					<label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
+						<Switch
+							size="sm"
+							checked={giveawayOnly}
+							onCheckedChange={setGiveawayOnly}
+						/>
 						{t("giveaway")}
-					</Button>
+					</label>
 				</div>
 			</div>
 
