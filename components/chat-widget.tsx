@@ -34,6 +34,8 @@ const WELCOME_MESSAGE: Record<string, string> = {
 	ru: "\u041F\u0440\u0438\u0432\u0435\u0442 \u{1F44B} \u042F Sharry. \u041C\u043E\u0433\u0443 \u043F\u043E\u043C\u043E\u0447\u044C \u043D\u0430\u0439\u0442\u0438 \u0432\u0435\u0449\u0438, \u043E\u0442\u0432\u0435\u0442\u0438\u0442\u044C \u043D\u0430 \u0432\u043E\u043F\u0440\u043E\u0441\u044B, \u043E\u0434\u043E\u0431\u0440\u0438\u0442\u044C \u0437\u0430\u044F\u0432\u043A\u0438 \u0438\u043B\u0438 \u0443\u043F\u0440\u0430\u0432\u043B\u044F\u0442\u044C \u0432\u0430\u0448\u0438\u043C\u0438 \u043E\u0431\u044A\u044F\u0432\u043B\u0435\u043D\u0438\u044F\u043C\u0438. \u0427\u0435\u043C \u043F\u043E\u043C\u043E\u0447\u044C?",
 };
 
+const SUPPORT_EMAIL = "sharitydalat+support@proton.me";
+
 const AI_DISCLAIMER: Record<string, string> = {
 	en: "Sharry is an AI assistant and can make mistakes.",
 	vi: "Sharry l\u00E0 tr\u1EE3 l\u00FD AI v\u00E0 c\u00F3 th\u1EC3 m\u1EAFc l\u1ED7i.",
@@ -1009,7 +1011,14 @@ export function ChatWidget() {
 						className="px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs sm:pb-2 sm:text-[10px]"
 						style={{ color: "var(--muted-foreground)" }}
 					>
-						{disclaimerText}
+						{disclaimerText}{" "}
+						<a
+							href={`mailto:${SUPPORT_EMAIL}`}
+							className="underline"
+							style={{ color: "var(--muted-foreground)" }}
+						>
+							Contact support
+						</a>
 					</p>
 				</div>
 			)}

@@ -69,7 +69,9 @@ export const SHARRY_APP_KNOWLEDGE = `**For Sharers (lending items):**
 - Only the owner can approve or reject requests.
 - Only the fosterer can cancel their own request.
 
-**About Sharity:** Based in Da Lat, Vietnam. Community of expats and locals sharing everyday items. No need to buy something you'll use once — someone nearby probably has it. Sharity is a WEB APP (not a mobile app). Users sign up via the website using the Sign In button — there is NO app store download. Never tell users to download an app.`;
+**About Sharity:** Based in Da Lat, Vietnam. Community of expats and locals sharing everyday items. No need to buy something you'll use once — someone nearby probably has it. Sharity is a WEB APP (not a mobile app). Users sign up via the website using the Sign In button — there is NO app store download. Never tell users to download an app.
+
+**Support:** If you can't resolve an issue, suggest the user email **sharitydalat+support@proton.me** for help from the team.`;
 
 export const SHARRY_TOOL_GUIDANCE = `## Using tools
 You have tools to look up live data and take actions. Follow these rules:
