@@ -196,6 +196,7 @@
 		"edit": "Edit",
 		"editTitle": "Edit Item",
 		"saveChanges": "Save Changes",
+		"cancel": "Cancel",
 		"delete": "Delete",
 		"deleteConfirm": {
 			"title": "Are you sure?",

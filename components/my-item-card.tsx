@@ -9,6 +9,7 @@ import { format } from "date-fns";
 
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
@@ -260,6 +261,7 @@ export function MyItemCard({
 										giveaway: Boolean(item.giveaway),
 									}}
 									enableModeSwitch
+									hideMyItemsLink
 									onSubmit={async (values) => {
 										if (
 											typeof values.giveaway === "boolean" &&
@@ -279,6 +281,17 @@ export function MyItemCard({
 										setEditingId(null);
 									}}
 									submitLabel={t("saveChanges")}
+									footerActions={
+										<DialogClose asChild>
+											<Button
+												type="button"
+												variant="outline"
+												className="w-full sm:w-auto"
+											>
+												{t("cancel")}
+											</Button>
+										</DialogClose>
+									}
 								/>
 							</DialogContent>
 						</Dialog>
