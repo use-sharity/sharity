@@ -3,8 +3,16 @@
 import { useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
-import { useState, useEffect } from "react";
-import { ProfileSetupModal } from "./profile-setup-modal";
+import { useState } from "react";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { ProfileForm } from "@/components/profile-form";
+import { useTranslations } from "next-intl";
 
 interface ProfileProviderProps {
 	children: React.ReactNode;
@@ -13,44 +21,43 @@ interface ProfileProviderProps {
 export function ProfileProvider({ children }: ProfileProviderProps) {
 	const { isSignedIn, isLoaded } = useAuth();
 	const profile = useQuery(api.users.getMyProfile, isSignedIn ? {} : "skip");
-	const [showSetupModal, setShowSetupModal] = useState(false);
-	const [hasShownModal, setHasShownModal] = useState(false);
+	const [dismissed, setDismissed] = useState(false);
+	const t = useTranslations("ProfileSetup");
 
-	useEffect(() => {
-		// Show modal when:
-		// 1. Auth is loaded
-		// 2. User is signed in
-		// 3. Profile query has returned
-		// 4. User has no profile yet
-		// 5. Haven't shown the modal in this session
-		if (
-			isLoaded &&
-			isSignedIn &&
-			profile !== undefined &&
-			profile?.hasProfile === false &&
-			!hasShownModal
-		) {
-			setShowSetupModal(true);
-			setHasShownModal(true);
-		}
-	}, [isLoaded, isSignedIn, profile, hasShownModal]);
+	const needsProfile =
+		isLoaded &&
+		isSignedIn &&
+		profile !== undefined &&
+		profile?.hasProfile === false;
 
-	// Reset hasShownModal when user signs out
-	useEffect(() => {
-		if (isLoaded && !isSignedIn) {
-			setHasShownModal(false);
-		}
-	}, [isLoaded, isSignedIn]);
+	const showSetupModal = needsProfile && !dismissed;
+
+	const handleClose = () => setDismissed(true);
 
 	return (
 		<>
 			{children}
 			{profile && profile.clerkData && (
-				<ProfileSetupModal
+				<Dialog
 					open={showSetupModal}
-					onOpenChange={setShowSetupModal}
-					clerkData={profile.clerkData}
-				/>
+					onOpenChange={(open) => {
+						if (!open) handleClose();
+					}}
+				>
+					<DialogContent className="max-h-[90vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>{t("title")}</DialogTitle>
+							<DialogDescription>{t("description")}</DialogDescription>
+						</DialogHeader>
+						<ProfileForm
+							initialValues={{
+								name: profile.clerkData.name,
+								avatarUrl: profile.clerkData.avatarUrl,
+							}}
+							onSuccess={handleClose}
+						/>
+					</DialogContent>
+				</Dialog>
 			)}
 		</>
 	);

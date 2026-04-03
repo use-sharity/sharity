@@ -766,25 +766,7 @@
 	},
 	"ProfileSetup": {
 		"title": "Complete Your Profile",
-		"description": "Set up your profile to start sharing and fostering items. You can update this later.",
-		"nameLabel": "Name",
-		"fromClerk": "(from Clerk)",
-		"namePlaceholder": "Your name",
-		"resetToClerk": "Reset to Clerk value",
-		"addressLabel": "Address",
-		"addressPlaceholder": "Your location (e.g., Da Lat, Vietnam)",
-		"contactMethodsLabel": "Contact Methods",
-		"contactMethodsDesc": "Add at least one way for others to contact you",
-		"telegramPlaceholder": "Telegram @username",
-		"whatsappPlaceholder": "WhatsApp number",
-		"facebookPlaceholder": "Facebook profile",
-		"phonePlaceholder": "Phone number",
-		"later": "Later",
-		"save": "Save Profile",
-		"saving": "Saving...",
-		"toastRequired": "Name is required",
-		"toastSuccess": "Profile created successfully!",
-		"toastFailed": "Failed to create profile"
+		"description": "Set up your profile to start sharing and fostering items. You can update this later."
 	},
 	"RatingsList": {
 		"loading": "Loading ratings...",

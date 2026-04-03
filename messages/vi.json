@@ -766,25 +766,7 @@
 	},
 	"ProfileSetup": {
 		"title": "Tạo hồ sơ",
-		"description": "Thêm vài thông tin để bắt đầu. Sửa sau cũng được.",
-		"nameLabel": "Tên",
-		"fromClerk": "(từ Clerk)",
-		"namePlaceholder": "Tên của bạn",
-		"resetToClerk": "Đặt lại theo Clerk",
-		"addressLabel": "Khu vực",
-		"addressPlaceholder": "Vị trí của bạn (VD: Đà Lạt, Việt Nam)",
-		"contactMethodsLabel": "Cách liên hệ",
-		"contactMethodsDesc": "Thêm ít nhất 1 cách để người khác liên hệ",
-		"telegramPlaceholder": "Telegram @username",
-		"whatsappPlaceholder": "Số WhatsApp",
-		"facebookPlaceholder": "Hồ sơ Facebook",
-		"phonePlaceholder": "Số điện thoại",
-		"later": "Để sau",
-		"save": "Lưu",
-		"saving": "Đang lưu...",
-		"toastRequired": "Cần tên",
-		"toastSuccess": "Đã tạo hồ sơ!",
-		"toastFailed": "Tạo hồ sơ thất bại"
+		"description": "Thêm vài thông tin để bắt đầu. Sửa sau cũng được."
 	},
 	"RatingsList": {
 		"loading": "Đang tải...",

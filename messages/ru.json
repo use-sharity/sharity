@@ -766,25 +766,7 @@
 	},
 	"ProfileSetup": {
 		"title": "Заполни профиль",
-		"description": "Заполни профиль, чтобы начать. Всё можно изменить позже.",
-		"nameLabel": "Имя",
-		"fromClerk": "(из Clerk)",
-		"namePlaceholder": "Твоё имя",
-		"resetToClerk": "Сбросить",
-		"addressLabel": "Адрес",
-		"addressPlaceholder": "Где ты находишься (например, Далат, Вьетнам)",
-		"contactMethodsLabel": "Способы связи",
-		"contactMethodsDesc": "Добавь хотя бы один способ связи",
-		"telegramPlaceholder": "Telegram @username",
-		"whatsappPlaceholder": "Номер WhatsApp",
-		"facebookPlaceholder": "Профиль Facebook",
-		"phonePlaceholder": "Номер телефона",
-		"later": "Позже",
-		"save": "Сохранить профиль",
-		"saving": "Сохранение...",
-		"toastRequired": "Имя обязательно",
-		"toastSuccess": "Профиль создан!",
-		"toastFailed": "Не удалось создать профиль"
+		"description": "Заполни профиль, чтобы начать. Всё можно изменить позже."
 	},
 	"RatingsList": {
 		"loading": "Загрузка оценок...",
