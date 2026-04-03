@@ -2,19 +2,19 @@
 	"Layout": {
 		"metadata": {
 			"title": {
-				"default": "Sharity — Share, borrow, and lend items in Da Lat, Vietnam",
+				"default": "Sharity — Foster and share items in Da Lat, Vietnam",
 				"template": "%s — Sharity, the sharing economy in Da Lat, Vietnam"
 			},
-			"description": "Sharity is a community sharing platform in Da Lat, Vietnam. Lend rarely used items, borrow what you need for a few days, and manage requests and availability in one place.",
+			"description": "Sharity is a neighborhood sharing platform in Da Lat, Vietnam. Share rarely used items, foster what you need for a few days, and manage requests and availability in one place.",
 			"openGraph": {
 				"siteName": "Sharity",
-				"title": "Sharity — Share, borrow, and lend items in Da Lat, Vietnam",
-				"description": "Sharity is a community sharing platform in Da Lat, Vietnam. Lend rarely used items, borrow what you need for a few days, and manage requests and availability in one place.",
+				"title": "Sharity — Foster and share items in Da Lat, Vietnam",
+				"description": "Sharity is a neighborhood sharing platform in Da Lat, Vietnam. Share rarely used items, foster what you need for a few days, and manage requests and availability in one place.",
 				"locale": "en_US"
 			},
 			"twitter": {
-				"title": "Sharity — Share, borrow, and lend items in Da Lat, Vietnam",
-				"description": "Sharity is a community sharing platform in Da Lat, Vietnam. Lend rarely used items, borrow what you need for a few days, and manage requests and availability in one place."
+				"title": "Sharity — Foster and share items in Da Lat, Vietnam",
+				"description": "Sharity is a neighborhood sharing platform in Da Lat, Vietnam. Share rarely used items, foster what you need for a few days, and manage requests and availability in one place."
 			}
 		}
 	},
@@ -37,7 +37,7 @@
 	},
 	"Home": {
 		"title": "Sharity",
-		"subtitle": "Borrow and lend useful items in Da Lat.",
+		"subtitle": "Foster and share useful items in Da Lat.",
 		"shareButton": "Share an item",
 		"shareLabel": "Share",
 		"sharePrompt": "Got something to share?",
@@ -46,11 +46,11 @@
 			"request": "Request",
 			"browse": "Browse"
 		},
-		"cantFind": "Can't find what you need? Check the community wishlist.",
+		"cantFind": "Can't find what you need? Check the neighborhood wishlist.",
 		"goToWishlist": "Go to Wishlist",
 		"onboarding": {
 			"title": "How Sharity works",
-			"subtitle": "Quick overview of the full lending timeline.",
+			"subtitle": "Quick overview of the full sharing timeline.",
 			"back": "Back",
 			"next": "Next",
 			"getStarted": "Get started",
@@ -60,19 +60,19 @@
 				"timeline": {
 					"title": "Full timeline overview",
 					"description": "A typical item flow moves through request, approval, pickup, and return.",
-					"point1": "Borrower sends a request with dates.",
+					"point1": "Fosterer sends a request with dates.",
 					"point2": "Owner approves, then both sides align on pickup.",
 					"point3": "After use, return is proposed, approved, and confirmed."
 				},
 				"lend": {
-					"title": "Lend your item",
-					"description": "Post your item and control who can borrow it.",
+					"title": "Share your item",
+					"description": "Post your item and control who can foster it.",
 					"point1": "Add item details, photos, and optional lease limits.",
 					"point2": "Review incoming requests and approve the right one.",
 					"point3": "Track status clearly in your timeline."
 				},
 				"borrow": {
-					"title": "Borrow what you need",
+					"title": "Request what you need",
 					"description": "Find items and request them for your planned time window.",
 					"point1": "Browse listings and open item details.",
 					"point2": "Send a request and wait for owner approval.",
@@ -89,11 +89,11 @@
 		}
 	},
 	"ItemCard": {
-		"giveaway": "Giveaway",
+		"giveaway": "Pass On",
 		"locationAvailable": "Location available"
 	},
 	"ItemForm": {
-		"giveawayMode": "Giveaway",
+		"giveawayMode": "Pass On",
 		"giveawayDesc": "No return. Ownership transfers after pickup.",
 		"switchMode": {
 			"title": "Switch mode?",
@@ -106,7 +106,7 @@
 		"description": "Description",
 		"descriptionPlaceholder": "Optional description",
 		"leaseLengthLimits": "Lease length limits (days)",
-		"giveawaylimitDesc": "Lease length limits are disabled for giveaway items.",
+		"giveawaylimitDesc": "Lease length limits are disabled for pass on items.",
 		"minLeaseDays": "Min days (optional)",
 		"minLeaseDaysPlaceholder": "e.g., 1",
 		"maxLeaseDays": "Max days (optional)",
@@ -142,10 +142,10 @@
 		"requestToReceive": "Request to Receive",
 		"signInToRequest": "Sign in to request.",
 		"connecting": "Connecting...",
-		"giveawayDesc": "Giveaway: no return needed. Ownership transfers after pickup.",
+		"giveawayDesc": "Pass On: no return needed. Ownership transfers after pickup.",
 		"details": "Details",
 		"request": "Request",
-		"requestToBorrow": "Request to Borrow",
+		"requestToBorrow": "Request to Foster",
 		"openDetails": "Open details",
 		"noActiveRequests": "No active requests",
 		"nothingToApprove": "Nothing to approve right now.",
@@ -175,7 +175,7 @@
 		"dueInDays": "Due in {count, plural, one {# day} other {# days}}",
 		"dueOn": "Due {date}",
 		"viewDetails": "View Details",
-		"borrowedFrom": "Borrowed from {name}",
+		"borrowedFrom": "Fostered from {name}",
 		"pickedUp": "Picked up {date}"
 	},
 	"MyItemCard": {
@@ -190,8 +190,8 @@
 			"expired": "Expired",
 			"missing": "Missing"
 		},
-		"giveaway": "Giveaway",
-		"borrowed": "Borrowed",
+		"giveaway": "Pass On",
+		"borrowed": "Fostered",
 		"review": "Review",
 		"edit": "Edit",
 		"editTitle": "Edit Item",
@@ -315,10 +315,10 @@
 			"confirm": "Confirm"
 		},
 		"rejectDialog": {
-			"titleGiveaway": "Reject giveaway request",
+			"titleGiveaway": "Reject pass on request",
 			"titleLease": "Reject lease request",
 			"descGiveaway": "This will notify the requester that their request was declined.",
-			"descLease": "This will notify the borrower that their request was declined.",
+			"descLease": "This will notify the fosterer that their request was declined.",
 			"reasonLabel": "Reason (optional, but recommended)",
 			"reasonPlaceholder": "Let them know why..."
 		},
@@ -411,14 +411,14 @@
 			"hoursNotAvailable": "Selected hours are not available"
 		},
 		"requesting": "Requesting...",
-		"requestToBorrow": "Request to Borrow",
+		"requestToBorrow": "Request to Foster",
 		"signInToRequest": "Sign in to request",
 		"intradayNote": "For intraday requests, pickup & return time is arranged via proposed and approved hour windows after approval.",
 		"yourRequests": "Your Requests",
 		"hideInactive": "Hide Inactive",
 		"showInactive": "Show Inactive",
 		"pickPickupDay": "Pick a pickup day",
-		"giveawayNote": "Giveaway: no return needed. Ownership transfers after pickup.",
+		"giveawayNote": "Pass On: no return needed. Ownership transfers after pickup.",
 		"request": "Request"
 	},
 	"Calendar": {
@@ -466,8 +466,8 @@
 			"conflictReturn": "Return for {name}"
 		},
 		"popover": {
-			"lending": "Lending",
-			"borrowing": "Borrowing",
+			"lending": "Sharing",
+			"borrowing": "Fostering",
 			"vacation": "Vacation",
 			"pickup": "Pickup:",
 			"return": "Return:",
@@ -482,17 +482,17 @@
 	},
 	"MyItems": {
 		"title": "My Items",
-		"subtitle": "Track items you're borrowing and sharing.",
+		"subtitle": "Track items you're fostering and sharing.",
 		"signInMessage": "Please sign in to view and manage your items.",
 		"signInButton": "Sign In",
 		"loading": "Loading...",
 		"noItems": "You don't have any items yet.",
-		"noBorrowing": "You're not borrowing any items.",
+		"noBorrowing": "You're not fostering any items.",
 		"noShared": "You haven't shared any items yet.",
-		"borrowingTitle": "Items I'm Borrowing",
+		"borrowingTitle": "Items I'm Fostering",
 		"myItemsTitle": "My Items",
 		"tabs": {
-			"borrowing": "Borrowing",
+			"borrowing": "Fostering",
 			"history": "History",
 			"shared": "Shared Items"
 		}
@@ -571,10 +571,10 @@
 	"Ratings": {
 		"pendingTitle": "Rate Your Transactions",
 		"pendingDesc": "You have {count, plural, one {# transaction} other {# transactions}} to rate.",
-		"lender": "lender",
-		"borrower": "borrower",
-		"asLender": "As lender",
-		"asBorrower": "As borrower",
+		"lender": "sharer",
+		"borrower": "fosterer",
+		"asLender": "As sharer",
+		"asBorrower": "As fosterer",
 		"with": "with {name}",
 		"rate": "Rate",
 		"leaveRating": "Leave a Rating",
@@ -596,13 +596,13 @@
 	"UserHistory": {
 		"loading": "Loading history...",
 		"noHistory": "No transaction history yet.",
-		"noLending": "No lending history.",
-		"noBorrowing": "No borrowing history.",
-		"lent": "Lent",
-		"borrowed": "Borrowed",
+		"noLending": "No sharing history.",
+		"noBorrowing": "No fostering history.",
+		"lent": "Shared",
+		"borrowed": "Fostered",
 		"tabs": {
-			"lending": "Lending ({count})",
-			"borrowing": "Borrowing ({count})"
+			"lending": "Sharing ({count})",
+			"borrowing": "Fostering ({count})"
 		}
 	},
 	"Wishlist": {
@@ -619,7 +619,7 @@
 		"noItems": "No items found.",
 		"emptyCard": {
 			"title": "Can't find what you're looking for?",
-			"description": "Check what others are looking for, or make a wish yourself.",
+			"description": "Check what your neighbors are looking for, or make a wish yourself.",
 			"seeFull": "See all wishes",
 			"makeRequest": "Make a Wish"
 		},
@@ -660,7 +660,7 @@
 	},
 	"ItemList": {
 		"searchPlaceholder": "Search available items...",
-		"giveaway": "Giveaway",
+		"giveaway": "Pass On",
 		"loadingMap": "Loading map...",
 		"loading": "Loading...",
 		"noLocationItems": "No items with location in current filter"
@@ -670,12 +670,12 @@
 		"noRatings": "No ratings",
 		"noRatingsYet": "No ratings yet",
 		"ratingCount": "{count, plural, one {# rating} other {# ratings}}",
-		"asLender": "As Lender",
-		"asBorrower": "As Borrower"
+		"asLender": "As Sharer",
+		"asBorrower": "As Fosterer"
 	},
 	"ItemDetail": {
 		"youOwnThis": "You own this",
-		"giveaway": "Giveaway",
+		"giveaway": "Pass On",
 		"locationAvailable": "Location available",
 		"notFound": "Item not found",
 		"rateTransaction": "Rate transaction",
@@ -686,10 +686,10 @@
 			"giveToUser": "Share your experience giving this item to {targetUserName}",
 			"receive": "Share your experience receiving this item",
 			"give": "Share your experience giving this item",
-			"borrowFromUser": "Share your experience borrowing from {targetUserName}",
-			"lendToUser": "Share your experience lending to {targetUserName}",
-			"borrow": "Share your experience borrowing this item",
-			"lend": "Share your experience lending this item"
+			"borrowFromUser": "Share your experience fostering from {targetUserName}",
+			"lendToUser": "Share your experience sharing with {targetUserName}",
+			"borrow": "Share your experience fostering this item",
+			"lend": "Share your experience sharing this item"
 		},
 		"rate": "Rate",
 		"leaveRating": "Leave a Rating",
@@ -722,13 +722,13 @@
 	"ItemActivity": {
 		"system": "System",
 		"itemCreated": "Item created",
-		"giveawayApproved": "Giveaway approved",
+		"giveawayApproved": "Pass on approved",
 		"loanStarted": "Loan started",
 		"itemPickedUp": "Item picked up",
 		"itemReturned": "Item returned",
 		"defaultActivity": "Activity",
 		"recipient": "Recipient: ",
-		"borrower": "Borrower: ",
+		"borrower": "Fosterer: ",
 		"loading": "Loading activity…",
 		"noActivity": "No activity yet.",
 		"by": "by "
@@ -765,7 +765,7 @@
 	},
 	"ProfileSetup": {
 		"title": "Complete Your Profile",
-		"description": "Set up your profile to start sharing and borrowing items. You can update this later.",
+		"description": "Set up your profile to start sharing and fostering items. You can update this later.",
 		"nameLabel": "Name",
 		"fromClerk": "(from Clerk)",
 		"namePlaceholder": "Your name",
@@ -788,11 +788,11 @@
 	"RatingsList": {
 		"loading": "Loading ratings...",
 		"all": "All ({count})",
-		"lender": "As Lender ({count})",
-		"borrower": "As Borrower ({count})",
+		"lender": "As Sharer ({count})",
+		"borrower": "As Fosterer ({count})",
 		"noRatings": "No ratings in this category.",
-		"asLender": "As Lender",
-		"asBorrower": "As Borrower",
+		"asLender": "As Sharer",
+		"asBorrower": "As Fosterer",
 		"photoAlt": "Rating photo {index}"
 	}
 }

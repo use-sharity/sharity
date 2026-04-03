@@ -42,7 +42,7 @@ export default function Image() {
 					Sharity
 				</div>
 				<div style={{ fontSize: 36, color: "rgba(15, 23, 42, 0.72)" }}>
-					Borrow and lend useful items in Da Lat.
+					Request and share useful items in Da Lat.
 				</div>
 				<div style={{ fontSize: 24, color: "rgba(15, 23, 42, 0.56)" }}>
 					sharity-dalat.vercel.app
