@@ -740,7 +740,8 @@
 		"clothing": "Quần áo",
 		"books": "Sách",
 		"sports": "Thể thao",
-		"other": "Khác"
+		"other": "Khác",
+		"allCategories": "Tất cả danh mục"
 	},
 	"ClaimButton": {
 		"manageRequest": "Xem yêu cầu",

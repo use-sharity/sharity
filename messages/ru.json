@@ -740,7 +740,8 @@
 		"clothing": "Одежда",
 		"books": "Книги",
 		"sports": "Спорт",
-		"other": "Другое"
+		"other": "Другое",
+		"allCategories": "Все категории"
 	},
 	"ClaimButton": {
 		"manageRequest": "Мой запрос",
