@@ -42,7 +42,7 @@ export default function Image() {
 					Sharity
 				</div>
 				<div style={{ fontSize: 36, color: "rgba(15, 23, 42, 0.72)" }}>
-					Share, borrow, and lend items in Da Lat, Vietnam.
+					Foster and share items in Da Lat, Vietnam.
 				</div>
 				<div style={{ fontSize: 24, color: "rgba(15, 23, 42, 0.56)" }}>
 					sharity-dalat.vercel.app

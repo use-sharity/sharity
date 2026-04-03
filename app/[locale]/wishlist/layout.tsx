@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const ogTitle =
 	"Wishlist — Request and vote on needed items in Da Lat, Vietnam";
 const description =
-	"Request items you can't find in Da Lat, Vietnam and vote on what others need. Help the community prioritize popular requests and find items worth sharing next.";
+	"Request items you can't find in Da Lat, Vietnam and vote on what others need. Help the neighborhood prioritize popular requests and find items worth sharing next.";
 
 export const metadata: Metadata = {
 	title: "Wishlist",

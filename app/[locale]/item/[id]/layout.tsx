@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 const ogTitle =
-	"Item — View availability and request to borrow in Da Lat, Vietnam";
+	"Item — View availability and request to foster in Da Lat, Vietnam";
 const description =
-	"See item details, photos, and pickup location in Da Lat, Vietnam. Check availability, choose dates, send a borrow request, and track approvals all in one place.";
+	"See item details, photos, and pickup location in Da Lat, Vietnam. Check availability, choose dates, send a foster request, and track approvals all in one place.";
 
 export const metadata: Metadata = {
 	title: "Item",
