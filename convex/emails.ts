@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import type { DigestItemSummary } from "./emailTemplates/_shared";
 
 // ─── Idempotency queries/mutations ────────────────────────────────────────────
 
@@ -63,24 +64,9 @@ export const buildDigestPayloads = internalQuery({
 			email: string;
 			data: {
 				userName: string;
-				ownerNotifications: Array<{
-					type: string;
-					itemName: string;
-					createdAt: number;
-					itemId: string;
-				}>;
-				borrowerNotifications: Array<{
-					type: string;
-					itemName: string;
-					createdAt: number;
-					itemId: string;
-				}>;
-				generalNotifications: Array<{
-					type: string;
-					itemName: string;
-					createdAt: number;
-					itemId: string;
-				}>;
+				ownerNotifications: DigestItemSummary[];
+				borrowerNotifications: DigestItemSummary[];
+				generalNotifications: DigestItemSummary[];
 			};
 		}> = [];
 
@@ -92,32 +78,49 @@ export const buildDigestPayloads = internalQuery({
 
 			if (!userRecord?.email) continue;
 
-			const ownerNotifications = [];
-			const borrowerNotifications = [];
-			const generalNotifications = [];
+			// counts keyed by `bucket:itemId:type`
+			const ownerCounts = new Map<string, Map<string, number>>();
+			const borrowerCounts = new Map<string, Map<string, number>>();
+			const generalCounts = new Map<string, Map<string, number>>();
+			const itemNames = new Map<string, string>();
 
 			for (const n of notifications) {
-				const item = await ctx.db.get(n.itemId);
-				const entry = {
-					type: n.type,
-					itemName: item?.name ?? "Unknown item",
-					createdAt: n.createdAt,
-					itemId: n.itemId,
-				};
+				const itemId = n.itemId as string;
+				if (!itemNames.has(itemId)) {
+					const item = await ctx.db.get(n.itemId);
+					itemNames.set(itemId, item?.name ?? "Unknown item");
+				}
 
-				if (OWNER_TYPES.has(n.type)) ownerNotifications.push(entry);
-				else if (BORROWER_TYPES.has(n.type)) borrowerNotifications.push(entry);
-				else generalNotifications.push(entry);
+				let bucket: Map<string, Map<string, number>>;
+				if (OWNER_TYPES.has(n.type)) bucket = ownerCounts;
+				else if (BORROWER_TYPES.has(n.type)) bucket = borrowerCounts;
+				else bucket = generalCounts;
+
+				const byType = bucket.get(itemId) ?? new Map<string, number>();
+				byType.set(n.type, (byType.get(n.type) ?? 0) + 1);
+				bucket.set(itemId, byType);
 			}
+
+			const toSummaries = (
+				counts: Map<string, Map<string, number>>,
+			): DigestItemSummary[] =>
+				[...counts.entries()].map(([itemId, byType]) => ({
+					itemName: itemNames.get(itemId) ?? "Unknown item",
+					itemId,
+					events: [...byType.entries()].map(([type, count]) => ({
+						type,
+						count,
+					})),
+				}));
 
 			results.push({
 				clerkId,
 				email: userRecord.email,
 				data: {
 					userName: userRecord.name ?? "there",
-					ownerNotifications,
-					borrowerNotifications,
-					generalNotifications,
+					ownerNotifications: toSummaries(ownerCounts),
+					borrowerNotifications: toSummaries(borrowerCounts),
+					generalNotifications: toSummaries(generalCounts),
 				},
 			});
 		}

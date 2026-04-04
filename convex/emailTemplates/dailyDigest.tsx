@@ -1,36 +1,42 @@
 import { Link, Section, Text } from "@react-email/components";
 import * as React from "react";
 import { EmailButton, SharityEmail, COLORS } from "./_shared";
-import type { DigestNotification } from "./_shared";
+import type { DigestItemSummary } from "./_shared";
 
 export interface DigestData {
 	userName: string;
-	ownerNotifications: DigestNotification[];
-	borrowerNotifications: DigestNotification[];
-	generalNotifications: DigestNotification[];
+	ownerNotifications: DigestItemSummary[];
+	borrowerNotifications: DigestItemSummary[];
+	generalNotifications: DigestItemSummary[];
 }
 
-const NOTIFICATION_LABELS: Record<string, string> = {
-	new_request: "New borrow request",
-	request_approved: "Request approved",
-	request_rejected: "Request rejected",
-	item_available: "Item now available",
-	pickup_proposed: "Pickup window proposed",
-	pickup_approved: "Pickup window approved",
-	pickup_expired: "Pickup window expired",
-	return_proposed: "Return window proposed",
-	return_approved: "Return window approved",
-	return_missing: "Item not returned (overdue)",
-	rate_transaction: "Please rate this transaction",
-	rating_received: "You received a rating",
+const NOTIFICATION_LABELS: Record<string, { singular: string; plural: string }> = {
+	new_request: { singular: "new request", plural: "new requests" },
+	request_approved: { singular: "request approved", plural: "requests approved" },
+	request_rejected: { singular: "request rejected", plural: "requests rejected" },
+	item_available: { singular: "now available", plural: "now available" },
+	pickup_proposed: { singular: "pickup proposed", plural: "pickups proposed" },
+	pickup_approved: { singular: "pickup approved", plural: "pickups approved" },
+	pickup_expired: { singular: "pickup expired", plural: "pickups expired" },
+	return_proposed: { singular: "return proposed", plural: "returns proposed" },
+	return_approved: { singular: "return approved", plural: "returns approved" },
+	return_missing: { singular: "overdue return", plural: "overdue returns" },
+	rate_transaction: { singular: "rating requested", plural: "ratings requested" },
+	rating_received: { singular: "rating received", plural: "ratings received" },
 };
+
+function eventLabel(type: string, count: number): string {
+	const labels = NOTIFICATION_LABELS[type];
+	if (!labels) return `${count} ${type}`;
+	return `${count} ${count === 1 ? labels.singular : labels.plural}`;
+}
 
 function DigestSection({
 	heading,
-	notifications,
+	items,
 }: {
 	heading: string;
-	notifications: DigestNotification[];
+	items: DigestItemSummary[];
 }) {
 	const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://sharity-dalat.com";
 	return (
@@ -45,18 +51,21 @@ function DigestSection({
 			>
 				{heading}
 			</Text>
-			{notifications.map((n, i) => {
-				const label = NOTIFICATION_LABELS[n.type] ?? n.type;
-				const url = `${base}/item/${n.itemId}`;
+			{items.map((item, i) => {
+				const url = `${base}/item/${item.itemId}`;
+				const summary = item.events
+					.map((e) => eventLabel(e.type, e.count))
+					.join(", ");
 				return (
 					<Text
 						key={i}
 						style={{ color: COLORS.body, fontSize: "14px", margin: "4px 0" }}
 					>
-						• <strong>{label}</strong> —{" "}
+						•{" "}
 						<Link href={url} style={{ color: COLORS.brand }}>
-							{n.itemName}
-						</Link>
+							<strong>{item.itemName}</strong>
+						</Link>{" "}
+						— {summary}
 					</Text>
 				);
 			})}
@@ -93,19 +102,19 @@ export function DailyDigestEmail(data: DigestData) {
 			{data.ownerNotifications.length > 0 && (
 				<DigestSection
 					heading="As Owner"
-					notifications={data.ownerNotifications}
+					items={data.ownerNotifications}
 				/>
 			)}
 			{data.borrowerNotifications.length > 0 && (
 				<DigestSection
 					heading="As Borrower"
-					notifications={data.borrowerNotifications}
+					items={data.borrowerNotifications}
 				/>
 			)}
 			{data.generalNotifications.length > 0 && (
 				<DigestSection
 					heading="General"
-					notifications={data.generalNotifications}
+					items={data.generalNotifications}
 				/>
 			)}
 			<EmailButton href={base}>Go to Sharity</EmailButton>

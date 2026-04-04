@@ -15,18 +15,20 @@ import * as React from "react";
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
 export const COLORS = {
-	brand: "#18181b",
-	heading: "#09090b",
-	body: "#3f3f46",
-	background: "#f4f4f5",
+	brand: "#2b4f4e",
+	heading: "#1f3d3c",
+	body: "#3d5a59",
+	background: "#f5f2ed",
 	content: "#ffffff",
-	card: "#f4f4f5",
-	button: "#18181b",
+	card: "#eef5f4",
+	button: "#2b4f4e",
 	buttonText: "#ffffff",
-	danger: "#dc2626",
+	accent: "#c9a04c",
+	accentText: "#1f3d3c",
+	danger: "#c53030",
 	dangerText: "#ffffff",
-	muted: "#71717a",
-	border: "#e4e4e7",
+	muted: "#6b8a89",
+	border: "#d4e0df",
 };
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
@@ -43,6 +45,12 @@ export interface DigestNotification {
 	itemName: string;
 	createdAt: number;
 	itemId: string;
+}
+
+export interface DigestItemSummary {
+	itemName: string;
+	itemId: string;
+	events: Array<{ type: string; count: number }>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -84,25 +92,32 @@ export function contactLines(contacts: ContactInfo): string {
 
 export function EmailHeader() {
 	return (
-		<Section
-			style={{
-				backgroundColor: COLORS.brand,
-				padding: "16px 24px",
-				borderRadius: "8px 8px 0 0",
-			}}
-		>
-			<Text
+		<>
+			<Section
 				style={{
-					color: "#ffffff",
-					fontSize: "18px",
-					fontWeight: "700",
-					margin: "0",
-					letterSpacing: "-0.3px",
+					backgroundColor: COLORS.brand,
+					padding: "16px 24px",
 				}}
 			>
-				Sharity
-			</Text>
-		</Section>
+				<Text
+					style={{
+						color: "#ffffff",
+						fontSize: "18px",
+						fontWeight: "700",
+						margin: "0",
+						letterSpacing: "-0.3px",
+					}}
+				>
+					Sharity
+				</Text>
+			</Section>
+			<Section
+				style={{
+					height: "3px",
+					backgroundColor: COLORS.accent,
+				}}
+			/>
+		</>
 	);
 }
 
