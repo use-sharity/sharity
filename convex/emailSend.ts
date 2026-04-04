@@ -10,12 +10,20 @@ import {
 	MeetupConfirmedEmail,
 	DailyDigestEmail,
 	OverdueAlertEmail,
+	NewRequestEmail,
+	RequestRejectedEmail,
+	MeetupProposedEmail,
+	ItemAvailableEmail,
 } from "./emailTemplates/index";
 import type {
 	LeaseApprovedData,
 	MeetupConfirmedData,
 	DigestData,
 	OverdueAlertData,
+	NewRequestData,
+	RequestRejectedData,
+	MeetupProposedData,
+	ItemAvailableData,
 } from "./emailTemplates/index";
 import * as React from "react";
 import { resend, FROM } from "./resendClient";
@@ -267,5 +275,136 @@ export const sendOverdueAlert = internalAction({
 					)
 				: Promise.resolve(),
 		]);
+	},
+});
+
+// ─── 6. New Request ──────────────────────────────────────────────────────────
+
+export const sendNewRequest = internalAction({
+	args: {
+		claimId: v.id("claims"),
+		ownerEmail: v.string(),
+		data: v.object({
+			ownerName: v.string(),
+			borrowerName: v.string(),
+			itemName: v.string(),
+			startDate: v.number(),
+			endDate: v.number(),
+			itemId: v.string(),
+		}),
+	},
+	handler: async (ctx, args) => {
+		const key = `new-request/${args.claimId}`;
+		const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+			key,
+		});
+		if (alreadySent) return;
+
+		const data: NewRequestData = args.data;
+		await sendMail(
+			ctx,
+			args.ownerEmail,
+			`New request for "${data.itemName}"`,
+			React.createElement(NewRequestEmail, data),
+		);
+		await ctx.runMutation(internal.emails.logEmail, { key });
+	},
+});
+
+// ─── 7. Request Rejected ─────────────────────────────────────────────────────
+
+export const sendRequestRejected = internalAction({
+	args: {
+		claimId: v.id("claims"),
+		borrowerEmail: v.string(),
+		data: v.object({
+			borrowerName: v.string(),
+			itemName: v.string(),
+			startDate: v.number(),
+			endDate: v.number(),
+		}),
+	},
+	handler: async (ctx, args) => {
+		const key = `request-rejected/${args.claimId}`;
+		const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+			key,
+		});
+		if (alreadySent) return;
+
+		const data: RequestRejectedData = args.data;
+		await sendMail(
+			ctx,
+			args.borrowerEmail,
+			`Your request for "${data.itemName}" was not approved`,
+			React.createElement(RequestRejectedEmail, data),
+		);
+		await ctx.runMutation(internal.emails.logEmail, { key });
+	},
+});
+
+// ─── 8. Meetup Proposed ──────────────────────────────────────────────────────
+
+export const sendMeetupProposed = internalAction({
+	args: {
+		claimId: v.id("claims"),
+		meetupType: v.union(v.literal("pickup"), v.literal("return")),
+		recipientEmail: v.string(),
+		data: v.object({
+			recipientName: v.string(),
+			proposerName: v.string(),
+			itemName: v.string(),
+			windowStartAt: v.number(),
+			windowEndAt: v.number(),
+			itemId: v.string(),
+			meetupType: v.union(v.literal("pickup"), v.literal("return")),
+		}),
+	},
+	handler: async (ctx, args) => {
+		const key = `meetup-${args.meetupType}-proposed/${args.claimId}/${args.data.windowStartAt}`;
+		const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+			key,
+		});
+		if (alreadySent) return;
+
+		const data: MeetupProposedData = args.data;
+		const typeLabel = args.meetupType === "pickup" ? "Pickup" : "Return";
+		await sendMail(
+			ctx,
+			args.recipientEmail,
+			`${typeLabel} time proposed for "${data.itemName}"`,
+			React.createElement(MeetupProposedEmail, data),
+		);
+		await ctx.runMutation(internal.emails.logEmail, { key });
+	},
+});
+
+// ─── 9. Item Available ───────────────────────────────────────────────────────
+
+export const sendItemAvailable = internalAction({
+	args: {
+		itemId: v.id("items"),
+		recipientClerkId: v.string(),
+		recipientEmail: v.string(),
+		data: v.object({
+			recipientName: v.string(),
+			itemName: v.string(),
+			itemId: v.string(),
+		}),
+	},
+	handler: async (ctx, args) => {
+		const key = `item-available/${args.itemId}/${args.recipientClerkId}`;
+		const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+			key,
+		});
+		if (alreadySent) return;
+
+		const data: ItemAvailableData = args.data;
+		await sendMail(
+			ctx,
+			args.recipientEmail,
+			`"${data.itemName}" is available again!`,
+			React.createElement(ItemAvailableEmail, data),
+		);
+		await ctx.runMutation(internal.emails.logEmail, { key });
 	},
 });

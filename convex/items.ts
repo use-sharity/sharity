@@ -920,6 +920,27 @@ export const requestItem = mutation({
 			createdAt: now,
 		});
 
+		// Email owner: new request
+		const owner = await resolveUserEmail(ctx, item.ownerId, "requestItem");
+		const borrowerProfile = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+			.first();
+		if (owner) {
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendNewRequest, {
+				claimId,
+				ownerEmail: owner.email,
+				data: {
+					ownerName: owner.name,
+					borrowerName: borrowerProfile?.name ?? "Someone",
+					itemName: item.name,
+					startDate: args.startDate,
+					endDate: args.endDate,
+					itemId: args.id,
+				},
+			});
+		}
+
 		// Schedule auto-expiry at the start date
 		await ctx.scheduler.runAt(
 			args.startDate,
@@ -1138,12 +1159,14 @@ export const proposePickupWindow = mutation({
 			windowEndAt,
 		});
 
+		const pickupRecipientId = otherPartyId({
+			itemOwnerId: item.ownerId,
+			claimerId: claim.claimerId,
+			actorId: userId,
+		});
+
 		await ctx.db.insert("notifications", {
-			recipientId: otherPartyId({
-				itemOwnerId: item.ownerId,
-				claimerId: claim.claimerId,
-				actorId: userId,
-			}),
+			recipientId: pickupRecipientId,
 			type: "pickup_proposed",
 			itemId: args.itemId,
 			requestId: args.claimId,
@@ -1152,6 +1175,37 @@ export const proposePickupWindow = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Email counterparty: pickup proposed
+		const recipient = await resolveUserEmail(
+			ctx,
+			pickupRecipientId,
+			"proposePickupWindow",
+		);
+		const proposerProfile = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
+			.first();
+		if (recipient) {
+			await ctx.scheduler.runAfter(
+				0,
+				internal.emailSend.sendMeetupProposed,
+				{
+					claimId: args.claimId,
+					meetupType: "pickup",
+					recipientEmail: recipient.email,
+					data: {
+						recipientName: recipient.name,
+						proposerName: proposerProfile?.name ?? "The other party",
+						itemName: item.name,
+						windowStartAt: args.windowStartAt,
+						windowEndAt,
+						itemId: args.itemId,
+						meetupType: "pickup",
+					},
+				},
+			);
+		}
 	},
 });
 
@@ -1239,12 +1293,14 @@ export const proposeReturnWindow = mutation({
 			windowEndAt,
 		});
 
+		const returnRecipientId = otherPartyId({
+			itemOwnerId: item.ownerId,
+			claimerId: claim.claimerId,
+			actorId: userId,
+		});
+
 		await ctx.db.insert("notifications", {
-			recipientId: otherPartyId({
-				itemOwnerId: item.ownerId,
-				claimerId: claim.claimerId,
-				actorId: userId,
-			}),
+			recipientId: returnRecipientId,
 			type: "return_proposed",
 			itemId: args.itemId,
 			requestId: args.claimId,
@@ -1253,6 +1309,37 @@ export const proposeReturnWindow = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Email counterparty: return proposed
+		const returnRecipient = await resolveUserEmail(
+			ctx,
+			returnRecipientId,
+			"proposeReturnWindow",
+		);
+		const returnProposerProfile = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
+			.first();
+		if (returnRecipient) {
+			await ctx.scheduler.runAfter(
+				0,
+				internal.emailSend.sendMeetupProposed,
+				{
+					claimId: args.claimId,
+					meetupType: "return",
+					recipientEmail: returnRecipient.email,
+					data: {
+						recipientName: returnRecipient.name,
+						proposerName: returnProposerProfile?.name ?? "The other party",
+						itemName: item.name,
+						windowStartAt: args.windowStartAt,
+						windowEndAt,
+						itemId: args.itemId,
+						meetupType: "return",
+					},
+				},
+			);
+		}
 	},
 });
 
@@ -1877,6 +1964,29 @@ export const rejectClaim = mutation({
 			isRead: false,
 			createdAt: now,
 		});
+
+		// Email borrower: request rejected
+		const borrower = await resolveUserEmail(
+			ctx,
+			claim.claimerId,
+			"rejectClaim",
+		);
+		if (borrower) {
+			await ctx.scheduler.runAfter(
+				0,
+				internal.emailSend.sendRequestRejected,
+				{
+					claimId: args.claimId,
+					borrowerEmail: borrower.email,
+					data: {
+						borrowerName: borrower.name,
+						itemName: item.name,
+						startDate: claim.startDate,
+						endDate: claim.endDate,
+					},
+				},
+			);
+		}
 	},
 });
 
@@ -2100,6 +2210,9 @@ export const cancelClaim = mutation({
 				.withIndex("by_item", (q) => q.eq("itemId", claim.itemId))
 				.collect();
 
+			const item = await ctx.db.get(claim.itemId);
+			const availableItemName = item?.name ?? "Unknown item";
+
 			for (const sub of subscriptions) {
 				await ctx.db.insert("notifications", {
 					recipientId: sub.userId,
@@ -2108,6 +2221,30 @@ export const cancelClaim = mutation({
 					isRead: false,
 					createdAt: Date.now(),
 				});
+
+				// Email subscriber: item available
+				const subscriber = await resolveUserEmail(
+					ctx,
+					sub.userId,
+					"cancelClaim/itemAvailable",
+				);
+				if (subscriber) {
+					await ctx.scheduler.runAfter(
+						0,
+						internal.emailSend.sendItemAvailable,
+						{
+							itemId: claim.itemId,
+							recipientClerkId: sub.userId,
+							recipientEmail: subscriber.email,
+							data: {
+								recipientName: subscriber.name,
+								itemName: availableItemName,
+								itemId: claim.itemId,
+							},
+						},
+					);
+				}
+
 				// Remove subscription after notifying
 				await ctx.db.delete(sub._id);
 			}
