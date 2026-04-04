@@ -1,12 +1,6 @@
 import { Text } from "@react-email/components";
 import * as React from "react";
-import {
-	Callout,
-	EmailButton,
-	SharityEmail,
-	appUrl,
-	COLORS,
-} from "./_shared";
+import { Callout, EmailButton, SharityEmail, appUrl, COLORS } from "./_shared";
 
 export interface ItemAvailableData {
 	recipientName: string;

@@ -1,4 +1,8 @@
-export type { ContactInfo, DigestNotification, DigestItemSummary } from "./_shared";
+export type {
+	ContactInfo,
+	DigestNotification,
+	DigestItemSummary,
+} from "./_shared";
 export { WelcomeEmail } from "./welcome";
 export { LeaseApprovedEmail } from "./leaseApproved";
 export type { LeaseApprovedData } from "./leaseApproved";

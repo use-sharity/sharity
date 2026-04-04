@@ -10,10 +10,19 @@ export interface DigestData {
 	generalNotifications: DigestItemSummary[];
 }
 
-const NOTIFICATION_LABELS: Record<string, { singular: string; plural: string }> = {
+const NOTIFICATION_LABELS: Record<
+	string,
+	{ singular: string; plural: string }
+> = {
 	new_request: { singular: "new request", plural: "new requests" },
-	request_approved: { singular: "request approved", plural: "requests approved" },
-	request_rejected: { singular: "request rejected", plural: "requests rejected" },
+	request_approved: {
+		singular: "request approved",
+		plural: "requests approved",
+	},
+	request_rejected: {
+		singular: "request rejected",
+		plural: "requests rejected",
+	},
 	item_available: { singular: "now available", plural: "now available" },
 	pickup_proposed: { singular: "pickup proposed", plural: "pickups proposed" },
 	pickup_approved: { singular: "pickup approved", plural: "pickups approved" },
@@ -21,7 +30,10 @@ const NOTIFICATION_LABELS: Record<string, { singular: string; plural: string }> 
 	return_proposed: { singular: "return proposed", plural: "returns proposed" },
 	return_approved: { singular: "return approved", plural: "returns approved" },
 	return_missing: { singular: "overdue return", plural: "overdue returns" },
-	rate_transaction: { singular: "rating requested", plural: "ratings requested" },
+	rate_transaction: {
+		singular: "rating requested",
+		plural: "ratings requested",
+	},
 	rating_received: { singular: "rating received", plural: "ratings received" },
 };
 
@@ -100,10 +112,7 @@ export function DailyDigestEmail(data: DigestData) {
 				hours:
 			</Text>
 			{data.ownerNotifications.length > 0 && (
-				<DigestSection
-					heading="As Owner"
-					items={data.ownerNotifications}
-				/>
+				<DigestSection heading="As Owner" items={data.ownerNotifications} />
 			)}
 			{data.borrowerNotifications.length > 0 && (
 				<DigestSection
@@ -112,10 +121,7 @@ export function DailyDigestEmail(data: DigestData) {
 				/>
 			)}
 			{data.generalNotifications.length > 0 && (
-				<DigestSection
-					heading="General"
-					items={data.generalNotifications}
-				/>
+				<DigestSection heading="General" items={data.generalNotifications} />
 			)}
 			<EmailButton href={base}>Go to Sharity</EmailButton>
 		</SharityEmail>
