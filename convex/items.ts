@@ -1187,24 +1187,20 @@ export const proposePickupWindow = mutation({
 			.withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
 			.first();
 		if (recipient) {
-			await ctx.scheduler.runAfter(
-				0,
-				internal.emailSend.sendMeetupProposed,
-				{
-					claimId: args.claimId,
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupProposed, {
+				claimId: args.claimId,
+				meetupType: "pickup",
+				recipientEmail: recipient.email,
+				data: {
+					recipientName: recipient.name,
+					proposerName: proposerProfile?.name ?? "The other party",
+					itemName: item.name,
+					windowStartAt: args.windowStartAt,
+					windowEndAt,
+					itemId: args.itemId,
 					meetupType: "pickup",
-					recipientEmail: recipient.email,
-					data: {
-						recipientName: recipient.name,
-						proposerName: proposerProfile?.name ?? "The other party",
-						itemName: item.name,
-						windowStartAt: args.windowStartAt,
-						windowEndAt,
-						itemId: args.itemId,
-						meetupType: "pickup",
-					},
 				},
-			);
+			});
 		}
 	},
 });
@@ -1321,24 +1317,20 @@ export const proposeReturnWindow = mutation({
 			.withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
 			.first();
 		if (returnRecipient) {
-			await ctx.scheduler.runAfter(
-				0,
-				internal.emailSend.sendMeetupProposed,
-				{
-					claimId: args.claimId,
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupProposed, {
+				claimId: args.claimId,
+				meetupType: "return",
+				recipientEmail: returnRecipient.email,
+				data: {
+					recipientName: returnRecipient.name,
+					proposerName: returnProposerProfile?.name ?? "The other party",
+					itemName: item.name,
+					windowStartAt: args.windowStartAt,
+					windowEndAt,
+					itemId: args.itemId,
 					meetupType: "return",
-					recipientEmail: returnRecipient.email,
-					data: {
-						recipientName: returnRecipient.name,
-						proposerName: returnProposerProfile?.name ?? "The other party",
-						itemName: item.name,
-						windowStartAt: args.windowStartAt,
-						windowEndAt,
-						itemId: args.itemId,
-						meetupType: "return",
-					},
 				},
-			);
+			});
 		}
 	},
 });
@@ -1972,20 +1964,16 @@ export const rejectClaim = mutation({
 			"rejectClaim",
 		);
 		if (borrower) {
-			await ctx.scheduler.runAfter(
-				0,
-				internal.emailSend.sendRequestRejected,
-				{
-					claimId: args.claimId,
-					borrowerEmail: borrower.email,
-					data: {
-						borrowerName: borrower.name,
-						itemName: item.name,
-						startDate: claim.startDate,
-						endDate: claim.endDate,
-					},
+			await ctx.scheduler.runAfter(0, internal.emailSend.sendRequestRejected, {
+				claimId: args.claimId,
+				borrowerEmail: borrower.email,
+				data: {
+					borrowerName: borrower.name,
+					itemName: item.name,
+					startDate: claim.startDate,
+					endDate: claim.endDate,
 				},
-			);
+			});
 		}
 	},
 });
