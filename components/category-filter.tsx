@@ -7,9 +7,14 @@ import { useTranslations } from "next-intl";
 interface CategoryFilterProps {
   selected: ItemCategory[];
   onChange: (categories: ItemCategory[]) => void;
+  className?: string;
 }
 
-export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
+export function CategoryFilter({
+  selected,
+  onChange,
+  className,
+}: CategoryFilterProps) {
   const t = useTranslations("Categories");
 
   const options = ITEM_CATEGORIES.map((category) => ({
@@ -20,9 +25,14 @@ export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
   return (
     <MultiSelect
       options={options}
-      selected={selected}
-      onChange={(values) => onChange(values as ItemCategory[])}
+      defaultValue={selected}
+      onValueChange={(values) => onChange(values as ItemCategory[])}
       placeholder={t("allCategories")}
+      singleLine={true}
+      animation={0}
+      hideSelectAll={false}
+      closeOnSelect={false}
+      className={className}
     />
   );
 }
