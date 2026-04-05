@@ -108,89 +108,89 @@ NEVER skip step 2. If you don't call a tool, the action did NOT happen. Saying "
 - If you see a [FRESH_CHAT_HINT] marker in the conversation, include the suggestion naturally in your next response.`;
 
 export interface UserContext {
-	stage: string;
-	itemCount: number;
-	itemNames: string[];
-	activeBorrows: number;
-	fosteringItemNames: string[];
-	pendingClaimsOnMyItems: number;
-	pendingMyRequests: number;
+  stage: string;
+  itemCount: number;
+  itemNames: string[];
+  activeBorrows: number;
+  fosteringItemNames: string[];
+  pendingClaimsOnMyItems: number;
+  pendingMyRequests: number;
 }
 
 function buildUserContext(ctx: UserContext): string {
-	const lines = [
-		"## The user's current state",
-		"This neighbor is SIGNED IN. You have access to their live account data. Never tell them to sign up or sign in — they already are. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
-	];
-	lines.push(
-		`- Items listed (${ctx.itemCount}): ${ctx.itemNames.length > 0 ? ctx.itemNames.join(", ") : "none"}`,
-	);
-	lines.push(
-		`- Items currently fostering (${ctx.activeBorrows}): ${ctx.fosteringItemNames.length > 0 ? ctx.fosteringItemNames.join(", ") : "none"}`,
-	);
-	lines.push(
-		`- Pending requests on their items: ${ctx.pendingClaimsOnMyItems}`,
-	);
-	lines.push(`- Their pending requests to others: ${ctx.pendingMyRequests}`);
+  const lines = [
+    "## The user's current state",
+    "This neighbor is SIGNED IN. You have access to their live account data. Never tell them to sign up or sign in — they already are. Use these numbers to answer questions about their items, requests, and activity. Never say you can't see their account.",
+  ];
+  lines.push(
+    `- Items listed (${ctx.itemCount}): ${ctx.itemNames.length > 0 ? ctx.itemNames.join(", ") : "none"}`,
+  );
+  lines.push(
+    `- Items currently fostering (${ctx.activeBorrows}): ${ctx.fosteringItemNames.length > 0 ? ctx.fosteringItemNames.join(", ") : "none"}`,
+  );
+  lines.push(
+    `- Pending requests on their items: ${ctx.pendingClaimsOnMyItems}`,
+  );
+  lines.push(`- Their pending requests to others: ${ctx.pendingMyRequests}`);
 
-	if (ctx.stage === "new_user") {
-		lines.push(
-			"\nThis neighbor just signed up. Encourage them to add their first item or browse what's available.",
-		);
-	} else if (ctx.stage === "has_items_no_activity") {
-		lines.push(
-			"\nThis neighbor has items listed but no one has requested them yet. Suggest patience or improving their listings (better photos, clearer descriptions).",
-		);
-	} else if (ctx.stage === "has_pending_claims") {
-		lines.push(
-			"\nThis neighbor has pending requests to review. Remind them to check My Items.",
-		);
-	}
+  if (ctx.stage === "new_user") {
+    lines.push(
+      "\nThis neighbor just signed up. Encourage them to add their first item or browse what's available.",
+    );
+  } else if (ctx.stage === "has_items_no_activity") {
+    lines.push(
+      "\nThis neighbor has items listed but no one has requested them yet. Suggest patience or improving their listings (better photos, clearer descriptions).",
+    );
+  } else if (ctx.stage === "has_pending_claims") {
+    lines.push(
+      "\nThis neighbor has pending requests to review. Remind them to check My Items.",
+    );
+  }
 
-	return lines.join("\n");
+  return lines.join("\n");
 }
 
 export function buildSystemPrompt({
-	userContext,
-	locale,
+  userContext,
+  locale,
 }: {
-	userContext?: UserContext | null;
-	locale?: string;
+  userContext?: UserContext | null;
+  locale?: string;
 }): string {
-	const parts = [SHARRY_IDENTITY];
+  const parts = [SHARRY_IDENTITY];
 
-	// Inject current date so the LLM can interpret "next week", "tomorrow", etc.
-	const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-	const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
-	parts.push(`## Current date\nToday is ${dayName}, ${today}.`);
+  // Inject current date so the LLM can interpret "next week", "tomorrow", etc.
+  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+  const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  parts.push(`## Current date\nToday is ${dayName}, ${today}.`);
 
-	if (locale) {
-		const langMap: Record<string, string> = {
-			en: "English",
-			vi: "Vietnamese",
-			ru: "Russian",
-		};
-		const lang = langMap[locale] ?? "English";
-		parts.push(
-			`## Default language\nRespond in ${lang} by default. If the user writes in a different language, switch to theirs.`,
-		);
-	}
+  if (locale) {
+    const langMap: Record<string, string> = {
+      en: "English",
+      vi: "Vietnamese",
+      ru: "Russian",
+    };
+    const lang = langMap[locale] ?? "English";
+    parts.push(
+      `## Default language\nRespond in ${lang} by default. If the user writes in a different language, switch to theirs.`,
+    );
+  }
 
-	parts.push(SHARRY_APP_KNOWLEDGE);
-	parts.push(SHARRY_TOOL_GUIDANCE);
+  parts.push(SHARRY_APP_KNOWLEDGE);
+  parts.push(SHARRY_TOOL_GUIDANCE);
 
-	if (userContext) {
-		parts.push(buildUserContext(userContext));
-	} else if (userContext === null) {
-		parts.push(
-			"## The user's current state\nThis neighbor is not signed in. You can answer general questions about how Sharity works, but for anything account-specific (their items, requests, activity), let them know they need to sign in first.",
-		);
-	}
+  if (userContext) {
+    parts.push(buildUserContext(userContext));
+  } else if (userContext === null) {
+    parts.push(
+      "## The user's current state\nThis neighbor is not signed in. You can answer general questions about how Sharity works, but for anything account-specific (their items, requests, activity), let them know they need to sign in first.",
+    );
+  }
 
-	// Final reinforcement — last thing the LLM sees before generating
-	parts.push(
-		"REMINDER: Chat bubbles render markdown. Use **bold**, numbered lists (1. 2. 3.) for steps, and bullet lists (- ) for items. Never write bare lines without list markers.",
-	);
+  // Final reinforcement — last thing the LLM sees before generating
+  parts.push(
+    "REMINDER: Chat bubbles render markdown. Use **bold**, numbered lists (1. 2. 3.) for steps, and bullet lists (- ) for items. Never write bare lines without list markers.",
+  );
 
-	return parts.join("\n\n");
+  return parts.join("\n\n");
 }
