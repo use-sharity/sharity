@@ -84,7 +84,17 @@ aws s3 cp s3://sharity-backups/convex-backup-YYYY-MM-DD.zip ./backup.zip \
   --region auto
 ```
 
-Backups accumulate indefinitely in R2 — set up an [Object Lifecycle policy](https://developers.cloudflare.com/r2/buckets/object-lifecycles/) in the Cloudflare dashboard if you want automatic deletion of old backups.
+Old backups are pruned automatically — see [`convex-backup-prune.yml`](./convex-backup-prune.yml).
+
+---
+
+## Pruning
+
+Workflow file: [`convex-backup-prune.yml`](./convex-backup-prune.yml)
+
+Runs every Sunday at midnight Da Lat time (17:00 UTC) and deletes any backup files in R2 older than 7 days. This keeps at most one week of daily backups in storage at any time.
+
+To trigger pruning manually: **Actions → Convex Backup Prune → Run workflow**.
 
 ---
 
