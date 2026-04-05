@@ -1,11 +1,11 @@
 import { v } from "convex/values";
 
 export const vCloudinaryRef = v.object({
-	publicId: v.string(),
-	secureUrl: v.string(),
+  publicId: v.string(),
+  secureUrl: v.string(),
 });
 
 export type CloudinaryRef = {
-	publicId: string;
-	secureUrl: string;
+  publicId: string;
+  secureUrl: string;
 };
