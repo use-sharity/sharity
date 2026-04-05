@@ -92,6 +92,13 @@
     "giveaway": "Подарок",
     "locationAvailable": "Место указано"
   },
+  "DiscoveryCard": {
+    "claim": "Запросить",
+    "manageRequest": "Управление запросом",
+    "giveaway": "Подарок",
+    "loan": "Аренда",
+    "locationAvailable": "Место указано"
+  },
   "ItemForm": {
     "giveawayMode": "Подарок",
     "giveawayDesc": "Без возврата. Вещь перейдёт получателю.",
@@ -210,6 +217,26 @@
     "awaitingApproval": "Ожидает одобрения",
     "reject": "Отклонить",
     "approve": "Одобрить"
+  },
+  "ManagementRow": {
+    "approve": "Одобрить",
+    "review": "Рассмотреть",
+    "manage": "Управлять",
+    "open": "Открыть",
+    "viewDetails": "Подробнее",
+    "by": "у",
+    "giveaway": "Подарок",
+    "loan": "Аренда",
+    "borrowedFrom": "Взято у {name}",
+    "status": {
+      "available": "Доступно",
+      "pending": "Есть заявки",
+      "approved": "Одобрено",
+      "picked_up": "Используется",
+      "returned": "Возвращено",
+      "expired": "Истекло",
+      "missing": "Пропало"
+    }
   },
   "Notifications": {
     "loading": "Загрузка уведомлений...",
@@ -677,6 +704,7 @@
   "ItemDetail": {
     "youOwnThis": "Это твоя вещь",
     "giveaway": "Подарок",
+    "loan": "Аренда",
     "locationAvailable": "Место указано",
     "notFound": "Вещь не найдена",
     "rateTransaction": "Оставить отзыв",

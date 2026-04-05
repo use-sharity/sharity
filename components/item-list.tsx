@@ -9,11 +9,7 @@ import { List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
-import { Doc } from "../convex/_generated/dataModel";
-
-import { ReactNode } from "react";
-import { UserLink } from "@/components/user-link";
-import { ItemCard } from "./item-card";
+import { DiscoveryCard } from "./discovery-card";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
@@ -43,12 +39,8 @@ const ItemsMap = dynamic(
 type ViewMode = "list" | "map";
 
 export function ItemList({
-  action,
-  actionBack,
   onEmptyMakeRequest,
 }: {
-  action?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
-  actionBack?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
   onEmptyMakeRequest?: () => void;
 }) {
   const t = useTranslations("ItemList");
@@ -66,10 +58,8 @@ export function ItemList({
     const needle = search.trim().toLowerCase();
     const itemText = `${item.name} ${item.description ?? ""}`.toLowerCase();
 
-    // (1) keyword AND category (when both are set)
     const matchesSearch = needle.length === 0 || itemText.includes(needle);
 
-    // (2) categories are OR'd together
     const matchesCategory =
       selectedCategories.length === 0 ||
       (item.category !== undefined &&
@@ -156,17 +146,7 @@ export function ItemList({
             <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
           ) : (
             filteredItems?.map((item) => (
-              <ItemCard
-                key={item._id}
-                item={item}
-                backContent={actionBack && actionBack(item)}
-                footer={
-                  <div className="flex justify-between items-center w-full">
-                    <UserLink userId={item.ownerId} size="sm" />
-                    {action && action(item)}
-                  </div>
-                }
-              />
+              <DiscoveryCard key={item._id} item={item} />
             ))
           )}
           {onEmptyMakeRequest && filteredItems && filteredItems.length > 0 && (

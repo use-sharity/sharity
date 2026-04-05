@@ -92,6 +92,13 @@
     "giveaway": "Tặng",
     "locationAvailable": "Có vị trí"
   },
+  "DiscoveryCard": {
+    "claim": "Mượn",
+    "manageRequest": "Quản lý yêu cầu",
+    "giveaway": "Tặng",
+    "loan": "Mượn",
+    "locationAvailable": "Có vị trí"
+  },
   "ItemForm": {
     "giveawayMode": "Tặng",
     "giveawayDesc": "Tặng, không cần trả lại.",
@@ -210,6 +217,26 @@
     "awaitingApproval": "Chờ duyệt",
     "reject": "Từ chối",
     "approve": "Duyệt"
+  },
+  "ManagementRow": {
+    "approve": "Duyệt",
+    "review": "Xem xét",
+    "manage": "Quản lý",
+    "open": "Mở",
+    "viewDetails": "Xem chi tiết",
+    "by": "bởi",
+    "giveaway": "Tặng",
+    "loan": "Mượn",
+    "borrowedFrom": "Mượn từ {name}",
+    "status": {
+      "available": "Sẵn sàng",
+      "pending": "Có yêu cầu",
+      "approved": "Đã duyệt",
+      "picked_up": "Đang mượn",
+      "returned": "Đã trả",
+      "expired": "Hết hạn",
+      "missing": "Thất lạc"
+    }
   },
   "Notifications": {
     "loading": "Đang tải...",
@@ -677,6 +704,7 @@
   "ItemDetail": {
     "youOwnThis": "Đồ của bạn",
     "giveaway": "Tặng",
+    "loan": "Mượn",
     "locationAvailable": "Có vị trí",
     "notFound": "Không tìm thấy món đồ",
     "rateTransaction": "Đánh giá",

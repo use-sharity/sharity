@@ -23,22 +23,15 @@ export function AddItemForm({
   return (
     <>
       <SignedIn>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("title")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ItemForm
-              onSubmit={async (values) => {
-                const itemId = await createItem(values);
-                onSuccess?.(itemId);
-              }}
-              submitLabel={t("submit")}
-              enableModeSwitch
-              hideMyItemsLink={hideMyItemsLink}
-            />
-          </CardContent>
-        </Card>
+        <ItemForm
+          onSubmit={async (values) => {
+            const itemId = await createItem(values);
+            onSuccess?.(itemId);
+          }}
+          submitLabel={t("submit")}
+          enableModeSwitch
+          hideMyItemsLink={hideMyItemsLink}
+        />
       </SignedIn>
       <SignedOut>
         <Card className="bg-gray-50 border-dashed">
