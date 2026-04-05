@@ -116,6 +116,7 @@ export function ItemList({
           <CategoryFilter
             selected={selectedCategories}
             onChange={setSelectedCategories}
+            className="flex-1"
           />
           <label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
             <Switch
