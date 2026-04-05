@@ -24,7 +24,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Roadmap
 
-### 🎁 Giving & Managing Items
+### 🎁 Item Management
 - [x] Submit an item for sharing
 - [~] Manage owned items:
     - [x] View pending and approved requests
@@ -34,27 +34,48 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - [x] Approve or reject claims:
     - [x] Manage queue of claimants (limit to 5)
     - [x] Provide rejection reasons (optional)
-- [ ] Block specific users from claiming items
-- [~] Manage borrowed items & owned items
+- [x] Manage borrowed items & owned items
 - [x] Show "Past Due" status for stale requests
+- [x] Visualize item journey (activity timeline)
+- [ ] Mark items as exchanged (hides from market)
+- [~] Status badges for items (owner-side: available, pending, approved, picked up, returned, expired)
 
-### 🔍 Finding & Requesting Items
+### 🔍 Discovery & Search
 - [x] Browse items for discovery
 - [~] Search for items:
     - [x] By location
-    - [ ] By keyword [~]
+    - [x] By keyword (client-side filtering)
     - [ ] By availability time
     - [ ] By deposit/price requirements
-    - [ ] By owner (exclude own items)
+    - [ ] By owner (exclude own items from browse)
+    - [ ] Semantic search (beyond keyword) [#12](https://github.com/JenyaBogacheva/sharity-dalat/issues/12)
 - [x] Claim/Request an item:
     - [x] Specify pick-up time
     - [x] Specify return time
-    - [ ] Request non-existent items (wishlist)
+- [x] Request non-existent items (wishlist)
 
-### 🤝 Exchange & Trust
-- [ ] Mark items as exchanged (hides from market)
-- [ ] Status badges for items (Available, Waitlist Open/Closed, Exchanged)
+### 💰 Payments & Logistics
+- [ ] Selling / Buying flow (no integrated payments) [#11](https://github.com/JenyaBogacheva/sharity-dalat/issues/11)
+- [ ] Deposit (for valuable items) [#19](https://github.com/JenyaBogacheva/sharity-dalat/issues/19)
+- [ ] Payments (integrated) [#16](https://github.com/JenyaBogacheva/sharity-dalat/issues/16)
+- [ ] Delivery via Grab [#15](https://github.com/JenyaBogacheva/sharity-dalat/issues/15)
+
+### 💬 Communication & Support
 - [x] Show contact details after exchange approval
+- [ ] Chat (in-app) [#17](https://github.com/JenyaBogacheva/sharity-dalat/issues/17)
+- [x] Email notifications + Email as contact method [#21](https://github.com/JenyaBogacheva/sharity-dalat/issues/21)
+- [x] Support bot [#29](https://github.com/JenyaBogacheva/sharity-dalat/issues/29)
+
+### 🛡️ Trust & Safety
+- [ ] Block specific users from claiming items
+- [ ] Dispute handling [#20](https://github.com/JenyaBogacheva/sharity-dalat/issues/20)
+- [ ] Gamification [#18](https://github.com/JenyaBogacheva/sharity-dalat/issues/18)
+
+### 🌍 Localization
+- [x] i18n infrastructure (next-intl, locale routing)
+- [x] English
+- [x] Russian
+- [x] Vietnamese
     
 ## Deployment
 
