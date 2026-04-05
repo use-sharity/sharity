@@ -386,23 +386,35 @@ export function BorrowerRequestActions() {
 export function BorrowerRequestPanel({
   item,
   fullWidth,
+  embedded,
 }: {
   item: Doc<"items">;
   fullWidth?: boolean;
+  embedded?: boolean;
 }) {
   if (item.giveaway) {
-    return <GiveawayBorrowerRequestPanel item={item} fullWidth={fullWidth} />;
+    return (
+      <GiveawayBorrowerRequestPanel
+        item={item}
+        fullWidth={fullWidth}
+        embedded={embedded}
+      />
+    );
   }
   return (
     <BorrowerRequestProvider item={item}>
-      <div
-        className={cn(
-          "bg-white border rounded-lg p-4 w-full",
-          fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
-        )}
-      >
+      {embedded ? (
         <BorrowerRequestCalendar className="mx-auto" />
-      </div>
+      ) : (
+        <div
+          className={cn(
+            "bg-white border rounded-lg p-4 w-full",
+            fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
+          )}
+        >
+          <BorrowerRequestCalendar className="mx-auto" />
+        </div>
+      )}
       <BorrowerRequestActions />
     </BorrowerRequestProvider>
   );
@@ -419,9 +431,11 @@ function startOfLocalDay(day: Date): Date {
 export function GiveawayBorrowerRequestPanel({
   item,
   fullWidth,
+  embedded,
 }: {
   item: Doc<"items">;
   fullWidth?: boolean;
+  embedded?: boolean;
 }) {
   const {
     isAuthenticated,
@@ -486,54 +500,62 @@ export function GiveawayBorrowerRequestPanel({
   const requestDisabled =
     !pickupDay || isSubmitting || isAuthLoading || !isAuthenticated;
 
+  const calendarContent = (
+    <>
+      <div className="space-y-2">
+        <div className="text-sm font-medium">{t("pickPickupDay")}</div>
+        <div className="text-xs text-muted-foreground">{t("giveawayNote")}</div>
+      </div>
+      <div className="mt-3 flex justify-center">
+        <Calendar
+          mode="single"
+          selected={pickupDay}
+          onSelect={setPickupDay}
+          disabled={[
+            { before: startOfLocalDay(new Date()) },
+            ...disabledDayRanges,
+          ]}
+          numberOfMonths={2}
+        />
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        {!hasActiveBorrow && <AvailabilityToggle id={item._id} />}
+        <Button
+          size="sm"
+          disabled={requestDisabled}
+          onClick={async () => {
+            if (!pickupDay) return;
+            const startDate = startOfLocalDay(pickupDay);
+            const endDate = new Date(startDate.getTime() + ONE_DAY_MS);
+            await requestItem(startDate, endDate, () =>
+              setPickupDay(undefined),
+            );
+          }}
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            t("request")
+          )}
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <>
-      <div
-        className={cn(
-          "bg-white border rounded-lg p-4 w-full",
-          fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
-        )}
-      >
-        <div className="space-y-2">
-          <div className="text-sm font-medium">{t("pickPickupDay")}</div>
-          <div className="text-xs text-muted-foreground">
-            {t("giveawayNote")}
-          </div>
+      {embedded ? (
+        calendarContent
+      ) : (
+        <div
+          className={cn(
+            "bg-white border rounded-lg p-4 w-full",
+            fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
+          )}
+        >
+          {calendarContent}
         </div>
-        <div className="mt-3 flex justify-center">
-          <Calendar
-            mode="single"
-            selected={pickupDay}
-            onSelect={setPickupDay}
-            disabled={[
-              { before: startOfLocalDay(new Date()) },
-              ...disabledDayRanges,
-            ]}
-            numberOfMonths={2}
-          />
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-2">
-          {!hasActiveBorrow && <AvailabilityToggle id={item._id} />}
-          <Button
-            size="sm"
-            disabled={requestDisabled}
-            onClick={async () => {
-              if (!pickupDay) return;
-              const startDate = startOfLocalDay(pickupDay);
-              const endDate = new Date(startDate.getTime() + ONE_DAY_MS);
-              await requestItem(startDate, endDate, () =>
-                setPickupDay(undefined),
-              );
-            }}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              t("request")
-            )}
-          </Button>
-        </div>
-      </div>
+      )}
 
       {isAuthenticated && myRequests && myRequests.length > 0 ? (
         <div className="mt-6">

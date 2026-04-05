@@ -315,7 +315,11 @@ export default function ItemDetailPage({
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {item.giveaway ? <Badge>{tDetail("giveaway")}</Badge> : null}
+        {item.giveaway ? (
+          <Badge>{tDetail("giveaway")}</Badge>
+        ) : (
+          <Badge variant="outline">{tDetail("loan")}</Badge>
+        )}
         {item.category && (
           <Badge variant="secondary">{tCategories(item.category)}</Badge>
         )}

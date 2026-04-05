@@ -2,10 +2,7 @@
 
 import { ItemList } from "@/components/item-list";
 import { OnboardingCarousel } from "@/components/onboarding-carousel";
-import { SharePrompt } from "@/components/share-prompt";
 
-import { ClaimButton } from "@/components/claim-button";
-import { ClaimItemBack } from "@/components/claim-item-back";
 import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -42,8 +39,6 @@ export default function Home() {
 
         <Suspense fallback={<div>Loading…</div>}>
           <ItemList
-            action={(item) => <ClaimButton item={item} />}
-            actionBack={(item) => <ClaimItemBack item={item} />}
             onEmptyMakeRequest={() => {
               router.push("/wishlist");
             }}

@@ -92,6 +92,13 @@
     "giveaway": "Pass On",
     "locationAvailable": "Location available"
   },
+  "DiscoveryCard": {
+    "claim": "Claim",
+    "manageRequest": "Manage Request",
+    "giveaway": "Pass On",
+    "loan": "Loan",
+    "locationAvailable": "Location available"
+  },
   "ItemForm": {
     "giveawayMode": "Pass On",
     "giveawayDesc": "No return. Ownership transfers after pickup.",
@@ -210,6 +217,26 @@
     "awaitingApproval": "Awaiting approval",
     "reject": "Reject",
     "approve": "Approve"
+  },
+  "ManagementRow": {
+    "approve": "Approve",
+    "review": "Review",
+    "manage": "Manage",
+    "open": "Open",
+    "viewDetails": "View Details",
+    "by": "by",
+    "giveaway": "Pass On",
+    "loan": "Loan",
+    "borrowedFrom": "Borrowed from {name}",
+    "status": {
+      "available": "Available",
+      "pending": "Requests pending",
+      "approved": "Approved",
+      "picked_up": "In use",
+      "returned": "Completed",
+      "expired": "Expired",
+      "missing": "Missing"
+    }
   },
   "Notifications": {
     "loading": "Loading notifications...",
@@ -677,6 +704,7 @@
   "ItemDetail": {
     "youOwnThis": "You own this",
     "giveaway": "Pass On",
+    "loan": "Loan",
     "locationAvailable": "Location available",
     "notFound": "Item not found",
     "rateTransaction": "Rate transaction",
