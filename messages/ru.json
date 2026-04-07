@@ -98,7 +98,7 @@
     "giveaway": "Подарок",
     "loan": "Аренда",
     "locationAvailable": "Место указано",
-    "yourItem": "Ваша вещь"
+    "yourItem": "Твоя вещь"
   },
   "ItemForm": {
     "giveawayMode": "Подарок",
@@ -772,7 +772,11 @@
     "books": "Книги",
     "sports": "Спорт",
     "other": "Другое",
-    "allCategories": "Все категории"
+    "allCategories": "Все категории",
+    "selectAll": "Выбрать все",
+    "clear": "Сбросить",
+    "close": "Закрыть",
+    "search": "Поиск..."
   },
   "ClaimButton": {
     "manageRequest": "Мой запрос",

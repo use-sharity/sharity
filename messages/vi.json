@@ -772,7 +772,11 @@
     "books": "Sách",
     "sports": "Thể thao",
     "other": "Khác",
-    "allCategories": "Tất cả danh mục"
+    "allCategories": "Tất cả danh mục",
+    "selectAll": "Chọn tất cả",
+    "clear": "Xóa",
+    "close": "Đóng",
+    "search": "Tìm kiếm..."
   },
   "ClaimButton": {
     "manageRequest": "Xem yêu cầu",

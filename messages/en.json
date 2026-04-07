@@ -772,7 +772,11 @@
     "books": "Books",
     "sports": "Sports",
     "other": "Other",
-    "allCategories": "All categories"
+    "allCategories": "All categories",
+    "selectAll": "Select All",
+    "clear": "Clear",
+    "close": "Close",
+    "search": "Search..."
   },
   "ClaimButton": {
     "manageRequest": "Manage Request",

@@ -126,6 +126,10 @@ interface MultiSelectProps
   deduplicateOptions?: boolean;
   resetOnDefaultValueChange?: boolean;
   closeOnSelect?: boolean;
+  selectAllLabel?: string;
+  clearLabel?: string;
+  closeLabel?: string;
+  searchLabel?: string;
 }
 
 export interface MultiSelectRef {
@@ -163,6 +167,10 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
       deduplicateOptions = false,
       resetOnDefaultValueChange = true,
       closeOnSelect = false,
+      selectAllLabel = "Select All",
+      clearLabel = "Clear",
+      closeLabel = "Close",
+      searchLabel = "Search...",
       ...props
     },
     ref,
@@ -771,7 +779,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
             <Command id={listboxId}>
               {searchable && (
                 <CommandInput
-                  placeholder="Search..."
+                  placeholder={searchLabel}
                   onKeyDown={handleInputKeyDown}
                   value={searchValue}
                   onValueChange={setSearchValue}
@@ -810,9 +818,9 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                       <CheckIcon className="h-4 w-4" />
                     </div>
                     <span>
-                      (Select All
+                      ({selectAllLabel}
                       {getAllOptions().length > 20
-                        ? ` - ${getAllOptions().length} options`
+                        ? ` - ${getAllOptions().length}`
                         : ""}
                       )
                     </span>
@@ -906,7 +914,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                         onSelect={handleClear}
                         className="flex-1 justify-center cursor-pointer max-w-full"
                       >
-                        Clear
+                        {clearLabel}
                       </CommandItem>
                       <Separator
                         orientation="vertical"
@@ -918,7 +926,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                     onSelect={() => setIsPopoverOpen(false)}
                     className="flex-1 justify-center cursor-pointer max-w-full"
                   >
-                    Close
+                    {closeLabel}
                   </CommandItem>
                 </div>
               </CommandGroup>
