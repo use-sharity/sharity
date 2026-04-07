@@ -134,6 +134,8 @@ export function buildTools(
       execute: async ({ query, category }) => {
         try {
           let items = await convex.query(api.items.get);
+          // Exclude user's own items — browseItems is for finding others' items
+          items = items.filter((i) => !i.isOwn);
           if (query) {
             const q = query.toLowerCase();
             items = items.filter(

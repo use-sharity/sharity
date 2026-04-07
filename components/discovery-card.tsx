@@ -27,6 +27,7 @@ interface DiscoveryCardItem extends Doc<"items"> {
   category?: ItemCategory;
   location?: { lat: number; lng: number; address?: string; ward?: string };
   isRequested?: boolean;
+  isOwn?: boolean;
 }
 
 interface DiscoveryCardProps {
@@ -38,7 +39,11 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
   const t = useTranslations("DiscoveryCard");
   const tCategories = useTranslations("Categories");
 
-  const claimLabel = item.isRequested ? t("manageRequest") : t("claim");
+  const claimLabel = item.isOwn
+    ? t("yourItem")
+    : item.isRequested
+      ? t("manageRequest")
+      : t("claim");
 
   return (
     <Card className="gap-3 py-7">
@@ -79,20 +84,26 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
       <CardFooter>
         <div className="flex justify-between items-center w-full">
           <UserLink userId={item.ownerId} size="sm" />
-          <Button
-            variant={isExpanded ? "secondary" : "default"}
-            size="sm"
-            onClick={() => setIsExpanded((v) => !v)}
-            aria-expanded={isExpanded}
-            className="gap-1"
-          >
-            {claimLabel}
-            {isExpanded ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </Button>
+          {item.isOwn ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/item/${item._id}`}>{claimLabel}</Link>
+            </Button>
+          ) : (
+            <Button
+              variant={isExpanded ? "secondary" : "default"}
+              size="sm"
+              onClick={() => setIsExpanded((v) => !v)}
+              aria-expanded={isExpanded}
+              className="gap-1"
+            >
+              {claimLabel}
+              {isExpanded ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          )}
         </div>
       </CardFooter>
 

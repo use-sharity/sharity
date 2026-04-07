@@ -97,7 +97,8 @@
     "manageRequest": "Quản lý yêu cầu",
     "giveaway": "Tặng",
     "loan": "Mượn",
-    "locationAvailable": "Có vị trí"
+    "locationAvailable": "Có vị trí",
+    "yourItem": "Đồ của bạn"
   },
   "ItemForm": {
     "giveawayMode": "Tặng",
@@ -691,7 +692,8 @@
     "giveaway": "Đồ tặng",
     "loadingMap": "Đang tải bản đồ...",
     "loading": "Đang tải...",
-    "noLocationItems": "Không có đồ có vị trí trong bộ lọc này"
+    "noLocationItems": "Không có đồ có vị trí trong bộ lọc này",
+    "hideMyItems": "Ẩn đồ của tôi"
   },
   "RatingSummary": {
     "loading": "Đang tải...",

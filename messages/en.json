@@ -97,7 +97,8 @@
     "manageRequest": "Manage Request",
     "giveaway": "Pass On",
     "loan": "Loan",
-    "locationAvailable": "Location available"
+    "locationAvailable": "Location available",
+    "yourItem": "Your Item"
   },
   "ItemForm": {
     "giveawayMode": "Pass On",
@@ -691,7 +692,8 @@
     "giveaway": "Pass On",
     "loadingMap": "Loading map...",
     "loading": "Loading...",
-    "noLocationItems": "No items with location in current filter"
+    "noLocationItems": "No items with location in current filter",
+    "hideMyItems": "Hide mine"
   },
   "RatingSummary": {
     "loading": "Loading...",

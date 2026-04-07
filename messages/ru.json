@@ -97,7 +97,8 @@
     "manageRequest": "Управление запросом",
     "giveaway": "Подарок",
     "loan": "Аренда",
-    "locationAvailable": "Место указано"
+    "locationAvailable": "Место указано",
+    "yourItem": "Ваша вещь"
   },
   "ItemForm": {
     "giveawayMode": "Подарок",
@@ -691,7 +692,8 @@
     "giveaway": "Подарок",
     "loadingMap": "Загрузка карты...",
     "loading": "Загрузка...",
-    "noLocationItems": "В этом фильтре нет вещей на карте"
+    "noLocationItems": "В этом фильтре нет вещей на карте",
+    "hideMyItems": "Скрыть мои"
   },
   "RatingSummary": {
     "loading": "Загрузка...",
