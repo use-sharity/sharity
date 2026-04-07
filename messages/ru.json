@@ -97,7 +97,8 @@
     "manageRequest": "Управление запросом",
     "giveaway": "Подарок",
     "loan": "Аренда",
-    "locationAvailable": "Место указано"
+    "locationAvailable": "Место указано",
+    "yourItem": "Твоя вещь"
   },
   "ItemForm": {
     "giveawayMode": "Подарок",
@@ -691,7 +692,8 @@
     "giveaway": "Подарок",
     "loadingMap": "Загрузка карты...",
     "loading": "Загрузка...",
-    "noLocationItems": "В этом фильтре нет вещей на карте"
+    "noLocationItems": "В этом фильтре нет вещей на карте",
+    "hideMyItems": "Скрыть мои"
   },
   "RatingSummary": {
     "loading": "Загрузка...",
@@ -770,7 +772,11 @@
     "books": "Книги",
     "sports": "Спорт",
     "other": "Другое",
-    "allCategories": "Все категории"
+    "allCategories": "Все категории",
+    "selectAll": "Выбрать все",
+    "clear": "Сбросить",
+    "close": "Закрыть",
+    "search": "Поиск..."
   },
   "ClaimButton": {
     "manageRequest": "Мой запрос",

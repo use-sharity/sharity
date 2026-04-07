@@ -28,6 +28,10 @@ export function CategoryFilter({
       defaultValue={selected}
       onValueChange={(values) => onChange(values as ItemCategory[])}
       placeholder={t("allCategories")}
+      selectAllLabel={t("selectAll")}
+      clearLabel={t("clear")}
+      closeLabel={t("close")}
+      searchLabel={t("search")}
       singleLine={true}
       animation={0}
       hideSelectAll={false}

@@ -292,6 +292,7 @@ export const get = query({
               images,
               imageUrls,
               isRequested: false,
+              isOwn: false,
             };
           }),
       );
@@ -319,7 +320,6 @@ export const get = query({
 
     const itemsWithUrls = await Promise.all(
       items
-        .filter((item) => item.ownerId !== identity.subject)
         .filter((item) => !activeUnavailableOwners.has(item.ownerId))
         .map(async (item) => {
           const { images, imageUrls } = await resolveImages({
@@ -328,11 +328,13 @@ export const get = query({
             imageStorageIds: item.imageStorageIds,
           });
 
+          const isOwn = item.ownerId === identity.subject;
           return {
             ...item,
             images,
             imageUrls,
-            isRequested: myClaimedItemIds.has(item._id),
+            isRequested: isOwn ? false : myClaimedItemIds.has(item._id),
+            isOwn,
           };
         }),
     );

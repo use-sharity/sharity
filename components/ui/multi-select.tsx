@@ -126,6 +126,10 @@ interface MultiSelectProps
   deduplicateOptions?: boolean;
   resetOnDefaultValueChange?: boolean;
   closeOnSelect?: boolean;
+  selectAllLabel?: string;
+  clearLabel?: string;
+  closeLabel?: string;
+  searchLabel?: string;
 }
 
 export interface MultiSelectRef {
@@ -163,6 +167,10 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
       deduplicateOptions = false,
       resetOnDefaultValueChange = true,
       closeOnSelect = false,
+      selectAllLabel = "Select All",
+      clearLabel = "Clear",
+      closeLabel = "Close",
+      searchLabel = "Search...",
       ...props
     },
     ref,
@@ -614,7 +622,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
               {...props}
               onClick={handleTogglePopover}
               className={cn(
-                "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm shadow-sm ring-offset-background",
+                "flex min-h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm shadow-sm ring-offset-background",
                 "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 "disabled:cursor-not-allowed disabled:opacity-50",
                 { "cursor-not-allowed opacity-50": disabled },
@@ -728,7 +736,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                   )}
                 </div>
               ) : (
-                <span className="flex-1 text-sm text-muted-foreground">
+                <span className="flex-1 text-sm text-muted-foreground whitespace-nowrap">
                   {placeholder}
                 </span>
               )}
@@ -761,17 +769,18 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
           </PopoverTrigger>
           <PopoverContent
             className={cn(
-              "w-(--radix-popover-trigger-width) p-0",
+              "w-auto p-0",
               getPopoverAnimationClass(),
               popoverClassName,
             )}
             align="start"
+            style={{ minWidth: "var(--radix-popover-trigger-width)" }}
             onEscapeKeyDown={() => setIsPopoverOpen(false)}
           >
             <Command id={listboxId}>
               {searchable && (
                 <CommandInput
-                  placeholder="Search..."
+                  placeholder={searchLabel}
                   onKeyDown={handleInputKeyDown}
                   value={searchValue}
                   onValueChange={setSearchValue}
@@ -810,9 +819,9 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                       <CheckIcon className="h-4 w-4" />
                     </div>
                     <span>
-                      (Select All
+                      ({selectAllLabel}
                       {getAllOptions().length > 20
-                        ? ` - ${getAllOptions().length} options`
+                        ? ` - ${getAllOptions().length}`
                         : ""}
                       )
                     </span>
@@ -906,7 +915,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                         onSelect={handleClear}
                         className="flex-1 justify-center cursor-pointer max-w-full"
                       >
-                        Clear
+                        {clearLabel}
                       </CommandItem>
                       <Separator
                         orientation="vertical"
@@ -918,7 +927,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                     onSelect={() => setIsPopoverOpen(false)}
                     className="flex-1 justify-center cursor-pointer max-w-full"
                   >
-                    Close
+                    {closeLabel}
                   </CommandItem>
                 </div>
               </CommandGroup>

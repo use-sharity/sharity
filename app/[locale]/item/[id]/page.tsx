@@ -30,19 +30,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { ItemImageCarousel } from "@/components/item-image-carousel";
 import { Toggle } from "@/components/ui/toggle";
 import { ItemCalendar } from "@/components/item-calendar";
-import {
-  CloudinaryImage,
-  isCloudinaryImageUrl,
-} from "@/components/cloudinary-image";
+import { isCloudinaryImageUrl } from "@/components/cloudinary-image";
 import { cn } from "@/lib/utils";
 import { useItemCalendar } from "@/hooks/use-item-calendar";
 import { api } from "@/convex/_generated/api";
@@ -275,34 +266,12 @@ export default function ItemDetailPage({
 
   const imageSection =
     imageUrls.length > 0 ? (
-      <div className="relative rounded-lg overflow-hidden bg-gray-100 border">
-        <Carousel className="w-full">
-          <CarouselContent>
-            {imageUrls.map((url, index) => (
-              <CarouselItem key={index}>
-                <div className="aspect-[4/3] relative">
-                  <CloudinaryImage
-                    src={url}
-                    alt={tDetail("imageAlt", {
-                      name: item.name,
-                      index: index + 1,
-                    })}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 560px"
-                    className="object-cover"
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          {imageUrls.length > 1 && (
-            <>
-              <CarouselPrevious className="left-2" />
-              <CarouselNext className="right-2" />
-            </>
-          )}
-        </Carousel>
-      </div>
+      <ItemImageCarousel
+        imageUrls={imageUrls}
+        name={item.name}
+        aspectRatio="4/3"
+        sizes="(max-width: 1024px) 100vw, 560px"
+      />
     ) : null;
 
   const detailsSection = (

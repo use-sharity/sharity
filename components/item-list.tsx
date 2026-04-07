@@ -53,6 +53,7 @@ export function ItemList({
   );
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [giveawayOnly, setGiveawayOnly] = useState(false);
+  const [hideMyItems, setHideMyItems] = useState(false);
 
   const filteredItems = items?.filter((item) => {
     const needle = search.trim().toLowerCase();
@@ -67,7 +68,11 @@ export function ItemList({
 
     const matchesGiveaway = !giveawayOnly || Boolean(item.giveaway);
 
-    return matchesSearch && matchesCategory && matchesGiveaway;
+    const matchesOwnership = !hideMyItems || !item.isOwn;
+
+    return (
+      matchesSearch && matchesCategory && matchesGiveaway && matchesOwnership
+    );
   });
 
   return (
@@ -102,12 +107,20 @@ export function ItemList({
             </Button>
           </div>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <CategoryFilter
             selected={selectedCategories}
             onChange={setSelectedCategories}
-            className="flex-1"
+            className="flex-1 min-w-36"
           />
+          <label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
+            <Switch
+              size="sm"
+              checked={hideMyItems}
+              onCheckedChange={setHideMyItems}
+            />
+            {t("hideMyItems")}
+          </label>
           <label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
             <Switch
               size="sm"
