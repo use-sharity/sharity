@@ -9,14 +9,24 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Globe } from "lucide-react";
+import { useMutation } from "convex/react";
+import { useConvexAuth } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export function LanguageSwitcher() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const { isAuthenticated } = useConvexAuth();
+  const updateLocale = useMutation(api.users.updateLocale);
 
   function onSelectChange(nextLocale: string) {
     router.replace(pathname, { locale: nextLocale });
+    if (isAuthenticated) {
+      updateLocale({
+        locale: nextLocale as "en" | "vi" | "ru",
+      }).catch(console.error);
+    }
   }
 
   return (

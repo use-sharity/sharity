@@ -175,6 +175,9 @@ export default defineSchema({
     digestFrequency: v.optional(
       v.union(v.literal("daily"), v.literal("weekly"), v.literal("off")),
     ),
+    locale: v.optional(
+      v.union(v.literal("en"), v.literal("vi"), v.literal("ru")),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
