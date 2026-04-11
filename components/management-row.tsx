@@ -29,7 +29,7 @@ function RowThumbnail({ url, name }: { url: string; name: string }) {
   const thumbUrl = cloudinaryThumbnailUrl(url);
   if (!thumbUrl) return null;
   return (
-    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
       <Image
         src={thumbUrl}
         alt={name}

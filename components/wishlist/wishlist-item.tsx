@@ -177,7 +177,7 @@ export function WishlistItem({ item, compact }: WishlistItemProps) {
             <button
               type="button"
               onClick={() => setPreviewImage(cloudImages[0].url)}
-              className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-gray-100 hover:opacity-80 transition-opacity"
+              className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted hover:opacity-80 transition-opacity"
             >
               <CloudinaryImage
                 src={cloudImages[0].url}
