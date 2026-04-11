@@ -549,6 +549,11 @@
     "whatsapp": "WhatsApp number",
     "facebook": "Facebook profile",
     "phone": "Phone number",
+    "digestFrequency": "Activity email",
+    "digestFrequencyDesc": "How often you want to receive a summary of your Sharity activity.",
+    "digestDaily": "Daily",
+    "digestWeekly": "Weekly",
+    "digestOff": "Off",
     "tabs": {
       "ratings": "Ratings",
       "history": "History"

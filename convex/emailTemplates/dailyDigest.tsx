@@ -5,6 +5,7 @@ import type { DigestItemSummary } from "./_shared";
 
 export interface DigestData {
   userName: string;
+  mode: "daily" | "weekly";
   ownerNotifications: DigestItemSummary[];
   borrowerNotifications: DigestItemSummary[];
   generalNotifications: DigestItemSummary[];
@@ -93,6 +94,12 @@ export function DailyDigestEmail(data: DigestData) {
     day: "numeric",
   });
 
+  const isWeekly = data.mode === "weekly";
+  const title = isWeekly
+    ? `Weekly Summary — ${today}`
+    : `Daily Summary — ${today}`;
+  const period = isWeekly ? "this past week" : "the last 24 hours";
+
   return (
     <SharityEmail preview={`Your Sharity activity — ${today}`}>
       <Text
@@ -103,13 +110,12 @@ export function DailyDigestEmail(data: DigestData) {
           margin: "0 0 8px",
         }}
       >
-        Daily Summary — {today}
+        {title}
       </Text>
       <Text
         style={{ color: COLORS.body, fontSize: "15px", margin: "0 0 16px" }}
       >
-        Hi {data.userName}, here&apos;s what happened on Sharity in the last 24
-        hours:
+        Hi {data.userName}, here&apos;s what happened on Sharity in {period}:
       </Text>
       {data.ownerNotifications.length > 0 && (
         <DigestSection heading="As Owner" items={data.ownerNotifications} />

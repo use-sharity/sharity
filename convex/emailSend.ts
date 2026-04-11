@@ -175,32 +175,42 @@ export const sendMeetupConfirmed = internalAction({
 
 // ─── 4. Daily Digest ─────────────────────────────────────────────────────────
 
+async function sendDigests(
+  ctx: ActionCtx,
+  mode: "daily" | "weekly",
+): Promise<void> {
+  const usersWithActivity: Array<{
+    clerkId: string;
+    email: string;
+    data: DigestData;
+  }> = await ctx.runQuery(internal.emails.buildDigestPayloads, { mode });
+
+  for (const user of usersWithActivity) {
+    const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const key = `digest-${mode}/${user.clerkId}/${dateKey}`;
+    const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+      key,
+    });
+    if (alreadySent) continue;
+
+    await sendMail(
+      ctx,
+      user.email,
+      `Your Sharity activity — ${dateKey}`,
+      React.createElement(DailyDigestEmail, user.data),
+    );
+    await ctx.runMutation(internal.emails.logEmail, { key });
+  }
+}
+
 export const sendDailyDigests = internalAction({
   args: {},
-  handler: async (ctx) => {
-    const usersWithActivity: Array<{
-      clerkId: string;
-      email: string;
-      data: DigestData;
-    }> = await ctx.runQuery(internal.emails.buildDigestPayloads, {});
+  handler: async (ctx) => sendDigests(ctx, "daily"),
+});
 
-    for (const user of usersWithActivity) {
-      const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const key = `digest/${user.clerkId}/${dateKey}`;
-      const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
-        key,
-      });
-      if (alreadySent) continue;
-
-      await sendMail(
-        ctx,
-        user.email,
-        `Your Sharity activity — ${dateKey}`,
-        React.createElement(DailyDigestEmail, user.data),
-      );
-      await ctx.runMutation(internal.emails.logEmail, { key });
-    }
-  },
+export const sendWeeklyDigests = internalAction({
+  args: {},
+  handler: async (ctx) => sendDigests(ctx, "weekly"),
 });
 
 // ─── 5. Overdue / Missing Alert ───────────────────────────────────────────────

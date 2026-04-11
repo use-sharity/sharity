@@ -17,6 +17,13 @@ crons.daily(
   internal.emailSend.sendDailyDigests,
 );
 
+// Weekly digest — Monday morning (same local time)
+crons.weekly(
+  "weekly_activity_digest",
+  { dayOfWeek: "monday", hourUTC: 2, minuteUTC: 0 },
+  internal.emailSend.sendWeeklyDigests,
+);
+
 crons.interval(
   "cleanup resend emails",
   { hours: 1 },

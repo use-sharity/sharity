@@ -23,9 +23,13 @@ export const logEmail = internalMutation({
 });
 
 export const buildDigestPayloads = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const since = Date.now() - 24 * 60 * 60 * 1000;
+  args: {
+    mode: v.union(v.literal("daily"), v.literal("weekly")),
+  },
+  handler: async (ctx, args) => {
+    const lookback =
+      args.mode === "weekly" ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    const since = Date.now() - lookback;
 
     const recentNotifications = await ctx.db
       .query("notifications")
@@ -64,6 +68,7 @@ export const buildDigestPayloads = internalQuery({
       email: string;
       data: {
         userName: string;
+        mode: "daily" | "weekly";
         ownerNotifications: DigestItemSummary[];
         borrowerNotifications: DigestItemSummary[];
         generalNotifications: DigestItemSummary[];
@@ -77,6 +82,10 @@ export const buildDigestPayloads = internalQuery({
         .first();
 
       if (!userRecord?.email) continue;
+
+      // Respect user preference; undefined defaults to "daily"
+      const userFrequency = userRecord.digestFrequency ?? "daily";
+      if (userFrequency === "off" || userFrequency !== args.mode) continue;
 
       // counts keyed by `bucket:itemId:type`
       const ownerCounts = new Map<string, Map<string, number>>();
@@ -118,6 +127,7 @@ export const buildDigestPayloads = internalQuery({
         email: userRecord.email,
         data: {
           userName: userRecord.name ?? "there",
+          mode: args.mode,
           ownerNotifications: toSummaries(ownerCounts),
           borrowerNotifications: toSummaries(borrowerCounts),
           generalNotifications: toSummaries(generalCounts),
