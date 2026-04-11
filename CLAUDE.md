@@ -384,6 +384,65 @@ git commit --amend --no-edit
 - Только owner может approve/reject claims
 - Только claimer может отменить свою заявку
 
+## Email Templates (i18n)
+
+All outbound emails support `en`, `vi`, and `ru` via a Convex-side dictionary — `next-intl` is unavailable in Convex Node actions.
+
+### Where strings live
+
+All translatable copy lives in `convex/emailTemplates/i18n.ts`. Each key appears once per locale:
+
+```typescript
+const emailStrings: Record<Locale, Record<string, string>> = {
+  en: { "welcome.subject": "Welcome to Sharity!", ... },
+  vi: { "welcome.subject": "Chào mừng bạn đến với Sharity!", ... },
+  ru: { "welcome.subject": "Добро пожаловать в Sharity!", ... },
+};
+```
+
+### Adding a new email
+
+1. Add all string keys to `emailStrings` in `i18n.ts` for all 3 locales.
+2. Create a template in `convex/emailTemplates/yourEmail.tsx`. The template **must** accept `locale: Locale` and pass it to `SharityEmail`.
+3. Use `t(locale, "key", { param: value })` for all copy; `formatDateLocalized(ts, locale)` / `formatWindowLocalized(start, end, locale)` for dates.
+4. Add `locale: localeValidator` arg to the action in `emailSend.ts`; use `t(locale, "key")` for the subject.
+5. At the scheduler call site, pass `locale: user.profile.locale`.
+
+### Pattern example
+
+```typescript
+// emailTemplates/myEmail.tsx
+export function MyEmail({ name, locale }: { name: string; locale: Locale }) {
+  return (
+    <SharityEmail preview={t(locale, "myEmail.preview", { name })} locale={locale}>
+      <Text>{t(locale, "myEmail.heading", { name })}</Text>
+    </SharityEmail>
+  );
+}
+
+// emailSend.ts action
+export const sendMyEmail = internalAction({
+  args: { email: v.string(), name: v.string(), locale: localeValidator },
+  handler: async (ctx, args) => {
+    const locale = resolveLocale(args.locale);
+    await sendMail(ctx, args.email, t(locale, "myEmail.subject"),
+      React.createElement(MyEmail, { name: args.name, locale }));
+  },
+});
+
+// Call site in items.ts
+await ctx.scheduler.runAfter(0, internal.emailSend.sendMyEmail, {
+  email: user.email,
+  name: user.name,
+  locale: user.profile.locale,   // ← always pass locale from user record
+});
+```
+
+### Rules
+- `SharityEmail` **requires** `locale` — TypeScript will catch new templates that omit it.
+- Missing keys fall back to English automatically.
+- For plurals in Russian use `t()` with `"singular|few|many"` format + `pluralize()`.
+
 ## Leaflet Maps (react-leaflet)
 
 ### ВАЖНО: Tailwind CSS 4 ломает Leaflet tiles!

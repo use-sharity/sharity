@@ -14,6 +14,7 @@ import type * as crons from "../crons.js";
 import type * as emailSend from "../emailSend.js";
 import type * as emailTemplates__shared from "../emailTemplates/_shared.js";
 import type * as emailTemplates_dailyDigest from "../emailTemplates/dailyDigest.js";
+import type * as emailTemplates_i18n from "../emailTemplates/i18n.js";
 import type * as emailTemplates_index from "../emailTemplates/index.js";
 import type * as emailTemplates_itemAvailable from "../emailTemplates/itemAvailable.js";
 import type * as emailTemplates_leaseApproved from "../emailTemplates/leaseApproved.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   emailSend: typeof emailSend;
   "emailTemplates/_shared": typeof emailTemplates__shared;
   "emailTemplates/dailyDigest": typeof emailTemplates_dailyDigest;
+  "emailTemplates/i18n": typeof emailTemplates_i18n;
   "emailTemplates/index": typeof emailTemplates_index;
   "emailTemplates/itemAvailable": typeof emailTemplates_itemAvailable;
   "emailTemplates/leaseApproved": typeof emailTemplates_leaseApproved;
