@@ -1,8 +1,8 @@
 export type { Locale } from "./i18n";
 export type {
-	ContactInfo,
-	DigestNotification,
-	DigestItemSummary,
+  ContactInfo,
+  DigestNotification,
+  DigestItemSummary,
 } from "./_shared";
 export { WelcomeEmail } from "./welcome";
 export type { WelcomeEmailProps } from "./welcome";

@@ -13,6 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ProfileProvider } from "@/components/profile-provider";
 import { ChatWidget } from "@/components/chat-widget";
 import { LocaleSync } from "@/components/locale-sync";
+import { EnsureEmail } from "@/components/ensure-email";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,6 +90,7 @@ export default async function RootLayout({
               <PostHogIdentify />
               <ProfileProvider>
                 <LocaleSync />
+                <EnsureEmail />
                 <AppHeader />
                 <div className="pb-20 md:pb-0">{children}</div>
                 <MobileTabBar />
