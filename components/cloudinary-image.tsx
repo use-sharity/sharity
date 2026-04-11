@@ -47,6 +47,18 @@ type CloudinaryImageProps =
       height: number;
     };
 
+export function cloudinaryThumbnailUrl(
+  src: string,
+  size: number = 96,
+): string | null {
+  if (!isCloudinaryImageUrl(src)) return null;
+  const transform = `f_auto,q_auto:eco,c_fill,w_${size},h_${size}`;
+  return src.replace(
+    CLOUDINARY_UPLOAD_SEGMENT,
+    `${CLOUDINARY_UPLOAD_SEGMENT}${transform}/`,
+  );
+}
+
 export function CloudinaryImage(props: CloudinaryImageProps) {
   if (!isCloudinaryImageUrl(props.src)) {
     throw new Error(
