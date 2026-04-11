@@ -66,6 +66,7 @@ export const buildDigestPayloads = internalQuery({
     const results: Array<{
       clerkId: string;
       email: string;
+      locale: "en" | "vi" | "ru";
       data: {
         userName: string;
         mode: "daily" | "weekly";
@@ -125,6 +126,7 @@ export const buildDigestPayloads = internalQuery({
       results.push({
         clerkId,
         email: userRecord.email,
+        locale: userRecord.locale ?? "en",
         data: {
           userName: userRecord.name ?? "there",
           mode: args.mode,

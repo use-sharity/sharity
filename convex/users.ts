@@ -217,6 +217,10 @@ export const getProfileWithContacts = query({
 /**
  * Create or update user profile
  */
+const localeValidator = v.optional(
+  v.union(v.literal("en"), v.literal("vi"), v.literal("ru")),
+);
+
 export const updateProfile = mutation({
   args: {
     name: v.optional(v.string()),
@@ -228,6 +232,7 @@ export const updateProfile = mutation({
     digestFrequency: v.optional(
       v.union(v.literal("daily"), v.literal("weekly"), v.literal("off")),
     ),
+    locale: localeValidator,
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -275,6 +280,37 @@ export const updateProfile = mutation({
     });
 
     return profileId;
+  },
+});
+
+/**
+ * Update only the locale preference (called by LanguageSwitcher)
+ */
+export const updateLocale = mutation({
+  args: {
+    locale: v.union(v.literal("en"), v.literal("vi"), v.literal("ru")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
+
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { locale: args.locale, updatedAt: now });
+    } else {
+      await ctx.db.insert("users", {
+        clerkId: identity.subject,
+        locale: args.locale,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
   },
 });
 
@@ -407,6 +443,20 @@ export const getUserHistory = query({
         totalBorrowed: borrowingHistory.length,
       },
     };
+  },
+});
+
+/**
+ * Internal: get a user's stored locale preference (falls back to "en")
+ */
+export const getLocale = internalQuery({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+    return user?.locale ?? "en";
   },
 });
 
