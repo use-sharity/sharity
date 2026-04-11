@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import type { CloudinaryRef } from "@/lib/cloudinary-ref";
 import { useTranslations } from "next-intl";
 
+type DigestFrequency = "daily" | "weekly" | "off";
+
 interface ProfileFormProps {
   initialValues?: {
     name?: string | null;
@@ -26,6 +28,7 @@ interface ProfileFormProps {
       facebook?: string;
       phone?: string;
     } | null;
+    digestFrequency?: DigestFrequency | null;
   };
   onSuccess?: () => void;
 }
@@ -47,6 +50,9 @@ export function ProfileForm({ initialValues, onSuccess }: ProfileFormProps) {
   const [avatarCloudinary, setAvatarCloudinary] = useState<
     CloudinaryRef | undefined
   >(initialValues?.avatarCloudinary);
+  const [digestFrequency, setDigestFrequency] = useState<DigestFrequency>(
+    initialValues?.digestFrequency ?? "daily",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const t = useTranslations("Profile");
 
@@ -72,6 +78,7 @@ export function ProfileForm({ initialValues, onSuccess }: ProfileFormProps) {
         address: address.trim() || undefined,
         bio: bio.trim() || undefined,
         contacts: hasContacts ? contacts : undefined,
+        digestFrequency,
       };
       if (avatarCloudinary) {
         payload.avatarCloudinary = avatarCloudinary;
@@ -200,6 +207,36 @@ export function ProfileForm({ initialValues, onSuccess }: ProfileFormProps) {
               disabled={isSubmitting}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>{t("digestFrequency")}</Label>
+        <p className="text-sm text-muted-foreground">
+          {t("digestFrequencyDesc")}
+        </p>
+        <div className="flex gap-1 rounded-md border p-1 w-fit">
+          {(["daily", "weekly", "off"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setDigestFrequency(option)}
+              disabled={isSubmitting}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                digestFrequency === option
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t(
+                option === "daily"
+                  ? "digestDaily"
+                  : option === "weekly"
+                    ? "digestWeekly"
+                    : "digestOff",
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

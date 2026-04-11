@@ -549,6 +549,11 @@
     "whatsapp": "Номер WhatsApp",
     "facebook": "Профиль Facebook",
     "phone": "Номер телефона",
+    "digestFrequency": "Email-дайджест",
+    "digestFrequencyDesc": "Как часто получать сводку активности Sharity.",
+    "digestDaily": "Ежедневно",
+    "digestWeekly": "Еженедельно",
+    "digestOff": "Выключить",
     "tabs": {
       "ratings": "Оценки",
       "history": "История"

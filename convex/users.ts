@@ -52,6 +52,7 @@ export const getMyProfile = query({
         address: null,
         bio: null,
         contacts: null,
+        digestFrequency: null as "daily" | "weekly" | "off" | null,
         hasProfile: false,
         clerkData,
       };
@@ -224,6 +225,9 @@ export const updateProfile = mutation({
     contacts: contactsValidator,
     avatarStorageId: v.optional(v.id("_storage")),
     avatarCloudinary: v.optional(vCloudinaryRef),
+    digestFrequency: v.optional(
+      v.union(v.literal("daily"), v.literal("weekly"), v.literal("off")),
+    ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -265,6 +269,7 @@ export const updateProfile = mutation({
       contacts: args.contacts,
       avatarStorageId: undefined,
       avatarCloudinary: args.avatarCloudinary,
+      digestFrequency: args.digestFrequency,
       createdAt: now,
       updatedAt: now,
     });

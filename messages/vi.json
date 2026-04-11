@@ -549,6 +549,11 @@
     "whatsapp": "Số WhatsApp",
     "facebook": "Hồ sơ Facebook",
     "phone": "SĐT",
+    "digestFrequency": "Email hoạt động",
+    "digestFrequencyDesc": "Tần suất bạn muốn nhận tóm tắt hoạt động Sharity.",
+    "digestDaily": "Hàng ngày",
+    "digestWeekly": "Hàng tuần",
+    "digestOff": "Tắt",
     "tabs": {
       "ratings": "Đánh giá",
       "history": "Lịch sử"

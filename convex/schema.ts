@@ -172,6 +172,9 @@ export default defineSchema({
         phone: v.optional(v.string()),
       }),
     ),
+    digestFrequency: v.optional(
+      v.union(v.literal("daily"), v.literal("weekly"), v.literal("off")),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),

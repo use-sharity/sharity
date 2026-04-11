@@ -104,6 +104,7 @@ export default function ProfilePage() {
                   address: profile?.address,
                   bio: profile?.bio,
                   contacts: profile?.contacts,
+                  digestFrequency: profile?.digestFrequency,
                 }}
                 onSuccess={() => setIsEditOpen(false)}
               />
