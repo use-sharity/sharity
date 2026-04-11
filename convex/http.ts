@@ -53,6 +53,7 @@ http.route({
           clerkId: id,
           email,
           name: name ?? "there",
+          locale: "en",
         });
       }
     }

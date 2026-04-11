@@ -932,6 +932,7 @@ export const requestItem = mutation({
       await ctx.scheduler.runAfter(0, internal.emailSend.sendNewRequest, {
         claimId,
         ownerEmail: owner.email,
+        locale: owner.profile.locale,
         data: {
           ownerName: owner.name,
           borrowerName: borrowerProfile?.name ?? "Someone",
@@ -1028,6 +1029,7 @@ export const approveClaim = mutation({
       await ctx.scheduler.runAfter(0, internal.emailSend.sendLeaseApproved, {
         claimId: args.claimId,
         borrowerEmail: borrower.email,
+        locale: borrower.profile.locale,
         data: {
           borrowerName: borrower.name,
           itemName: item.name,
@@ -1193,6 +1195,7 @@ export const proposePickupWindow = mutation({
         claimId: args.claimId,
         meetupType: "pickup",
         recipientEmail: recipient.email,
+        locale: recipient.profile.locale,
         data: {
           recipientName: recipient.name,
           proposerName: proposerProfile?.name ?? "The other party",
@@ -1323,6 +1326,7 @@ export const proposeReturnWindow = mutation({
         claimId: args.claimId,
         meetupType: "return",
         recipientEmail: returnRecipient.email,
+        locale: returnRecipient.profile.locale,
         data: {
           recipientName: returnRecipient.name,
           proposerName: returnProposerProfile?.name ?? "The other party",
@@ -1436,6 +1440,8 @@ export const approvePickupWindow = mutation({
         meetupType: "pickup",
         recipient1Email: proposer.email,
         recipient2Email: approver.email,
+        locale1: proposer.profile.locale,
+        locale2: approver.profile.locale,
         data1: {
           recipientName: proposer.name,
           counterpartyName: approver.name,
@@ -1572,6 +1578,8 @@ export const approveReturnWindow = mutation({
         meetupType: "return",
         recipient1Email: proposer.email,
         recipient2Email: approver.email,
+        locale1: proposer.profile.locale,
+        locale2: approver.profile.locale,
         data1: {
           recipientName: proposer.name,
           counterpartyName: approver.name,
@@ -1969,6 +1977,7 @@ export const rejectClaim = mutation({
       await ctx.scheduler.runAfter(0, internal.emailSend.sendRequestRejected, {
         claimId: args.claimId,
         borrowerEmail: borrower.email,
+        locale: borrower.profile.locale,
         data: {
           borrowerName: borrower.name,
           itemName: item.name,
@@ -2052,6 +2061,8 @@ export const markExpired = mutation({
         alertType: "expired",
         ownerEmail: owner.email,
         borrowerEmail: borrowerResolved.email,
+        ownerLocale: owner.profile.locale,
+        borrowerLocale: borrowerResolved.profile.locale,
         ownerData: {
           recipientName: owner.name,
           itemName: item.name,
@@ -2153,6 +2164,8 @@ export const markMissing = mutation({
         alertType: "missing",
         ownerEmail: owner.email,
         borrowerEmail: borrowerResolved.email,
+        ownerLocale: owner.profile.locale,
+        borrowerLocale: borrowerResolved.profile.locale,
         ownerData: {
           recipientName: owner.name,
           itemName: item.name,
@@ -2226,6 +2239,7 @@ export const cancelClaim = mutation({
               itemId: claim.itemId,
               recipientClerkId: sub.userId,
               recipientEmail: subscriber.email,
+              locale: subscriber.profile.locale,
               data: {
                 recipientName: subscriber.name,
                 itemName: availableItemName,
@@ -2418,6 +2432,8 @@ export const resolveOverdueProposals = internalMutation({
             alertType: "expired",
             ownerEmail: ownerExp.email,
             borrowerEmail: borrowerExp.email,
+            ownerLocale: ownerExp.profile.locale,
+            borrowerLocale: borrowerExp.profile.locale,
             ownerData: {
               recipientName: ownerExp.name,
               itemName: item.name,
@@ -2487,6 +2503,8 @@ export const resolveOverdueProposals = internalMutation({
             alertType: "missing",
             ownerEmail: ownerMiss.email,
             borrowerEmail: borrowerMiss.email,
+            ownerLocale: ownerMiss.profile.locale,
+            borrowerLocale: borrowerMiss.profile.locale,
             ownerData: {
               recipientName: ownerMiss.name,
               itemName: item.name,
