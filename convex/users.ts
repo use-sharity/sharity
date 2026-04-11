@@ -7,7 +7,17 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import type { WithoutSystemFields } from "convex/server";
+import type { Doc } from "./_generated/dataModel";
 import { vCloudinaryRef } from "./mediaTypes";
+
+type UserFields = WithoutSystemFields<Doc<"users">>;
+type NullableFields<T> = { [K in keyof T]: T[K] | null };
+type MyProfile = NullableFields<UserFields> & {
+  avatarUrl: string | null;
+  hasProfile: boolean;
+  clerkData: { name: string | null; email: string | null; avatarUrl: string | null };
+};
 
 // Contact info validator
 const contactsValidator = v.optional(
@@ -24,13 +34,12 @@ const contactsValidator = v.optional(
  */
 export const getMyProfile = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<MyProfile | null> => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return null;
     }
 
-    // Clerk data for comparison/reset
     const clerkData = {
       name: identity.name || identity.nickname || null,
       email: identity.email || null,
@@ -43,34 +52,48 @@ export const getMyProfile = query({
       .first();
 
     if (!profile) {
-      // Return basic info from Clerk if no profile exists yet
       return {
         clerkId: identity.subject,
-        name: clerkData.name,
         email: clerkData.email,
+        name: clerkData.name,
+        avatarStorageId: null,
+        avatarCloudinary: null,
         avatarUrl: clerkData.avatarUrl,
         address: null,
+        ward: null,
         bio: null,
         contacts: null,
-        digestFrequency: null as "daily" | "weekly" | "off" | null,
+        digestFrequency: null,
+        locale: null,
+        createdAt: null,
+        updatedAt: null,
         hasProfile: false,
         clerkData,
       };
     }
 
-    // Get avatar URL if exists
     let avatarUrl: string | null = null;
     if (profile.avatarCloudinary) {
       avatarUrl = profile.avatarCloudinary.secureUrl;
     } else if (identity.pictureUrl) {
-      // Fallback to Clerk avatar
       avatarUrl = identity.pictureUrl;
     }
 
     return {
-      ...profile,
+      clerkId: profile.clerkId,
       email: clerkData.email,
+      name: profile.name ?? null,
+      avatarStorageId: profile.avatarStorageId ?? null,
+      avatarCloudinary: profile.avatarCloudinary ?? null,
       avatarUrl,
+      address: profile.address ?? null,
+      ward: profile.ward ?? null,
+      bio: profile.bio ?? null,
+      contacts: profile.contacts ?? null,
+      digestFrequency: profile.digestFrequency ?? null,
+      locale: profile.locale ?? null,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
       hasProfile: true,
       clerkData,
     };
