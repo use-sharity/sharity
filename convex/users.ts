@@ -16,7 +16,11 @@ type NullableFields<T> = { [K in keyof T]: T[K] | null };
 type MyProfile = NullableFields<UserFields> & {
   avatarUrl: string | null;
   hasProfile: boolean;
-  clerkData: { name: string | null; email: string | null; avatarUrl: string | null };
+  clerkData: {
+    name: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  };
 };
 
 // Contact info validator
@@ -466,6 +470,25 @@ export const getUserHistory = query({
         totalBorrowed: borrowingHistory.length,
       },
     };
+  },
+});
+
+/**
+ * Backfill email from Clerk JWT if missing in DB.
+ * Called on client mount; guarded by sessionStorage on the client side.
+ * Cost: 1 index read; 1 write only when email is absent.
+ */
+export const ensureEmail = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.email) return;
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+    if (!existing || existing.email) return;
+    await ctx.db.patch(existing._id, { email: identity.email });
   },
 });
 
