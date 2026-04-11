@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
@@ -18,8 +19,28 @@ import {
   getDueStatus,
   type OwnerItemStatus,
 } from "@/components/item-status-badge";
+import { cloudinaryThumbnailUrl } from "@/components/cloudinary-image";
 import { ItemEditActions } from "@/components/item-edit-actions";
 import type { MediaImage } from "@/components/item-form";
+
+// --- Shared thumbnail ---
+
+function RowThumbnail({ url, name }: { url: string; name: string }) {
+  const thumbUrl = cloudinaryThumbnailUrl(url);
+  if (!thumbUrl) return null;
+  return (
+    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+      <Image
+        src={thumbUrl}
+        alt={name}
+        width={48}
+        height={48}
+        unoptimized
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+}
 
 // --- Owner row ---
 
@@ -72,6 +93,9 @@ function OwnerManagementRow({ item }: { item: OwnerItem }) {
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm flex items-stretch gap-3">
+      {item.imageUrls?.[0] && (
+        <RowThumbnail url={item.imageUrls[0]} name={item.name} />
+      )}
       {/* Left col: dot+title / badges */}
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
@@ -157,6 +181,9 @@ function BorrowerManagementRow({ item }: { item: BorrowedItem }) {
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm flex items-stretch gap-3">
+      {item.imageUrls?.[0] && (
+        <RowThumbnail url={item.imageUrls[0]} name={item.name} />
+      )}
       {/* Left col: dot+title / badges+owner */}
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
