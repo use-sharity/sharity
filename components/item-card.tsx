@@ -40,7 +40,7 @@ interface ItemCardContextType {
 	flipToBack: () => void;
 }
 
-const ItemCardContext = createContext<ItemCardContextType | undefined>(
+export const ItemCardContext = createContext<ItemCardContextType | undefined>(
 	undefined,
 );
 

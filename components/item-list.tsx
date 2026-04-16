@@ -2,10 +2,10 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { List, Map } from "lucide-react";
+import { Layers, List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
@@ -14,6 +14,7 @@ import { Doc } from "../convex/_generated/dataModel";
 import { ReactNode } from "react";
 import { UserLink } from "@/components/user-link";
 import { ItemCard } from "./item-card";
+import { DiscoverDeck } from "./discover-deck";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +41,12 @@ const ItemsMap = dynamic(
 	},
 );
 
-type ViewMode = "list" | "map";
+type ViewMode = "discover" | "list" | "map";
+
+function getInitialViewMode(): ViewMode {
+	if (typeof window === "undefined") return "list";
+	return window.matchMedia("(max-width: 767px)").matches ? "discover" : "list";
+}
 
 export function ItemList({
 	action,
@@ -62,6 +68,10 @@ export function ItemList({
 	const [viewMode, setViewMode] = useState<ViewMode>("list");
 	const [giveawayOnly, setGiveawayOnly] = useState(false);
 
+	useEffect(() => {
+		setViewMode(getInitialViewMode());
+	}, []);
+
 	const filteredItems = items?.filter((item) => {
 		const needle = search.trim().toLowerCase();
 		const itemText = `${item.name} ${item.description ?? ""}`.toLowerCase();
@@ -80,6 +90,10 @@ export function ItemList({
 		return matchesSearch && matchesCategory && matchesGiveaway;
 	});
 
+	const discoverItems = filteredItems
+		? [...filteredItems].sort((a, b) => b._creationTime - a._creationTime)
+		: [];
+
 	return (
 		<div className="w-full space-y-4">
 			<div className="flex flex-col gap-3">
@@ -94,11 +108,24 @@ export function ItemList({
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setViewMode("list")}
+							onClick={() => setViewMode("discover")}
 							className={cn(
 								"rounded-r-none",
+								viewMode === "discover" && "bg-muted",
+							)}
+							aria-label="Discover (swipe)"
+						>
+							<Layers className="h-4 w-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setViewMode("list")}
+							className={cn(
+								"rounded-none",
 								viewMode === "list" && "bg-muted",
 							)}
+							aria-label="List"
 						>
 							<List className="h-4 w-4" />
 						</Button>
@@ -107,6 +134,7 @@ export function ItemList({
 							size="icon"
 							onClick={() => setViewMode("map")}
 							className={cn("rounded-l-none", viewMode === "map" && "bg-muted")}
+							aria-label="Map"
 						>
 							<Map className="h-4 w-4" />
 						</Button>
@@ -130,7 +158,13 @@ export function ItemList({
 
 			<SharePrompt />
 
-			{viewMode === "map" ? (
+			{viewMode === "discover" ? (
+				items === undefined ? (
+					<p>{t("loading")}</p>
+				) : (
+					<DiscoverDeck items={discoverItems} />
+				)
+			) : viewMode === "map" ? (
 				<div className="space-y-2">
 					{items === undefined ? (
 						<p>{t("loading")}</p>
