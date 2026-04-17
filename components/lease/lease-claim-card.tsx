@@ -27,6 +27,7 @@ import type {
   MarkLeaseStatusArgs,
   MutationResult,
   RecordLeaseArgs,
+  RecordPickupArgs,
   RejectClaimArgs,
   ViewerRole,
 } from "./lease-claim-types";
@@ -107,7 +108,7 @@ export function LeaseClaimCard(props: {
   approveClaim?: (args: ApproveClaimArgs) => MutationResult;
   rejectClaim?: (args: RejectClaimArgs) => MutationResult;
   cancelClaim?: (args: CancelClaimArgs) => MutationResult;
-  markPickedUp: (args: RecordLeaseArgs) => MutationResult;
+  markPickedUp: (args: RecordPickupArgs) => MutationResult;
   markReturned: (args: RecordLeaseArgs) => MutationResult;
   markExpired?: (args: MarkLeaseStatusArgs) => MutationResult;
   markMissing?: (args: MarkLeaseStatusArgs) => MutationResult;
@@ -597,6 +598,8 @@ export function LeaseClaimCard(props: {
                                 claimId: claim._id,
                                 note,
                                 photoCloudinary,
+                                isGiveaway,
+                                approvedAt: claim.approvedAt,
                               });
                               toast.success(t("pickup.confirmedToast"));
                             } catch (error: unknown) {

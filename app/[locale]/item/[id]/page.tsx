@@ -36,6 +36,7 @@ import { ItemCalendar } from "@/components/item-calendar";
 import { isCloudinaryImageUrl } from "@/components/cloudinary-image";
 import { cn } from "@/lib/utils";
 import { useItemCalendar } from "@/hooks/use-item-calendar";
+import { useTrackedPickup } from "@/hooks/use-tracked-pickup";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
@@ -62,7 +63,7 @@ export default function ItemDetailPage({
   const deleteItem = useMutation(api.items.deleteItem);
   const approveClaim = useMutation(api.items.approveClaim);
   const rejectClaim = useMutation(api.items.rejectClaim);
-  const markPickedUp = useMutation(api.items.markPickedUp);
+  const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
   const markExpired = useMutation(api.items.markExpired);
   const markMissing = useMutation(api.items.markMissing);

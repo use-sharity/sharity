@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { trackClaimRequested, ONE_DAY_MS } from "@/lib/posthog/events";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useConvexAuth } from "convex/react";
@@ -52,6 +53,12 @@ export function useClaimItem(itemId: Id<"items">) {
         id: itemId,
         startDate: startDate.getTime(),
         endDate: endDate.getTime(),
+      });
+      trackClaimRequested({
+        item_id: itemId,
+        duration_days: Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / ONE_DAY_MS,
+        ),
       });
       toast.success("Item requested successfully");
       onSuccess?.();
@@ -108,6 +115,10 @@ export function useClaimItem(itemId: Id<"items">) {
         id: itemId,
         startDate: startAt,
         endDate: endAt,
+      });
+      trackClaimRequested({
+        item_id: itemId,
+        duration_days: Math.ceil((endAt - startAt) / ONE_DAY_MS),
       });
       toast.success("Item requested successfully");
       onSuccess?.();
