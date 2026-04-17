@@ -14,6 +14,7 @@ import {
   type BorrowerCalendarState,
 } from "@/hooks/use-item-calendar";
 import { useClaimItem } from "@/hooks/use-claim-item";
+import { useTrackedPickup } from "@/hooks/use-tracked-pickup";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { LeaseClaimCard } from "./lease-claim-card";
@@ -272,7 +273,7 @@ export function BorrowerRequestActions() {
   } = useBorrowerRequestContext();
   const t = useTranslations("BorrowerRequest");
 
-  const markPickedUp = useMutation(api.items.markPickedUp);
+  const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
   const [showInactive, setShowInactive] = React.useState(false);
 
@@ -449,7 +450,7 @@ export function GiveawayBorrowerRequestPanel({
 
   const t = useTranslations("BorrowerRequest");
 
-  const markPickedUp = useMutation(api.items.markPickedUp);
+  const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
 
   const [pickupDay, setPickupDay] = React.useState<Date | undefined>(undefined);

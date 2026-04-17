@@ -15,6 +15,11 @@ export type RecordLeaseArgs = {
   photoCloudinary?: CloudinaryRef[];
 };
 
+export type RecordPickupArgs = RecordLeaseArgs & {
+  isGiveaway?: boolean;
+  approvedAt?: number;
+};
+
 export type MarkLeaseStatusArgs = {
   itemId: Id<"items">;
   claimId: Id<"claims">;

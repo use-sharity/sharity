@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useTrackedPickup } from "@/hooks/use-tracked-pickup";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { format, formatDistanceToNow } from "date-fns";
@@ -21,7 +22,7 @@ export function NotificationFeed() {
   const rejectClaim = useMutation(api.items.rejectClaim);
   const approvePickupWindow = useMutation(api.items.approvePickupWindow);
   const approveReturnWindow = useMutation(api.items.approveReturnWindow);
-  const markPickedUp = useMutation(api.items.markPickedUp);
+  const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
   const router = useRouter();
 

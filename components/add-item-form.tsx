@@ -2,6 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { trackItemListed } from "@/lib/posthog/events";
 import { ItemForm } from "./item-form";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
@@ -26,6 +27,11 @@ export function AddItemForm({
         <ItemForm
           onSubmit={async (values) => {
             const itemId = await createItem(values);
+            trackItemListed({
+              item_id: itemId,
+              has_images: (values.imageCloudinary?.length ?? 0) > 0,
+              mode: values.giveaway ? "giveaway" : "lease",
+            });
             onSuccess?.(itemId);
           }}
           submitLabel={t("submit")}
