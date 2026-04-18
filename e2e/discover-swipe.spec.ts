@@ -349,3 +349,97 @@ test("short flick near card edge does not navigate to item page", async ({
 		startUrl,
 	);
 });
+
+// Positive counterpart to the flick test: a clean touch tap in the center of
+// the card MUST navigate to the item detail page. Guards against the tap
+// threshold creeping too tight (e.g. 2026-04-18 real-iPhone report: the tap
+// guard introduced for the short-flick fix was suppressing legitimate taps
+// because iOS finger jitter routinely exceeds 8px).
+// Parameterized across the three A/B header variants. Tap logic in
+// discover-deck.tsx is variant-agnostic (same code path regardless of ?v),
+// but we run all three URLs to guarantee no regression if variant-specific
+// chrome (hidden header, tighter tab bar) ever shifts the deck's box in a
+// way that would confuse touch coordinates.
+const VARIANTS = [
+	{ name: "v1 (default)", url: "/" },
+	{ name: "v2 (slim — no header/hero on mobile)", url: "/?v=slim" },
+	{
+		name: "v3 (slim3 — header kept, hero hidden, tighter tab bar)",
+		url: "/?v=slim3",
+	},
+] as const;
+
+for (const variant of VARIANTS) {
+	test(`clean tap on top card navigates to item detail page — ${variant.name}`, async ({
+		page,
+	}) => {
+		await page.goto(variant.url);
+
+		const dismissModal = async () => {
+			const closeButton = page
+				.getByRole("button", { name: /close|×/i })
+				.first();
+			if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+				await closeButton.click();
+				await page.waitForTimeout(300);
+			}
+		};
+		await dismissModal();
+		for (let i = 0; i < 3; i++) {
+			await page.keyboard.press("Escape").catch(() => {});
+			await page.waitForTimeout(150);
+		}
+
+		const topCardLocator = page.locator('[data-testid="discover-top-card"]');
+		await expect(topCardLocator).toBeVisible({ timeout: 15_000 });
+		await page.waitForTimeout(1500);
+
+		const startUrl = page.url();
+		const box = await topCardLocator.boundingBox();
+		if (!box) throw new Error("no bounding box for top card");
+
+		// Use playwright's locator.tap() — synthesizes a proper touch tap (touch
+		// events + pointer events + click). CDP Input.dispatchTouchEvent alone
+		// doesn't synthesize pointer events that framer-motion's onTap listens for.
+		await topCardLocator.tap();
+
+		await page.waitForURL(/\/item\//, { timeout: 5_000 });
+		expect(page.url(), "clean tap must navigate to item detail page").not.toBe(
+			startUrl,
+		);
+		expect(page.url(), "navigation should land on /item/:id").toMatch(
+			/\/item\//,
+		);
+	});
+}
+
+// List-view tap regression — Agent A 2026-04-18 fix: item-card image was a
+// plain div with no link, only the title text was a <Link>. Verify tapping
+// on the card navigates to /item/:id.
+test("tap on list-view card navigates to item detail page", async ({
+	page,
+}) => {
+	await page.goto("/");
+
+	const closeButton = page.getByRole("button", { name: /close|×/i }).first();
+	if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+		await closeButton.click();
+		await page.waitForTimeout(300);
+	}
+
+	// Mobile default is discover mode — click the List toggle to switch.
+	const listButton = page.getByRole("button", { name: /^list$/i });
+	await expect(listButton).toBeVisible({ timeout: 10_000 });
+	await listButton.click();
+	await page.waitForTimeout(500);
+
+	// Find the first item card — the image link is the primary tap target.
+	const firstItemLink = page.locator('a[href*="/item/"]').first();
+	await expect(firstItemLink).toBeVisible({ timeout: 15_000 });
+
+	const startUrl = page.url();
+	await firstItemLink.tap();
+	await page.waitForURL(/\/item\//, { timeout: 5_000 });
+	expect(page.url()).not.toBe(startUrl);
+	expect(page.url()).toMatch(/\/item\//);
+});

@@ -11,7 +11,7 @@ import {
 	CarouselContent,
 	CarouselItem,
 } from "@/components/ui/carousel";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface SlideConfig {
@@ -123,6 +123,7 @@ export function OnboardingCarousel({ open, onClose }: OnboardingCarouselProps) {
 	return (
 		<Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
 			<DialogContent className="max-w-md gap-0 p-0 overflow-hidden">
+				<DialogTitle className="sr-only">{t("title")}</DialogTitle>
 				{/* Each slide includes its own hero so nothing escapes the carousel */}
 				<Carousel
 					setApi={setApi}

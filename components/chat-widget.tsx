@@ -564,8 +564,15 @@ export function ChatWidget() {
 				<button
 					type="button"
 					onClick={() => setIsOpen(true)}
-					className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6 ${isSignedIn ? "bottom-24" : "bottom-6"}`}
-					style={{ backgroundColor: "var(--primary)" }}
+					className="fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6"
+					style={{
+						backgroundColor: "var(--primary)",
+						// On mobile when signed in, sit above the tab bar; otherwise
+						// just respect the bottom safe-area (home indicator / URL bar).
+						bottom: isSignedIn
+							? "calc(5rem + env(safe-area-inset-bottom))"
+							: "calc(1.5rem + env(safe-area-inset-bottom))",
+					}}
 					aria-label="Open chat with Sharry"
 				>
 					<MessageCircle

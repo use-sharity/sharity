@@ -112,7 +112,13 @@ export function ItemsMap({ items, onItemClick }: ItemsMapProps) {
 
 	if (!MapComponents) {
 		return (
-			<div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+			<div
+				className="w-full bg-gray-100 rounded-lg flex items-center justify-center"
+				style={{
+					height:
+						"min(560px, calc(100svh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
+				}}
+			>
 				<p className="text-muted-foreground">Loading map...</p>
 			</div>
 		);
@@ -121,7 +127,13 @@ export function ItemsMap({ items, onItemClick }: ItemsMapProps) {
 	const { MapContainer, TileLayer, Marker, Popup } = MapComponents;
 
 	return (
-		<div className="w-full h-[400px] rounded-lg overflow-hidden border">
+		<div
+			className="w-full rounded-lg overflow-hidden border"
+			style={{
+				height:
+					"min(560px, calc(100svh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
+			}}
+		>
 			<MapContainer
 				center={DEFAULT_CENTER}
 				zoom={DEFAULT_ZOOM}

@@ -53,29 +53,32 @@ export function DiscoverCard({
 				</div>
 			)}
 
-			<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent p-5 pt-16 text-white pointer-events-none">
-				<div className="flex items-center gap-2 flex-wrap mb-2">
+			<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-4 pt-10 pb-3 text-white pointer-events-none">
+				<div className="flex items-center gap-2 flex-wrap mb-1.5">
 					{item.giveaway ? (
 						<Badge className="bg-emerald-500/90 hover:bg-emerald-500 text-white border-transparent">
 							{t("giveaway")}
 						</Badge>
 					) : null}
 					{item.category && (
-						<Badge variant="secondary" className="bg-white/20 text-white border-transparent backdrop-blur">
+						<Badge
+							variant="secondary"
+							className="bg-white/20 text-white border-transparent backdrop-blur"
+						>
 							{tCategories(item.category)}
 						</Badge>
 					)}
 				</div>
-				<h3 className="text-2xl font-semibold leading-tight line-clamp-2">
+				<h3 className="text-xl font-semibold leading-tight line-clamp-1">
 					{item.name}
 				</h3>
 				{item.description && (
-					<p className="text-sm text-white/80 line-clamp-2 mt-1">
+					<p className="text-sm text-white/80 line-clamp-1 mt-0.5">
 						{item.description}
 					</p>
 				)}
 				{item.location?.ward && (
-					<div className="inline-flex items-center gap-1 text-xs text-white/75 mt-2">
+					<div className="inline-flex items-center gap-1 text-xs text-white/75 mt-1">
 						<MapPin className="h-3 w-3" />
 						{item.location.ward}
 					</div>

@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Layers, List, Map } from "lucide-react";
@@ -15,7 +15,18 @@ import { ReactNode } from "react";
 import { UserLink } from "@/components/user-link";
 import { ItemCard } from "./item-card";
 import { DiscoverDeck } from "./discover-deck";
-import { CategoryFilter } from "./category-filter";
+import { PullToRefresh } from "./pull-to-refresh";
+
+const CategoryFilter = dynamic(
+	() => import("./category-filter").then((mod) => mod.CategoryFilter),
+	{
+		ssr: false,
+		loading: () => (
+			<div className="h-9 flex-1 rounded-md border bg-muted/30 animate-pulse" />
+		),
+	},
+);
+
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -52,10 +63,12 @@ export function ItemList({
 	action,
 	actionBack,
 	onEmptyMakeRequest,
+	hero,
 }: {
 	action?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
 	actionBack?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
 	onEmptyMakeRequest?: () => void;
+	hero?: ReactNode;
 }) {
 	const t = useTranslations("ItemList");
 	const items = useQuery(api.items.get);
@@ -94,9 +107,38 @@ export function ItemList({
 		? [...filteredItems].sort((a, b) => b._creationTime - a._creationTime)
 		: [];
 
+	const isDiscover = viewMode === "discover";
+	const controlsRef = useRef<HTMLDivElement | null>(null);
+
+	const itemsLoaded = items !== undefined;
+	useEffect(() => {
+		if (!isDiscover) return;
+		// On mobile the viewport is scroll-locked (see PullToRefresh), so
+		// scrollIntoView would leave the page frozen mid-scroll and hide the
+		// header. Desktop still uses scrollIntoView to focus the deck.
+		const isMobile = window.matchMedia("(max-width: 767px)").matches;
+		if (isMobile) return;
+		let raf1 = 0;
+		let raf2 = 0;
+		raf1 = requestAnimationFrame(() => {
+			raf2 = requestAnimationFrame(() => {
+				controlsRef.current?.scrollIntoView({
+					behavior: "auto",
+					block: "start",
+				});
+			});
+		});
+		return () => {
+			cancelAnimationFrame(raf1);
+			cancelAnimationFrame(raf2);
+		};
+	}, [isDiscover, itemsLoaded]);
+
 	return (
 		<div className="w-full space-y-4">
-			<div className="flex flex-col gap-3">
+			{isDiscover && <PullToRefresh />}
+			{hero}
+			<div ref={controlsRef} className="flex flex-col gap-3 scroll-mt-4">
 				<div className="flex gap-2">
 					<Input
 						placeholder={t("searchPlaceholder")}
@@ -109,10 +151,7 @@ export function ItemList({
 							variant="ghost"
 							size="icon"
 							onClick={() => setViewMode("discover")}
-							className={cn(
-								"rounded-r-none",
-								viewMode === "discover" && "bg-muted",
-							)}
+							className={cn("rounded-r-none", isDiscover && "bg-muted")}
 							aria-label="Discover (swipe)"
 						>
 							<Layers className="h-4 w-4" />
@@ -121,10 +160,7 @@ export function ItemList({
 							variant="ghost"
 							size="icon"
 							onClick={() => setViewMode("list")}
-							className={cn(
-								"rounded-none",
-								viewMode === "list" && "bg-muted",
-							)}
+							className={cn("rounded-none", viewMode === "list" && "bg-muted")}
 							aria-label="List"
 						>
 							<List className="h-4 w-4" />
@@ -156,11 +192,13 @@ export function ItemList({
 				</div>
 			</div>
 
-			<SharePrompt />
+			{!isDiscover && <SharePrompt />}
 
-			{viewMode === "discover" ? (
+			{isDiscover ? (
 				items === undefined ? (
-					<p>{t("loading")}</p>
+					<p className="text-center text-muted-foreground py-16">
+						{t("loading")}
+					</p>
 				) : (
 					<DiscoverDeck items={discoverItems} />
 				)

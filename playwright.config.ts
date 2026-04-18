@@ -37,5 +37,13 @@ export default defineConfig({
 			},
 			dependencies: ["setup"],
 		},
+		{
+			name: "mobile-a",
+			use: {
+				...devices["Pixel 5"],
+				storageState: "playwright/.auth/user-a.json",
+			},
+			dependencies: ["setup"],
+		},
 	],
 });

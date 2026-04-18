@@ -39,7 +39,11 @@ const FLY_DISTANCE = 600;
 // internal drag threshold is ~3px which is too permissive — a short flick
 // under it never fires onDragStart, so justDraggedRef stays false and onTap
 // navigates to /item/:id. Isis reported this on 2026-04-18.
-const TAP_MAX_MOVEMENT_PX = 8;
+// Value tuned for touch: iOS fingers commonly jitter 8-12px during a tap
+// (finger roll + contact area), so 8px was silently swallowing real taps on
+// device. 16px keeps the 30px flick regression suppressed while letting a
+// normal tap through. See e2e/discover-swipe.spec.ts.
+const TAP_MAX_MOVEMENT_PX = 16;
 // Only two cards in the DOM at once: the top one the user interacts with,
 // and the "already-there" card directly beneath it. The under-card is at
 // the EXACT same visual state as top — same scale, same y, same opacity.
@@ -102,7 +106,10 @@ export function DiscoverDeck({ items }: { items: Item[] }) {
 					// below. `svh` (small viewport height) accounts for mobile
 					// browser UI so the card doesn't duck under the bottom nav on
 					// the first paint. Clamped so desktop keeps a sane max size.
-					height: "min(560px, calc(100svh - 260px))",
+					// Sub value matched to items-map.tsx so both views have the
+					// same visual gap above the tab bar.
+					height:
+						"min(560px, calc(100svh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
 				}}
 			>
 				<AnimatePresence mode="popLayout" initial={false}>
@@ -169,16 +176,24 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 	const isTop = stackPos === 0;
 	const [isExiting, setIsExiting] = useState(false);
 
-	// framer-motion fires onTap on any pointer-up over the element, including
-	// after a completed drag (Trap 3 in the skill). Tracked in a ref so the
-	// onTap that fires right after onDragEnd still sees it set.
+	// Tap detection runs off NATIVE pointerdown/pointerup listeners rather
+	// than framer-motion's onTap. Reason: framer's onTap is unreliable when
+	// drag is on the same element (user report 2026-04-18: "tap sometimes
+	// fires, mostly doesn't"). Native pointer events are deterministic — we
+	// measure movement between pointerdown and pointerup ourselves and decide.
 	const justDraggedRef = useRef(false);
-	// Capture pointer down position via native listener on the outer drag
-	// element. Native listeners on an element fire BEFORE framer-motion's
-	// internal tap recognizer, which is why React synthetic onPointerDown
-	// doesn't help — it fires too late in the event loop order.
 	const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 	const dragRef = useRef<HTMLDivElement | null>(null);
+	// Captured at render time so the native listener (which closes over the
+	// initial mount's values) can read the latest state via ref. React state
+	// in the listener would be stale after re-renders.
+	const isTopRef = useRef(false);
+	const isExitingRef = useRef(false);
+	const onTapRef = useRef(onTap);
+	const itemIdRef = useRef(item._id);
+	isTopRef.current = stackPos === 0;
+	onTapRef.current = onTap;
+	itemIdRef.current = item._id;
 
 	useEffect(() => {
 		const el = dragRef.current;
@@ -186,8 +201,33 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 		const onDown = (e: PointerEvent) => {
 			pointerStartRef.current = { x: e.clientX, y: e.clientY };
 		};
+		const onUp = (e: PointerEvent) => {
+			const start = pointerStartRef.current;
+			pointerStartRef.current = null;
+			// Guard order matches priority: not top / exiting / drag just
+			// happened → not a tap. These bail before the movement check.
+			if (!isTopRef.current || isExitingRef.current) return;
+			if (justDraggedRef.current) return;
+			if (!start) return;
+			const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+			if (moved > TAP_MAX_MOVEMENT_PX) return;
+			onTapRef.current(itemIdRef.current);
+		};
+		const onCancel = () => {
+			pointerStartRef.current = null;
+		};
 		el.addEventListener("pointerdown", onDown);
-		return () => el.removeEventListener("pointerdown", onDown);
+		// Bubble phase — framer-motion's drag listeners run in capture phase,
+		// so onDragEnd has already set justDraggedRef synchronously by the
+		// time this fires. (Reset via setTimeout in onDragEnd happens after
+		// the current event dispatch completes, so it doesn't race us.)
+		el.addEventListener("pointerup", onUp);
+		el.addEventListener("pointercancel", onCancel);
+		return () => {
+			el.removeEventListener("pointerdown", onDown);
+			el.removeEventListener("pointerup", onUp);
+			el.removeEventListener("pointercancel", onCancel);
+		};
 	}, []);
 
 	const onDragStart = () => {
@@ -214,24 +254,9 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 		onDismiss(item._id, direction);
 	};
 
-	const handleTap = (
-		_e: unknown,
-		info: { point: { x: number; y: number } },
-	) => {
-		if (isExiting || justDraggedRef.current || !isTop) return;
-		// Explicit movement guard using framer's own tap info. If the pointer
-		// moved more than TAP_MAX_MOVEMENT_PX between pointerdown (captured via
-		// native listener) and the tap event, treat this as a swipe intent and
-		// suppress navigation. Fixes Isis' 2026-04-18 report: short left-flicks
-		// near the card edge were opening /item/:id instead of dismissing.
-		const start = pointerStartRef.current;
-		pointerStartRef.current = null;
-		if (start) {
-			const moved = Math.hypot(info.point.x - start.x, info.point.y - start.y);
-			if (moved > TAP_MAX_MOVEMENT_PX) return;
-		}
-		onTap(item._id);
-	};
+	// Keep exit ref in sync so the native pointerup listener sees the latest
+	// value without re-binding the effect.
+	isExitingRef.current = isExiting;
 
 	const exitDirection = useRef<1 | -1>(1);
 	if (isExiting) {
@@ -260,7 +285,6 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 			dragElastic={0.65}
 			onDragStart={onDragStart}
 			onDragEnd={onDragEnd}
-			onTap={handleTap}
 			// No animate/transition props on the stack-position changes —
 			// the under-card is already mounted at the same transform as
 			// the top. When the top exits, this card is simply revealed by

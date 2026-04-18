@@ -5,7 +5,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import {
 	Carousel,
 	CarouselContent,
@@ -130,9 +130,10 @@ export function ItemCard({
 						<Card className="gap-3 py-7">
 							<CardHeader className="gap-3">
 								{imageUrls.length > 0 && (
-									<div
+									<Link
+										href={`/item/${item._id}`}
 										className={cn(
-											"w-full relative rounded-md overflow-hidden bg-gray-100 group",
+											"block w-full relative rounded-md overflow-hidden bg-gray-100 group",
 											density === "compact" ? "aspect-4/3" : "aspect-video",
 										)}
 									>
@@ -166,7 +167,7 @@ export function ItemCard({
 												</>
 											)}
 										</Carousel>
-									</div>
+									</Link>
 								)}
 								<div className="flex justify-between items-start">
 									<CardTitle>

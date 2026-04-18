@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import { SignedIn } from "@clerk/nextjs";
 import {
@@ -27,6 +27,8 @@ const NAV_TABS_RIGHT = [
 
 export function MobileTabBar() {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const isSlim3 = searchParams.get("v") === "slim3";
 	const t = useTranslations("AppHeader");
 
 	// Strip locale prefix for matching (e.g., /en/calendar → /calendar)
@@ -45,7 +47,8 @@ export function MobileTabBar() {
 				key={href}
 				href={href}
 				className={cn(
-					"flex-1 flex flex-col items-center gap-1 px-1 pt-2.5 pb-1.5 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px",
+					"flex-1 flex flex-col items-center px-1 text-muted-foreground transition-colors border-t-[3px] border-transparent -mt-px",
+					isSlim3 ? "gap-0 pt-1 pb-0.5" : "gap-1 pt-2.5 pb-1.5",
 					isActive && "text-foreground border-t-foreground",
 				)}
 			>
@@ -66,8 +69,16 @@ export function MobileTabBar() {
 
 	return (
 		<SignedIn>
-			<nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-sm">
-				<div className="flex items-center justify-around px-2 pb-4">
+			<nav
+				className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-sm"
+				style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+			>
+				<div
+					className={cn(
+						"flex items-center justify-around px-2",
+						isSlim3 ? "pb-0" : "pb-2",
+					)}
+				>
 					{NAV_TABS.map(renderTab)}
 					<ShareItemSheet variant="tab" />
 					{NAV_TABS_RIGHT.map(renderTab)}
