@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import type { Doc } from "@/convex/_generated/dataModel";
 import type { ItemCategory } from "@/lib/constants";
 
-interface DiscoveryCardItem extends Doc<"items"> {
+export interface DiscoveryCardItem extends Doc<"items"> {
   imageUrls?: string[];
   category?: ItemCategory;
   location?: { lat: number; lng: number; address?: string; ward?: string };

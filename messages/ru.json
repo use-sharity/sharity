@@ -597,7 +597,11 @@
     "title": "Профиль пользователя",
     "memberSince": "Участник с {date}",
     "contactInfo": "Контакты",
+    "loadingItems": "Загружаем вещи...",
+    "noSharedItems": "Этот пользователь пока ничего не добавил.",
+    "sharedItems": "{count, plural, one {# вещь} few {# вещи} many {# вещей} other {# вещи}}",
     "tabs": {
+      "items": "Вещи",
       "ratings": "Оценки",
       "history": "История"
     }

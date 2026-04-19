@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { api, components, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, mutation, query } from "./_generated/server";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { CloudinaryClient } from "@imaxis/cloudinary-convex";
 import { vCloudinaryRef } from "./mediaTypes";
 import type { Doc } from "./_generated/dataModel";
@@ -45,6 +45,13 @@ type MediaImage =
   | { source: "cloudinary"; publicId: string; url: string }
   | { source: "storage"; storageId: Id<"_storage">; url: string };
 
+type PublicItem = Doc<"items"> & {
+  images: MediaImage[];
+  imageUrls: string[];
+  isRequested: boolean;
+  isOwn: boolean;
+};
+
 async function resolveImages(args: {
   ctx: { storage: { getUrl: (id: Id<"_storage">) => Promise<string | null> } };
   imageCloudinary?: { publicId: string; secureUrl: string }[];
@@ -65,6 +72,55 @@ async function resolveImages(args: {
   // Cloudinary-only: Convex Storage images are intentionally ignored to avoid
   // ever returning large raw Convex image URLs to the client.
   return { images: cloud, imageUrls: cloud.map((i) => i.url) };
+}
+
+async function getActiveClaimedItemIds(
+  ctx: QueryCtx,
+  userId: string,
+): Promise<Set<Id<"items">>> {
+  const myClaims = await ctx.db
+    .query("claims")
+    .withIndex("by_claimer", (q) => q.eq("claimerId", userId))
+    .collect();
+
+  return new Set(
+    myClaims
+      .filter((c) => {
+        if (c.status === "pending") return true;
+        if (c.status === "approved") {
+          return (
+            !c.returnedAt && !c.transferredAt && !c.expiredAt && !c.missingAt
+          );
+        }
+        return false;
+      })
+      .map((c) => c.itemId),
+  );
+}
+
+async function resolvePublicItem(args: {
+  ctx: QueryCtx;
+  item: Doc<"items">;
+  viewerId?: string;
+  claimedItemIds?: Set<Id<"items">>;
+}): Promise<PublicItem> {
+  const { images, imageUrls } = await resolveImages({
+    ctx: args.ctx,
+    imageCloudinary: args.item.imageCloudinary,
+    imageStorageIds: args.item.imageStorageIds,
+  });
+
+  const isOwn = args.viewerId === args.item.ownerId;
+
+  return {
+    ...args.item,
+    images,
+    imageUrls,
+    isRequested: isOwn
+      ? false
+      : (args.claimedItemIds?.has(args.item._id) ?? false),
+    isOwn,
+  };
 }
 
 function assertValidLeaseDaysLimits(args: {
@@ -277,68 +333,57 @@ export const get = query({
     }
 
     if (!identity) {
-      const itemsWithUrls = await Promise.all(
+      return Promise.all(
         items
           .filter((item) => !activeUnavailableOwners.has(item.ownerId))
-          .map(async (item) => {
-            const { images, imageUrls } = await resolveImages({
-              ctx,
-              imageCloudinary: item.imageCloudinary,
-              imageStorageIds: item.imageStorageIds,
-            });
-
-            return {
-              ...item,
-              images,
-              imageUrls,
-              isRequested: false,
-              isOwn: false,
-            };
-          }),
+          .map((item) => resolvePublicItem({ ctx, item })),
       );
-      return itemsWithUrls;
     }
 
-    const myClaims = await ctx.db
-      .query("claims")
-      .withIndex("by_claimer", (q) => q.eq("claimerId", identity.subject))
-      .collect();
-
-    const myClaimedItemIds = new Set(
-      myClaims
-        .filter((c) => {
-          if (c.status === "pending") return true;
-          if (c.status === "approved") {
-            return (
-              !c.returnedAt && !c.transferredAt && !c.expiredAt && !c.missingAt
-            );
-          }
-          return false;
-        })
-        .map((c) => c.itemId),
+    const myClaimedItemIds = await getActiveClaimedItemIds(
+      ctx,
+      identity.subject,
     );
 
-    const itemsWithUrls = await Promise.all(
+    return Promise.all(
       items
         .filter((item) => !activeUnavailableOwners.has(item.ownerId))
-        .map(async (item) => {
-          const { images, imageUrls } = await resolveImages({
+        .map((item) =>
+          resolvePublicItem({
             ctx,
-            imageCloudinary: item.imageCloudinary,
-            imageStorageIds: item.imageStorageIds,
-          });
-
-          const isOwn = item.ownerId === identity.subject;
-          return {
-            ...item,
-            images,
-            imageUrls,
-            isRequested: isOwn ? false : myClaimedItemIds.has(item._id),
-            isOwn,
-          };
-        }),
+            item,
+            viewerId: identity.subject,
+            claimedItemIds: myClaimedItemIds,
+          }),
+        ),
     );
-    return itemsWithUrls;
+  },
+});
+
+export const getByOwner = query({
+  args: { ownerId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const claimedItemIds = identity
+      ? await getActiveClaimedItemIds(ctx, identity.subject)
+      : undefined;
+
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
+      .order("desc")
+      .collect();
+
+    return Promise.all(
+      items.map((item) =>
+        resolvePublicItem({
+          ctx,
+          item,
+          viewerId: identity?.subject,
+          claimedItemIds,
+        }),
+      ),
+    );
   },
 });
 

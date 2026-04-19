@@ -11,6 +11,7 @@ import { UserHistory } from "@/components/user-history";
 import { ContactInfo } from "@/components/contact-info";
 import { CloudinaryImage } from "@/components/cloudinary-image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserSharedItemsList } from "@/components/user-shared-items-list";
 import { User, MapPin, ArrowLeft, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -141,12 +142,17 @@ export default function UserProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Tabs for History and Ratings */}
-        <Tabs defaultValue="ratings" className="w-full">
-          <TabsList className="w-full grid grid-cols-2">
+        {/* Tabs for shared items, history, and ratings */}
+        <Tabs defaultValue="items" className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="items">{t("tabs.items")}</TabsTrigger>
             <TabsTrigger value="ratings">{t("tabs.ratings")}</TabsTrigger>
             <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="items" className="mt-4">
+            <UserSharedItemsList userId={userId} />
+          </TabsContent>
 
           <TabsContent value="ratings" className="mt-4 space-y-4">
             <RatingSummary userId={userId} />
