@@ -9,242 +9,223 @@ import { Layers, List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
-import { Doc } from "../convex/_generated/dataModel";
-
-import { ReactNode } from "react";
-import { UserLink } from "@/components/user-link";
-import { ItemCard } from "./item-card";
+import { DiscoveryItemsList } from "@/components/discovery-items-list";
+import { CategoryFilter } from "./category-filter";
 import { DiscoverDeck } from "./discover-deck";
 import { PullToRefresh } from "./pull-to-refresh";
-
-const CategoryFilter = dynamic(
-	() => import("./category-filter").then((mod) => mod.CategoryFilter),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="h-9 flex-1 rounded-md border bg-muted/30 animate-pulse" />
-		),
-	},
-);
-
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { SharePrompt } from "@/components/share-prompt";
 import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 // Dynamic import to avoid SSR hydration issues with Leaflet
 function ItemsMapLoading() {
-	const t = useTranslations("ItemList");
-	return (
-		<div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
-			<p className="text-muted-foreground">{t("loadingMap")}</p>
-		</div>
-	);
+  const t = useTranslations("ItemList");
+  return (
+    <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <p className="text-muted-foreground">{t("loadingMap")}</p>
+    </div>
+  );
 }
 
 const ItemsMap = dynamic(
-	() => import("./items-map").then((mod) => mod.ItemsMap),
-	{
-		ssr: false,
-		loading: () => <ItemsMapLoading />,
-	},
+  () => import("./items-map").then((mod) => mod.ItemsMap),
+  {
+    ssr: false,
+    loading: () => <ItemsMapLoading />,
+  },
 );
 
 type ViewMode = "discover" | "list" | "map";
 
 function getInitialViewMode(): ViewMode {
-	if (typeof window === "undefined") return "list";
-	return window.matchMedia("(max-width: 767px)").matches ? "discover" : "list";
+  if (typeof window === "undefined") return "list";
+  return window.matchMedia("(max-width: 767px)").matches ? "discover" : "list";
 }
 
 export function ItemList({
-	action,
-	actionBack,
-	onEmptyMakeRequest,
-	hero,
+  onEmptyMakeRequest,
+  hero,
 }: {
-	action?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
-	actionBack?: (item: Doc<"items"> & { isRequested?: boolean }) => ReactNode;
-	onEmptyMakeRequest?: () => void;
-	hero?: ReactNode;
+  onEmptyMakeRequest?: () => void;
+  hero?: ReactNode;
 }) {
-	const t = useTranslations("ItemList");
-	const items = useQuery(api.items.get);
-	const searchParams = useSearchParams();
-	const urlQuery = searchParams.get("q") ?? "";
-	const [search, setSearch] = useState(() => urlQuery);
-	const [selectedCategories, setSelectedCategories] = useState<ItemCategory[]>(
-		[],
-	);
-	const [viewMode, setViewMode] = useState<ViewMode>("list");
-	const [giveawayOnly, setGiveawayOnly] = useState(false);
+  const t = useTranslations("ItemList");
+  const items = useQuery(api.items.get);
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q") ?? "";
+  const [search, setSearch] = useState(() => urlQuery);
+  const [selectedCategories, setSelectedCategories] = useState<ItemCategory[]>(
+    [],
+  );
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [giveawayOnly, setGiveawayOnly] = useState(false);
+  const [hideMyItems, setHideMyItems] = useState(false);
 
-	useEffect(() => {
-		setViewMode(getInitialViewMode());
-	}, []);
+  useEffect(() => {
+    setViewMode(getInitialViewMode());
+  }, []);
 
-	const filteredItems = items?.filter((item) => {
-		const needle = search.trim().toLowerCase();
-		const itemText = `${item.name} ${item.description ?? ""}`.toLowerCase();
+  const filteredItems = items?.filter((item) => {
+    const needle = search.trim().toLowerCase();
+    const itemText = `${item.name} ${item.description ?? ""}`.toLowerCase();
 
-		// (1) keyword AND category (when both are set)
-		const matchesSearch = needle.length === 0 || itemText.includes(needle);
+    const matchesSearch = needle.length === 0 || itemText.includes(needle);
 
-		// (2) categories are OR'd together
-		const matchesCategory =
-			selectedCategories.length === 0 ||
-			(item.category !== undefined &&
-				selectedCategories.includes(item.category));
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      (item.category !== undefined &&
+        selectedCategories.includes(item.category));
 
-		const matchesGiveaway = !giveawayOnly || Boolean(item.giveaway);
+    const matchesGiveaway = !giveawayOnly || Boolean(item.giveaway);
 
-		return matchesSearch && matchesCategory && matchesGiveaway;
-	});
+    const matchesOwnership = !hideMyItems || !item.isOwn;
 
-	const discoverItems = filteredItems
-		? [...filteredItems].sort((a, b) => b._creationTime - a._creationTime)
-		: [];
+    return (
+      matchesSearch && matchesCategory && matchesGiveaway && matchesOwnership
+    );
+  });
 
-	const isDiscover = viewMode === "discover";
-	const controlsRef = useRef<HTMLDivElement | null>(null);
+  const discoverItems = filteredItems
+    ? [...filteredItems].sort((a, b) => b._creationTime - a._creationTime)
+    : [];
 
-	const itemsLoaded = items !== undefined;
-	useEffect(() => {
-		if (!isDiscover) return;
-		// On mobile the viewport is scroll-locked (see PullToRefresh), so
-		// scrollIntoView would leave the page frozen mid-scroll and hide the
-		// header. Desktop still uses scrollIntoView to focus the deck.
-		const isMobile = window.matchMedia("(max-width: 767px)").matches;
-		if (isMobile) return;
-		let raf1 = 0;
-		let raf2 = 0;
-		raf1 = requestAnimationFrame(() => {
-			raf2 = requestAnimationFrame(() => {
-				controlsRef.current?.scrollIntoView({
-					behavior: "auto",
-					block: "start",
-				});
-			});
-		});
-		return () => {
-			cancelAnimationFrame(raf1);
-			cancelAnimationFrame(raf2);
-		};
-	}, [isDiscover, itemsLoaded]);
+  const isDiscover = viewMode === "discover";
+  const controlsRef = useRef<HTMLDivElement | null>(null);
 
-	return (
-		<div className="w-full space-y-4">
-			{isDiscover && <PullToRefresh />}
-			{hero}
-			<div ref={controlsRef} className="flex flex-col gap-3 scroll-mt-4">
-				<div className="flex gap-2">
-					<Input
-						placeholder={t("searchPlaceholder")}
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						className="flex-1"
-					/>
-					<div className="flex border rounded-md">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setViewMode("discover")}
-							className={cn("rounded-r-none", isDiscover && "bg-muted")}
-							aria-label="Discover (swipe)"
-						>
-							<Layers className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setViewMode("list")}
-							className={cn("rounded-none", viewMode === "list" && "bg-muted")}
-							aria-label="List"
-						>
-							<List className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setViewMode("map")}
-							className={cn("rounded-l-none", viewMode === "map" && "bg-muted")}
-							aria-label="Map"
-						>
-							<Map className="h-4 w-4" />
-						</Button>
-					</div>
-				</div>
-				<div className="flex gap-2 items-center">
-					<CategoryFilter
-						selected={selectedCategories}
-						onChange={setSelectedCategories}
-					/>
-					<label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
-						<Switch
-							size="sm"
-							checked={giveawayOnly}
-							onCheckedChange={setGiveawayOnly}
-						/>
-						{t("giveaway")}
-					</label>
-				</div>
-			</div>
+  const itemsLoaded = items !== undefined;
+  useEffect(() => {
+    if (!isDiscover) return;
+    // On mobile the viewport is scroll-locked (see PullToRefresh), so
+    // scrollIntoView would leave the page frozen mid-scroll and hide the
+    // header. Desktop still uses scrollIntoView to focus the deck.
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) return;
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        controlsRef.current?.scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [isDiscover, itemsLoaded]);
 
-			{!isDiscover && <SharePrompt />}
+  return (
+    <div className="w-full space-y-4">
+      {isDiscover && <PullToRefresh />}
+      {hero}
+      <div ref={controlsRef} className="flex flex-col gap-3 scroll-mt-4">
+        <div className="flex gap-2">
+          <Input
+            placeholder={t("searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1"
+          />
+          <div className="flex border rounded-md">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("discover")}
+              className={cn("rounded-r-none", isDiscover && "bg-muted")}
+              aria-label="Discover (swipe)"
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("list")}
+              className={cn("rounded-none", viewMode === "list" && "bg-muted")}
+              aria-label="List"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("map")}
+              className={cn("rounded-l-none", viewMode === "map" && "bg-muted")}
+              aria-label="Map"
+            >
+              <Map className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <CategoryFilter
+            selected={selectedCategories}
+            onChange={setSelectedCategories}
+            className="flex-1 min-w-36"
+          />
+          <label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
+            <Switch
+              size="sm"
+              checked={hideMyItems}
+              onCheckedChange={setHideMyItems}
+            />
+            {t("hideMyItems")}
+          </label>
+          <label className="flex items-center gap-1.5 shrink-0 text-sm cursor-pointer">
+            <Switch
+              size="sm"
+              checked={giveawayOnly}
+              onCheckedChange={setGiveawayOnly}
+            />
+            {t("giveaway")}
+          </label>
+        </div>
+      </div>
 
-			{isDiscover ? (
-				items === undefined ? (
-					<p className="text-center text-muted-foreground py-16">
-						{t("loading")}
-					</p>
-				) : (
-					<DiscoverDeck items={discoverItems} />
-				)
-			) : viewMode === "map" ? (
-				<div className="space-y-2">
-					{items === undefined ? (
-						<p>{t("loading")}</p>
-					) : (
-						<>
-							<ItemsMap items={filteredItems || []} />
-							{filteredItems?.filter((i) => i.location).length === 0 && (
-								<p className="text-sm text-muted-foreground text-center">
-									{t("noLocationItems")}
-								</p>
-							)}
-						</>
-					)}
-				</div>
-			) : (
-				<div className="grid gap-4">
-					{items === undefined ? (
-						<p>{t("loading")}</p>
-					) : items.length === 0 ? (
-						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-					) : filteredItems?.length === 0 ? (
-						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-					) : (
-						filteredItems?.map((item) => (
-							<ItemCard
-								key={item._id}
-								item={item}
-								backContent={actionBack && actionBack(item)}
-								footer={
-									<div className="flex justify-between items-center w-full">
-										<UserLink userId={item.ownerId} size="sm" />
-										{action && action(item)}
-									</div>
-								}
-							/>
-						))
-					)}
-					{onEmptyMakeRequest && filteredItems && filteredItems.length > 0 && (
-						<WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-					)}
-				</div>
-			)}
-		</div>
-	);
+      {!isDiscover && <SharePrompt />}
+
+      {isDiscover ? (
+        items === undefined ? (
+          <p className="text-center text-muted-foreground py-16">
+            {t("loading")}
+          </p>
+        ) : (
+          <DiscoverDeck items={discoverItems} />
+        )
+      ) : viewMode === "map" ? (
+        <div className="space-y-2">
+          {items === undefined ? (
+            <p>{t("loading")}</p>
+          ) : (
+            <>
+              <ItemsMap items={filteredItems || []} />
+              {filteredItems?.filter((i) => i.location).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  {t("noLocationItems")}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <DiscoveryItemsList
+          items={items === undefined ? undefined : (filteredItems ?? [])}
+          loadingLabel={t("loading")}
+          emptyContent={
+            <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
+          }
+          afterList={
+            onEmptyMakeRequest && filteredItems && filteredItems.length > 0 ? (
+              <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
+            ) : null
+          }
+        />
+      )}
+    </div>
+  );
 }

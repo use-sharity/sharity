@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <mask id="ring-cutout">
+      <rect width="200" height="200" fill="white"/>
+      <circle cx="100" cy="100" r="56" fill="black"/>
+    </mask>
+    <mask id="center-mask">
+      <circle cx="100" cy="100" r="46" fill="white"/>
+    </mask>
+  </defs>
+  <!-- Four rounded squares with ring cutout -->
+  <g mask="url(#ring-cutout)">
+    <rect x="8" y="8" width="76" height="76" rx="16" ry="16" fill="#2d4a44"/>
+    <rect x="116" y="8" width="76" height="76" rx="16" ry="16" fill="#2d4a44"/>
+    <rect x="8" y="116" width="76" height="76" rx="16" ry="16" fill="#2d4a44"/>
+    <rect x="116" y="116" width="76" height="76" rx="16" ry="16" fill="#2d4a44"/>
+  </g>
+  <!-- Inner circle -->
+  <circle cx="100" cy="100" r="36" fill="#68958e"/>
+</svg>

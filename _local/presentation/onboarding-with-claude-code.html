@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code for Fast Project Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+<style>
+  :root {
+    --sharity-primary: #3f635b;
+    --sharity-dark-primary: #2d4a44;
+    --sharity-secondary: #68958e;
+    --sharity-light: #f8f3ed;
+    --sharity-gray: #8C8C8C;
+    --sharity-gray-light: #B0B0B0;
+    --sharity-dark: #1a2b28;
+    --sharity-darker: #506b64;
+    --danger: #FF6B6B;
+    --success: #3f635b;
+    --accent: #d4a64a;
+    --font-heading: 'Montserrat', 'SF Pro Display', -apple-system, sans-serif;
+    --font-body: 'Inter', 'SF Pro Text', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* ====== BASE ====== */
+  .reveal {
+    font-family: var(--font-body); font-size: 32px; font-weight: 400;
+    line-height: 1.5; letter-spacing: -0.01em; color: #d4d4d4;
+    background: var(--sharity-darker);
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ====== HEADINGS ====== */
+  .reveal h1 { font-family: var(--font-heading); font-size: 2.8em; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: #fff; text-transform: none; margin-bottom: 0.4em; }
+  .reveal h2 { font-family: var(--font-heading); font-size: 1.8em; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; margin-bottom: 0.5em; }
+  .reveal h3 { font-family: var(--font-heading); font-size: 1.15em; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; color: var(--sharity-light); }
+
+  /* ====== BODY TEXT ====== */
+  .reveal p { color: #d4d4d4; line-height: 1.6; margin-bottom: 0.8em; }
+  .reveal li { color: #d4d4d4; line-height: 1.5; }
+  .reveal strong { color: #fff; font-weight: 600; }
+
+  /* ====== LAYOUT ====== */
+  .reveal .slides section { text-align: left; box-sizing: border-box; overflow: visible; padding: 40px 50px !important; }
+  .reveal .slides section.center-slide { text-align: center; }
+  .reveal .slides section * { box-sizing: border-box; max-width: 100%; }
+
+  /* ====== CODE ====== */
+  .reveal pre { width: 100%; font-size: 0.5em; border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  .reveal pre code { font-family: var(--font-mono); font-weight: 400; line-height: 1.6; letter-spacing: 0; max-height: 600px; padding: 20px 24px; background: #f0ece6; color: #2d4a44; border-left: 3px solid var(--sharity-primary); border-radius: 10px; }
+  .reveal code { font-family: var(--font-mono); font-size: 0.88em; }
+
+  /* ====== TABLES ====== */
+  .reveal table { font-family: var(--font-body); font-size: 0.7em; margin: 0 auto; border-collapse: separate; border-spacing: 0; }
+  .reveal table th { font-family: var(--font-heading); font-weight: 600; font-size: 1.05em; letter-spacing: 0.02em; text-transform: uppercase; background: var(--sharity-primary); color: #fff; padding: 12px 20px; }
+  .reveal table th:first-child { border-radius: 8px 0 0 0; }
+  .reveal table th:last-child { border-radius: 0 8px 0 0; }
+  .reveal table td { border-bottom: 1px solid rgba(255,255,255,0.06); color: #d4d4d4; padding: 10px 20px; }
+  .reveal table tr:hover td { background: rgba(255,255,255,0.03); }
+
+  /* ====== CONTROLS ====== */
+  .reveal .progress span { background: var(--sharity-primary); }
+  .reveal .controls { color: var(--sharity-primary); }
+  .reveal .slide-number { font-family: var(--font-mono); font-size: 0.5em; color: var(--sharity-gray); }
+  .reveal ol { padding-left: 1.2em; }
+  .reveal ol li::marker { color: var(--accent); font-family: var(--font-heading); font-weight: 700; }
+
+  /* ====== GLASSMORPHISM CARD ====== */
+  .glass-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin: 12px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  /* ====== COMPONENTS ====== */
+  .badge { display: inline-block; padding: 6px 20px; border-radius: 20px; font-family: var(--font-heading); font-size: 0.55em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 4px; }
+  .badge-primary { background: var(--sharity-primary); color: #fff; }
+  .badge-accent { background: var(--accent); color: #142e28; }
+  .badge-gray { background: rgba(255,255,255,0.06); color: rgba(139,175,168,0.85); border: 1px solid rgba(255,255,255,0.10); }
+
+  .highlight-box { background: rgba(63,99,91,0.1); border: 1px solid rgba(63,99,91,0.3); border-radius: 14px; padding: 24px 28px; margin: 14px 0; width: 100%; }
+
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; max-width: 100%; }
+  .comparison .col { background: rgba(255,248,230,0.06); border-radius: 14px; padding: 22px 24px; border: 1.5px solid rgba(255,248,230,0.10); min-width: 0; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+  .comparison .col p, .comparison .col li { color: var(--sharity-light); }
+  .comparison .col ul.clean li::before { color: var(--accent); }
+  .comparison .col strong { color: var(--sharity-light); }
+  .comparison .col h3 { margin-top: 0; text-align: center; font-size: 1.05em; margin-bottom: 12px; }
+
+  .pipeline-step { background: rgba(255,255,255,0.04); border-left: 4px solid var(--sharity-primary); padding: 12px 18px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 0.75em; line-height: 1.5; width: 100%; }
+  .pipeline-step strong { font-family: var(--font-heading); font-weight: 600; font-size: 1.05em; }
+  .pipeline-step.pain { border-left-color: var(--sharity-gray); background: rgba(140,140,140,0.06); }
+  .pipeline-step.win { border-left-color: var(--accent); background: rgba(212,166,74,0.06); }
+
+  .big-number { font-family: var(--font-heading); font-size: 3.2em; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); text-align: center; margin: 16px 0; line-height: 1.1; }
+  .big-number span { font-family: var(--font-body); font-size: 0.3em; font-weight: 400; letter-spacing: 0; color: var(--sharity-gray-light); display: block; margin-top: 4px; }
+
+  .verdict { background: linear-gradient(135deg, rgba(63,99,91,0.12), rgba(212,166,74,0.06)); border: 1px solid rgba(63,99,91,0.25); border-radius: 16px; padding: 26px 30px; text-align: center; margin-top: 16px; width: 100%; }
+  .verdict h3 { color: var(--accent); margin-top: 0; }
+
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { padding: 7px 0; line-height: 1.45; }
+  ul.clean li::before { content: "\2192"; color: var(--accent); font-weight: 600; font-family: var(--font-heading); margin-right: 0.4em; }
+
+  .flow-arrow { text-align: center; font-size: 1.6em; color: var(--accent); margin: 6px 0; opacity: 0.7; }
+  .small { font-size: 0.72em; font-weight: 300; color: var(--sharity-gray); letter-spacing: 0.01em; }
+  .fragment-list li { margin-bottom: 10px; font-size: 0.95em; }
+
+  .floating-logo {
+    position: absolute;
+    pointer-events: none;
+    filter: blur(0.5px);
+    z-index: 0;
+  }
+
+  .fixed-branding {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 120px;
+    opacity: 0.9;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .icon-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 20px; max-width: 100%; }
+  .icon-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 18px 14px; text-align: center; min-width: 0; overflow: hidden; }
+  .icon-card .label { font-family: var(--font-heading); font-size: 0.72em; font-weight: 600; color: var(--sharity-light); }
+  .icon-card .sub { font-size: 0.52em; color: rgba(212,166,74,0.85); margin-top: 6px; line-height: 1.3; }
+
+  .workflow-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 32px; max-width: 65%; margin-left: auto; margin-right: auto; }
+  .wf-step { background: #f0ece6; border: 1px solid rgba(45,74,68,0.2); border-radius: 12px; padding: 14px 10px; text-align: center; font-size: 0.6em; min-width: 0; overflow: hidden; }
+  .wf-step .num { font-family: var(--font-heading); font-size: 1.8em; font-weight: 800; color: var(--accent); }
+  .wf-step .wf-label { font-weight: 600; color: #2d4a44; margin: 4px 0; }
+  .wf-step .wf-desc { color: #6b8a84; font-size: 0.9em; }
+
+  .tree { font-family: var(--font-mono); font-size: 0.72em; line-height: 1.7; color: #2d4a44; background: #f0ece6; border-radius: 10px; padding: 18px 22px; border-left: 3px solid var(--sharity-primary); }
+  .tree .file { color: #3f635b; }
+  .tree .key { color: #2d4a44; font-weight: 600; }
+  .tree .comment { color: #8C8C8C; }
+
+  /* ====== CONTEXT DIAGRAM ====== */
+  .ctx-node {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 20px;
+    text-align: center;
+    display: inline-block;
+  }
+  .ctx-node img { display: block; margin: 0 auto 4px; }
+  .ctx-label { font-size: 0.5em; color: var(--sharity-light); font-family: var(--font-heading); font-weight: 600; }
+  .ctx-hub {
+    background: rgba(212,166,74,0.08);
+    border: 1.5px solid rgba(212,166,74,0.3);
+    border-radius: 16px;
+    padding: 14px 28px;
+    text-align: center;
+  }
+
+  /* ====== CUSTOM FRAGMENT: ZOOM-IN ====== */
+  .fragment.zoom-in { opacity: 0; transform: scale(0.85); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .fragment.zoom-in.visible { opacity: 1; transform: scale(1); }
+</style>
+</head>
+<body>
+<div class="reveal">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="fixed-branding" style="position:fixed;bottom:30px;left:30px;width:120px;opacity:0.9;z-index:1;pointer-events:none;"><defs><mask id="ring-cutout"><rect width="200" height="200" fill="white"/><circle cx="100" cy="100" r="56" fill="black"/></mask></defs><g mask="url(#ring-cutout)"><rect x="8" y="8" width="76" height="76" rx="16" ry="16" fill="#f0ece6" stroke="#ffffff" stroke-width="3"/><rect x="116" y="8" width="76" height="76" rx="16" ry="16" fill="#f0ece6" stroke="#ffffff" stroke-width="3"/><rect x="8" y="116" width="76" height="76" rx="16" ry="16" fill="#f0ece6" stroke="#ffffff" stroke-width="3"/><rect x="116" y="116" width="76" height="76" rx="16" ry="16" fill="#f0ece6" stroke="#ffffff" stroke-width="3"/></g><circle cx="100" cy="100" r="36" fill="#8aafa8"/></svg>
+<div class="slides">
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<section class="center-slide">
+
+  <!-- Tech icons — spread wide, no overlap -->
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(-12deg); width:80px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:4%; right:18%; transform:rotate(18deg); width:70px; opacity:0.09;">
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:18%; right:6%; transform:rotate(-8deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:20%; right:22%; transform:rotate(22deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(-20deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(14deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/playwright/ffffff" class="floating-logo" style="bottom:18%; right:28%; transform:rotate(10deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="bottom:6%; right:36%; transform:rotate(-15deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="bottom:8%; right:22%; transform:rotate(5deg); width:50px; opacity:0.05;">
+
+  <h1>Claude Code for Fast<br>Project Onboarding</h1>
+  <h3 style="color: var(--accent);">How AI turns weeks of ramp-up into days</h3>
+  <p class="small" style="margin-top:40px;">Dmitry Surkov / Dalat AI Meetup / 2026</p>
+
+  <!-- Context flow diagram (Excalidraw style via rough.js) -->
+  <div style="position: absolute; top: 500px; left: 50px; width: 1820px; height: 520px;">
+    <svg id="ctx-diagram" viewBox="0 0 1820 520" style="width: 100%; height: 100%;"></svg>
+  </div>
+</section>
+
+<!-- ===== SLIDE 2: THE PROJECT ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(15deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(-18deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(10deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="top:20%; right:20%; transform:rotate(-25deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(20deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(-10deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/leaflet/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(12deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/radixui/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(-8deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(8deg); width:50px; opacity:0.05;">
+
+  <h2>The Sharity Project</h2>
+  <p>A sharing economy platform for Da Lat — people lend and find things for temporary use.</p>
+  <div class="icon-grid">
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/nextdotjs/f8f3ed" alt="Next.js" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">Next.js 16</div>
+      <div class="sub">App Router + React 19</div>
+    </div>
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/convex/f8f3ed" alt="Convex" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">Convex</div>
+      <div class="sub">Serverless DB + Functions</div>
+    </div>
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/clerk/f8f3ed" alt="Clerk" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">Clerk</div>
+      <div class="sub">OAuth + Passwordless Auth</div>
+    </div>
+  </div>
+  <div class="icon-grid" style="margin-top: 14px;">
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/tailwindcss/f8f3ed" alt="Tailwind CSS" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">Tailwind CSS 4</div>
+      <div class="sub">Utility-first styling</div>
+    </div>
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/pnpm/f8f3ed" alt="pnpm" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">pnpm</div>
+      <div class="sub">Fast package manager</div>
+    </div>
+    <div class="icon-card">
+      <img src="https://cdn.simpleicons.org/typescript/f8f3ed" alt="TypeScript" style="width:48px; height:48px; margin-bottom:8px;">
+      <div class="label">TypeScript 5</div>
+      <div class="sub">Strict types, no any</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SLIDE 3: THE CHALLENGE ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:4%; right:3%; transform:rotate(-15deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:4%; right:17%; transform:rotate(12deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:18%; right:6%; transform:rotate(-22deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/playwright/ffffff" class="floating-logo" style="top:20%; right:22%; transform:rotate(18deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(-5deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(25deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="bottom:16%; right:28%; transform:rotate(-12deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="bottom:4%; right:36%; transform:rotate(8deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="bottom:6%; right:22%; transform:rotate(15deg); width:50px; opacity:0.05;">
+
+  <h2>The Challenge</h2>
+  <p>Joining a project mid-flight with unfamiliar stack and conventions</p>
+  <div class="comparison">
+    <div class="col">
+      <h3 style="color: rgba(139,175,168,0.85);">Traditional Onboarding</h3>
+      <ul class="clean">
+        <li class="fragment">Read docs for days</li>
+        <li class="fragment">Ask teammates endless questions</li>
+        <li class="fragment">Trial-and-error with conventions</li>
+        <li class="fragment">First meaningful PR in 1-2 weeks</li>
+      </ul>
+      <p class="fragment" style="text-align:center; margin-top: 20px;">
+        <span class="badge badge-gray">2-3 weeks</span>
+      </p>
+    </div>
+    <div class="col">
+      <h3 style="color: #b8892e;">AI-Assisted Onboarding</h3>
+      <ul class="clean">
+        <li class="fragment">AI reads the entire codebase</li>
+        <li class="fragment">Understands patterns instantly</li>
+        <li class="fragment">Follows conventions from day one</li>
+        <li class="fragment">First meaningful PR in 1-2 days</li>
+      </ul>
+      <p class="fragment" style="text-align:center; margin-top: 20px;">
+        <span class="badge badge-accent">2-3 days</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SLIDE 4: CHROME EXTENSION ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(16deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(-10deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(22deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/leaflet/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(-18deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/radixui/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(8deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(-14deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(28deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(-6deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(5deg); width:50px; opacity:0.05;">
+
+  <h2>Chrome Extension: The Context Bridge</h2>
+  <p>Claude in Chrome connects your browser tools directly to Claude Code via MCP</p>
+  <div class="workflow-grid">
+    <div class="wf-step fragment zoom-in">
+      <img src="https://cdn.simpleicons.org/notion/3f635b" alt="Notion" style="width:36px; height:36px; margin-bottom:4px;">
+      <div class="num">1</div>
+      <div class="wf-label">Notion</div>
+      <div class="wf-desc">Read project specs, user stories, and requirements</div>
+    </div>
+    <div class="wf-step fragment zoom-in">
+      <img src="https://cdn.simpleicons.org/figma/3f635b" alt="Figma" style="width:36px; height:36px; margin-bottom:4px;">
+      <div class="num">2</div>
+      <div class="wf-label">Figma</div>
+      <div class="wf-desc">Inspect designs, extract colors, spacing, components</div>
+    </div>
+    <div class="wf-step fragment zoom-in">
+      <img src="https://cdn.simpleicons.org/miro/3f635b" alt="Miro" style="width:36px; height:36px; margin-bottom:4px;">
+      <div class="num">3</div>
+      <div class="wf-label">Miro</div>
+      <div class="wf-desc">Understand system architecture and data flows</div>
+    </div>
+  </div>
+  <div class="highlight-box fragment" style="margin-top: 20px;">
+    <p style="text-align:center; margin: 0;"><strong>One agent, one context</strong> — no copy-pasting between tabs. Claude reads what you see in the browser and uses it to write code.</p>
+  </div>
+</section>
+
+<!-- ===== SLIDE 5: THE REALIZATION ===== -->
+<section class="center-slide">
+
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(-16deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(12deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(20deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/playwright/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(-10deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(15deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(-22deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="bottom:16%; right:28%; transform:rotate(8deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/radixui/ffffff" class="floating-logo" style="bottom:4%; right:36%; transform:rotate(-14deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="bottom:6%; right:22%; transform:rotate(25deg); width:50px; opacity:0.05;">
+
+  <h2 style="color: var(--accent); font-size: 1.4em; margin-bottom: 0.8em;">The Realization</h2>
+  <div class="highlight-box" style="display: inline-block; max-width: 800px;">
+    <h1 style="font-size: 1.8em; margin-bottom: 0.2em; line-height: 1.2;">"This is almost all you need<br>to be onboarded"</h1>
+    <p style="color: rgba(212,166,74,0.85); margin: 0;">Browser context + codebase access + CLAUDE.md = full project understanding</p>
+  </div>
+</section>
+
+<!-- ===== SLIDE 6: SKILLS SYSTEM ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(-8deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(20deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(-15deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(12deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(-20deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(8deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(18deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(-10deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/leaflet/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(14deg); width:50px; opacity:0.05;">
+
+  <h2>Skills System</h2>
+  <p>CLAUDE.md and skills teach AI your project's DNA</p>
+  <div class="tree">
+    <span class="key">.claude/</span><br>
+    |-- <span class="file">CLAUDE.md</span> <span class="comment"># Global rules, env vars, behavioral patterns</span><br>
+    <span class="key">project/</span><br>
+    |-- <span class="file">CLAUDE.md</span> <span class="comment"># Tech stack, code style, commit conventions</span><br>
+    <span class="key">.claude/skills/</span><br>
+    |-- <span class="file">react-patterns/</span> <span class="comment"># Hooks order, import conventions</span><br>
+    |-- <span class="file">convex-patterns/</span> <span class="comment"># Backend schema, mutations, auth flow</span><br>
+    |-- <span class="file">leaflet-maps/</span> <span class="comment"># Map integration patterns</span><br>
+    |-- <span class="file">revealjs-presentation/</span> <span class="comment"># This very presentation!</span>
+  </div>
+  <ul class="clean" style="margin-top: 16px;">
+    <li class="fragment">Code style enforced: tabs, double quotes, strict TS</li>
+    <li class="fragment">Naming conventions: <code>is*</code> booleans, <code>*At</code> timestamps, PascalCase components</li>
+    <li class="fragment">Commit format: <code>type(scope): description</code></li>
+  </ul>
+</section>
+
+<!-- ===== SLIDE 7: BRIDGING TOOLS ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(14deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(-12deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(22deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/playwright/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(-18deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(10deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(-25deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/radixui/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(16deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(-8deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(-5deg); width:50px; opacity:0.05;">
+
+  <h2>Bridging Tools</h2>
+  <p>Skills that connect context to code</p>
+  <div class="pipeline-step win fragment">
+    <strong>Chrome Extension (MCP)</strong><br>
+    Read Notion specs, Figma designs, Miro boards — browser context feeds directly into Claude Code.
+  </div>
+  <div class="flow-arrow fragment">&darr;</div>
+  <div class="pipeline-step win fragment">
+    <strong>Code Style Skills</strong><br>
+    React patterns, Convex backend patterns, Leaflet maps — write code that matches team conventions from day one.
+  </div>
+  <div class="flow-arrow fragment">&darr;</div>
+  <div class="pipeline-step win fragment">
+    <strong>E2E Testing Skill</strong><br>
+    Clerk auth in Playwright, sign-in tokens, test user setup — ship features with confidence.
+  </div>
+  <div class="flow-arrow fragment">&darr;</div>
+  <div class="pipeline-step win fragment">
+    <strong>GitHub Skill</strong><br>
+    Manage repos, PRs, issues via API. Automate the full PR workflow from branch to merge.
+  </div>
+</section>
+
+<!-- ===== SLIDE 8: TELEGRAM INTEGRATION ===== -->
+<section>
+
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(-14deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(18deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(-10deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/leaflet/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(24deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(-20deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(12deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(-8deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(15deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(-5deg); width:50px; opacity:0.05;">
+
+  <h2>Telegram Integration</h2>
+  <p>Team communication becomes AI context</p>
+  <div class="glass-card">
+    <h3 style="margin-top: 0; color: var(--accent);">How It Works</h3>
+    <ul class="clean">
+      <li class="fragment">Task info channel with structured updates</li>
+      <li class="fragment">Claude reads channel history for project context</li>
+      <li class="fragment">Sends formatted status updates and reports</li>
+      <li class="fragment">Search through chat history for decisions and context</li>
+    </ul>
+  </div>
+  <div class="highlight-box fragment" style="margin-top: 16px;">
+    <p style="margin: 0;"><strong>Key insight:</strong> Team chat is one of the richest sources of project knowledge — architecture decisions, bug discussions, feature rationale. AI can mine it instantly.</p>
+  </div>
+</section>
+
+<!-- ===== SLIDE 9: RESULTS ===== -->
+<section class="center-slide">
+
+  <img src="https://cdn.simpleicons.org/tailwindcss/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(-18deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(14deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/convex/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(-8deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(20deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(-15deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/playwright/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(25deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(-12deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(10deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/radixui/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(-6deg); width:50px; opacity:0.05;">
+
+  <h2>Results</h2>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; margin-top: 30px;">
+    <div class="fragment zoom-in">
+      <div class="big-number">Days<span>not weeks to first PR</span></div>
+    </div>
+    <div class="fragment zoom-in">
+      <div class="big-number">10+<span>custom skills created</span></div>
+    </div>
+    <div class="fragment zoom-in">
+      <div class="big-number">5+<span>tools connected via MCP</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SLIDE 10: KEY TAKEAWAY + Q&A ===== -->
+<section class="center-slide">
+
+  <img src="https://cdn.simpleicons.org/eslint/ffffff" class="floating-logo" style="top:4%; right:2%; transform:rotate(14deg); width:75px; opacity:0.10;">
+  <img src="https://cdn.simpleicons.org/clerk/ffffff" class="floating-logo" style="top:4%; right:16%; transform:rotate(-12deg); width:65px; opacity:0.08;">
+  <img src="https://cdn.simpleicons.org/vercel/ffffff" class="floating-logo" style="top:18%; right:5%; transform:rotate(22deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/nextdotjs/ffffff" class="floating-logo" style="top:20%; right:21%; transform:rotate(-18deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/typescript/ffffff" class="floating-logo" style="top:34%; right:3%; transform:rotate(10deg); width:60px; opacity:0.07;">
+  <img src="https://cdn.simpleicons.org/pnpm/ffffff" class="floating-logo" style="top:36%; right:18%; transform:rotate(-25deg); width:55px; opacity:0.06;">
+  <img src="https://cdn.simpleicons.org/leaflet/ffffff" class="floating-logo" style="bottom:16%; right:26%; transform:rotate(16deg); width:50px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/react/ffffff" class="floating-logo" style="bottom:4%; right:34%; transform:rotate(-10deg); width:45px; opacity:0.05;">
+  <img src="https://cdn.simpleicons.org/biome/ffffff" class="floating-logo" style="bottom:6%; right:20%; transform:rotate(8deg); width:50px; opacity:0.05;">
+
+  <div class="verdict" style="max-width: 900px; margin: 0 auto;">
+    <h3 style="font-size: 1.3em;">Key Takeaway</h3>
+    <p style="font-size: 1.1em; margin-bottom: 0.5em;">AI-assisted onboarding transforms project ramp-up from a passive reading exercise into an active, guided exploration.</p>
+    <p style="color: #ffffff; font-size: 0.85em; margin: 0;">The combination of <strong style="color: #ffffff;">CLAUDE.md</strong> + <strong style="color: #ffffff;">Skills</strong> + <strong style="color: #ffffff;">Browser MCP</strong> + <strong style="color: #ffffff;">Tool Bridges</strong> creates a system where the AI truly understands your project.</p>
+  </div>
+  <div style="margin-top: 50px;">
+    <h1 style="font-size:2.5em; color:#ffffff;">?</h1>
+    <h2 style="color:#ffffff; font-size: 1.2em;">Questions</h2>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="rough.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  transition: 'fade',
+  transitionSpeed: 'default',
+  width: 1920,
+  height: 1080,
+  margin: 0.02,
+  center: false,
+  controls: true,
+  progress: true,
+  slideNumber: true,
+  overview: true
+}).then(function() {
+// Excalidraw-style context diagram (rough.js)
+(function() {
+  var svg = document.getElementById('ctx-diagram');
+  if (!svg || typeof rough === 'undefined') return;
+  var rc = rough.svg(svg);
+  var ns = 'http://www.w3.org/2000/svg';
+
+  var hubX = 910, hubY = 260;
+  var lineOpts = { stroke: 'rgba(212,166,74,0.3)', strokeWidth: 1.5, roughness: 1.5 };
+  var nodeOpts = { stroke: 'rgba(248,243,237,0.3)', strokeWidth: 1.5, roughness: 2, fill: 'rgba(255,255,255,0.04)', fillStyle: 'solid' };
+  var hubOpts = { stroke: '#d4a64a', strokeWidth: 2, roughness: 1.8, fill: 'rgba(212,166,74,0.06)', fillStyle: 'solid' };
+
+  var nodes = [
+    { x: 250,  y: 75,  label: 'Notion',   icon: 'notion' },
+    { x: 910,  y: 75,  label: 'Figma',    icon: 'figma' },
+    { x: 1570, y: 75,  label: 'Miro',     icon: 'miro' },
+    { x: 250,  y: 450, label: 'GitHub',   icon: 'github' },
+    { x: 910,  y: 450, label: 'Telegram', icon: 'telegram' },
+    { x: 1570, y: 450, label: 'Obsidian', icon: 'obsidian' }
+  ];
+
+  // Helper: find where a line from (cx,cy) toward (tx,ty) exits a rectangle (half-width hw, half-height hh)
+  function edgePoint(cx, cy, tx, ty, hw, hh) {
+    var dx = tx - cx, dy = ty - cy;
+    if (dx === 0 && dy === 0) return { x: cx, y: cy };
+    var sx = hw / Math.abs(dx), sy = hh / Math.abs(dy);
+    var s = Math.min(sx, sy);
+    return { x: cx + dx * s, y: cy + dy * s };
+  }
+
+  var nw = 150, nh = 65;
+  var hw = 210, hh = 80;
+
+  // Connection lines (drawn first, behind boxes) — edge-to-edge
+  nodes.forEach(function(n) {
+    var fromNode = edgePoint(n.x, n.y, hubX, hubY, nw/2, nh/2);
+    var toHub = edgePoint(hubX, hubY, n.x, n.y, hw/2, hh/2);
+    svg.appendChild(rc.line(fromNode.x, fromNode.y, toHub.x, toHub.y, lineOpts));
+  });
+
+  // Node boxes + icons + labels
+  nodes.forEach(function(n) {
+    svg.appendChild(rc.rectangle(n.x - nw/2, n.y - nh/2, nw, nh, nodeOpts));
+
+    var img = document.createElementNS(ns, 'image');
+    img.setAttribute('href', 'https://cdn.simpleicons.org/' + n.icon + '/f8f3ed');
+    img.setAttribute('x', n.x - 12);
+    img.setAttribute('y', n.y - 22);
+    img.setAttribute('width', '24');
+    img.setAttribute('height', '24');
+    svg.appendChild(img);
+
+    var text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', n.x);
+    text.setAttribute('y', n.y + 16);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', '#f8f3ed');
+    text.setAttribute('font-family', 'Montserrat, sans-serif');
+    text.setAttribute('font-size', '16');
+    text.setAttribute('font-weight', '600');
+    text.textContent = n.label;
+    svg.appendChild(text);
+  });
+
+  // Hub box
+  svg.appendChild(rc.rectangle(hubX - hw/2, hubY - hh/2, hw, hh, hubOpts));
+
+  var hubImg = document.createElementNS(ns, 'image');
+  hubImg.setAttribute('href', 'https://cdn.simpleicons.org/anthropic/d4a64a');
+  hubImg.setAttribute('x', hubX - 14);
+  hubImg.setAttribute('y', hubY - 26);
+  hubImg.setAttribute('width', '28');
+  hubImg.setAttribute('height', '28');
+  svg.appendChild(hubImg);
+
+  var hubText = document.createElementNS(ns, 'text');
+  hubText.setAttribute('x', hubX);
+  hubText.setAttribute('y', hubY + 20);
+  hubText.setAttribute('text-anchor', 'middle');
+  hubText.setAttribute('fill', '#d4a64a');
+  hubText.setAttribute('font-family', 'Montserrat, sans-serif');
+  hubText.setAttribute('font-size', '20');
+  hubText.setAttribute('font-weight', '700');
+  hubText.textContent = 'Claude Code';
+  svg.appendChild(hubText);
+})();
+});
+</script>
+</body>
+</html>

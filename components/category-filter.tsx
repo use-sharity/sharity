@@ -5,24 +5,38 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { useTranslations } from "next-intl";
 
 interface CategoryFilterProps {
-	selected: ItemCategory[];
-	onChange: (categories: ItemCategory[]) => void;
+  selected: ItemCategory[];
+  onChange: (categories: ItemCategory[]) => void;
+  className?: string;
 }
 
-export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
-	const t = useTranslations("Categories");
+export function CategoryFilter({
+  selected,
+  onChange,
+  className,
+}: CategoryFilterProps) {
+  const t = useTranslations("Categories");
 
-	const options = ITEM_CATEGORIES.map((category) => ({
-		label: t(category),
-		value: category,
-	}));
+  const options = ITEM_CATEGORIES.map((category) => ({
+    label: t(category),
+    value: category,
+  }));
 
-	return (
-		<MultiSelect
-			options={options}
-			selected={selected}
-			onChange={(values) => onChange(values as ItemCategory[])}
-			placeholder={t("allCategories")}
-		/>
-	);
+  return (
+    <MultiSelect
+      options={options}
+      defaultValue={selected}
+      onValueChange={(values) => onChange(values as ItemCategory[])}
+      placeholder={t("allCategories")}
+      selectAllLabel={t("selectAll")}
+      clearLabel={t("clear")}
+      closeLabel={t("close")}
+      searchLabel={t("search")}
+      singleLine={true}
+      animation={0}
+      hideSelectAll={false}
+      closeOnSelect={false}
+      className={className}
+    />
+  );
 }

@@ -9,14 +9,19 @@ export type CancelClaimArgs = { claimId: Id<"claims"> };
 export type MutationResult = Promise<null | void>;
 
 export type RecordLeaseArgs = {
-	itemId: Id<"items">;
-	claimId: Id<"claims">;
-	note?: string;
-	photoCloudinary?: CloudinaryRef[];
+  itemId: Id<"items">;
+  claimId: Id<"claims">;
+  note?: string;
+  photoCloudinary?: CloudinaryRef[];
+};
+
+export type RecordPickupArgs = RecordLeaseArgs & {
+  isGiveaway?: boolean;
+  approvedAt?: number;
 };
 
 export type MarkLeaseStatusArgs = {
-	itemId: Id<"items">;
-	claimId: Id<"claims">;
-	note?: string;
+  itemId: Id<"items">;
+  claimId: Id<"claims">;
+  note?: string;
 };
