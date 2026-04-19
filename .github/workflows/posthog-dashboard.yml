@@ -1,0 +1,29 @@
+name: PostHog PMF Dashboard
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync PostHog PMF dashboard
+        env:
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+          POSTHOG_ENVIRONMENT_ID: ${{ secrets.POSTHOG_ENVIRONMENT_ID }}
+          POSTHOG_APP_HOST: ${{ secrets.POSTHOG_APP_HOST || 'https://us.posthog.com' }}
+        run: pnpm posthog:dashboard

@@ -85,6 +85,8 @@ Dead supply = no marketplace. Catches "list and forget" problem.
 
 **PostHog:** Two trend insights (unique property count on `item_id`); divide in the dashboard.
 
+The code-managed dashboard uses a native PostHog Trends formula with `claim_requested / item_listed` event totals as an API-safe proxy. If PostHog later supports saving SQL visualizations through the Insights API, switch this back to the exact unique `item_id` formula.
+
 ---
 
 ### 3. Repeat Usage Rate
@@ -109,14 +111,41 @@ Activation speed. Long = churn before value. Short = product clicks.
 
 **PostHog:** User path or custom formula using person's first `$identify` vs first `exchange_completed`.
 
+The code-managed dashboard uses a native PostHog funnel time-to-convert view from `$identify` to `exchange_completed`.
+
 ---
 
 ## PostHog Setup
 
-1. Go to **Insights** → **New insight**
-2. Build each metric as described above
-3. Pin all 4 to a **PMF Dashboard**
-4. Set dashboard to refresh weekly
+The PMF dashboard is code-managed by [`scripts/sync-posthog-dashboard.ts`](scripts/sync-posthog-dashboard.ts).
+
+### Required private env vars
+
+```env
+POSTHOG_PERSONAL_API_KEY=phx_...
+POSTHOG_ENVIRONMENT_ID=...
+POSTHOG_APP_HOST=https://us.posthog.com
+```
+
+`POSTHOG_PERSONAL_API_KEY` must be a private PostHog personal API key with `dashboard:read`, `dashboard:write`, `insight:read`, and `insight:write` scopes. Never expose it to frontend code.
+
+### Run locally
+
+```bash
+pnpm posthog:dashboard
+```
+
+Run this manually after changing this file, [`lib/posthog/events.ts`](lib/posthog/events.ts), or the dashboard sync script.
+
+### Run from GitHub Actions
+
+1. Add repository secrets:
+   - `POSTHOG_PERSONAL_API_KEY`
+   - `POSTHOG_ENVIRONMENT_ID`
+   - optional `POSTHOG_APP_HOST` (defaults to `https://us.posthog.com`)
+2. Go to **Actions** → **PostHog PMF Dashboard** → **Run workflow**.
+
+The workflow is `workflow_dispatch` only. It does not run on PRs, pushes to `main`, every successful deployment, or Vercel deploys.
 
 PostHog init is in [`instrumentation-client.ts`](instrumentation-client.ts).
 User identity (Clerk ID + email) is set in [`components/posthog-identify.tsx`](components/posthog-identify.tsx).
