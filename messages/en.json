@@ -597,7 +597,11 @@
     "title": "User Profile",
     "memberSince": "Member since {date}",
     "contactInfo": "Contact Information",
+    "loadingItems": "Loading shared items...",
+    "noSharedItems": "This user hasn't shared any items yet.",
+    "sharedItems": "{count, plural, one {# shared item} other {# shared items}}",
     "tabs": {
+      "items": "Items",
       "ratings": "Ratings",
       "history": "History"
     }

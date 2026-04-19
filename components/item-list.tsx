@@ -9,7 +9,7 @@ import { List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
-import { DiscoveryCard } from "./discovery-card";
+import { DiscoveryItemsList } from "@/components/discovery-items-list";
 import { CategoryFilter } from "./category-filter";
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
@@ -150,22 +150,18 @@ export function ItemList({
           )}
         </div>
       ) : (
-        <div className="grid gap-4">
-          {items === undefined ? (
-            <p>{t("loading")}</p>
-          ) : items.length === 0 ? (
+        <DiscoveryItemsList
+          items={items === undefined ? undefined : (filteredItems ?? [])}
+          loadingLabel={t("loading")}
+          emptyContent={
             <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-          ) : filteredItems?.length === 0 ? (
-            <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-          ) : (
-            filteredItems?.map((item) => (
-              <DiscoveryCard key={item._id} item={item} />
-            ))
-          )}
-          {onEmptyMakeRequest && filteredItems && filteredItems.length > 0 && (
-            <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
-          )}
-        </div>
+          }
+          afterList={
+            onEmptyMakeRequest && filteredItems && filteredItems.length > 0 ? (
+              <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
+            ) : null
+          }
+        />
       )}
     </div>
   );

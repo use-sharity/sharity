@@ -597,7 +597,11 @@
     "title": "Hồ sơ",
     "memberSince": "Tham gia từ {date}",
     "contactInfo": "Liên hệ",
+    "loadingItems": "Đang tải đồ chia sẻ...",
+    "noSharedItems": "Người này chưa chia sẻ món nào.",
+    "sharedItems": "{count} món đang chia sẻ",
     "tabs": {
+      "items": "Đồ chia sẻ",
       "ratings": "Đánh giá",
       "history": "Lịch sử"
     }
