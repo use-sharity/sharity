@@ -1,3 +1,7 @@
+import type { WithoutSystemFields } from "convex/server";
+import { v } from "convex/values";
+import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import {
   internalAction,
   internalMutation,
@@ -5,11 +9,8 @@ import {
   mutation,
   query,
 } from "./_generated/server";
-import { internal } from "./_generated/api";
-import { v } from "convex/values";
-import type { WithoutSystemFields } from "convex/server";
-import type { Doc } from "./_generated/dataModel";
 import { vCloudinaryRef } from "./mediaTypes";
+import { buildUserPublicSearchText } from "./searchText";
 
 type UserFields = WithoutSystemFields<Doc<"users">>;
 type NullableFields<T> = { [K in keyof T]: T[K] | null };
@@ -134,6 +135,41 @@ export const getBasicInfo = query({
       name: profile.name || null,
       avatarUrl,
     };
+  },
+});
+
+export const searchOwners = query({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit ?? 8, 1), 8);
+    const queryText = args.query.trim();
+    const owners = queryText
+      ? await ctx.db
+          .query("users")
+          .withSearchIndex("search_public_users", (q) =>
+            q.search("publicSearchText", queryText),
+          )
+          .take(limit)
+      : await ctx.db.query("users").order("desc").take(limit);
+
+    return Promise.all(
+      owners.map(async (profile) => {
+        const sharedItems = await ctx.db
+          .query("items")
+          .withIndex("by_owner", (q) => q.eq("ownerId", profile.clerkId))
+          .collect();
+
+        return {
+          userId: profile.clerkId,
+          name: profile.name ?? null,
+          avatarUrl: profile.avatarCloudinary?.secureUrl ?? null,
+          sharedItemCount: sharedItems.length,
+        };
+      }),
+    );
   },
 });
 
@@ -287,6 +323,9 @@ export const updateProfile = mutation({
       // Update existing profile
       await ctx.db.patch(existingProfile._id, {
         ...args,
+        publicSearchText: buildUserPublicSearchText({
+          name: args.name ?? existingProfile.name,
+        }),
         updatedAt: now,
       });
       return existingProfile._id;
@@ -296,6 +335,7 @@ export const updateProfile = mutation({
     const profileId = await ctx.db.insert("users", {
       clerkId: identity.subject,
       name: args.name,
+      publicSearchText: buildUserPublicSearchText({ name: args.name }),
       address: args.address,
       bio: args.bio,
       contacts: args.contacts,
@@ -334,6 +374,7 @@ export const updateLocale = mutation({
       await ctx.db.insert("users", {
         clerkId: identity.subject,
         locale: args.locale,
+        publicSearchText: "",
         createdAt: now,
         updatedAt: now,
       });
@@ -375,13 +416,17 @@ export const upsertFromWebhook = internalMutation({
     if (existing) {
       const patch: Record<string, unknown> = { updatedAt: now };
       if (args.email !== null) patch.email = args.email;
-      if (args.name !== null && !existing.name) patch.name = args.name;
+      if (args.name !== null && !existing.name) {
+        patch.name = args.name;
+        patch.publicSearchText = buildUserPublicSearchText({ name: args.name });
+      }
       await ctx.db.patch(existing._id, patch);
     } else {
       await ctx.db.insert("users", {
         clerkId: args.clerkId,
         email: args.email ?? undefined,
         name: args.name ?? undefined,
+        publicSearchText: buildUserPublicSearchText({ name: args.name }),
         createdAt: now,
         updatedAt: now,
       });

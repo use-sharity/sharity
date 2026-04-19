@@ -3,16 +3,19 @@
 import { useQuery } from "convex/react";
 import { User } from "lucide-react";
 import Link from "next/link";
-
+import { CloudinaryImage } from "@/components/cloudinary-image";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { CloudinaryImage } from "@/components/cloudinary-image";
 
 interface UserLinkProps {
   userId: string;
   size?: "sm" | "md" | "lg";
   showAvatar?: boolean;
   className?: string;
+  initialUserInfo?: {
+    name: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 const sizeStyles = {
@@ -38,8 +41,13 @@ export function UserLink({
   size = "md",
   showAvatar = true,
   className,
+  initialUserInfo,
 }: UserLinkProps) {
-  const userInfo = useQuery(api.users.getBasicInfo, { userId });
+  const queriedUserInfo = useQuery(
+    api.users.getBasicInfo,
+    initialUserInfo ? "skip" : { userId },
+  );
+  const userInfo = initialUserInfo ?? queriedUserInfo;
   const styles = sizeStyles[size];
 
   if (userInfo === undefined) {

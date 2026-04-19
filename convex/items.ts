@@ -1,11 +1,11 @@
+import { CloudinaryClient } from "@imaxis/cloudinary-convex";
 import { v } from "convex/values";
 import { api, components, internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { CloudinaryClient } from "@imaxis/cloudinary-convex";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 import { vCloudinaryRef } from "./mediaTypes";
-import type { Doc } from "./_generated/dataModel";
+import { buildItemSearchText } from "./searchText";
 
 type ResolvedUser = {
   email: string;
@@ -50,6 +50,16 @@ type PublicItem = Doc<"items"> & {
   imageUrls: string[];
   isRequested: boolean;
   isOwn: boolean;
+};
+
+type OwnerSummary = {
+  id: string;
+  name: string | null;
+  avatarUrl: string | null;
+};
+
+type PublicDiscoveryItem = PublicItem & {
+  owner: OwnerSummary;
 };
 
 async function resolveImages(args: {
@@ -121,6 +131,51 @@ async function resolvePublicItem(args: {
       : (args.claimedItemIds?.has(args.item._id) ?? false),
     isOwn,
   };
+}
+
+async function getOwnerSummary(
+  ctx: QueryCtx,
+  ownerId: string,
+): Promise<OwnerSummary> {
+  const profile = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_id", (q) => q.eq("clerkId", ownerId))
+    .first();
+
+  return {
+    id: ownerId,
+    name: profile?.name ?? null,
+    avatarUrl: profile?.avatarCloudinary?.secureUrl ?? null,
+  };
+}
+
+async function resolveDiscoveryItems(args: {
+  ctx: QueryCtx;
+  items: Doc<"items">[];
+  viewerId?: string;
+  claimedItemIds?: Set<Id<"items">>;
+}): Promise<PublicDiscoveryItem[]> {
+  const ownerCache = new Map<string, Promise<OwnerSummary>>();
+
+  return Promise.all(
+    args.items.map(async (item) => {
+      const owner =
+        ownerCache.get(item.ownerId) ?? getOwnerSummary(args.ctx, item.ownerId);
+      ownerCache.set(item.ownerId, owner);
+
+      const publicItem = await resolvePublicItem({
+        ctx: args.ctx,
+        item,
+        viewerId: args.viewerId,
+        claimedItemIds: args.claimedItemIds,
+      });
+
+      return {
+        ...publicItem,
+        owner: await owner,
+      };
+    }),
+  );
 }
 
 function assertValidLeaseDaysLimits(args: {
@@ -308,6 +363,10 @@ export const seed = internalMutation({
       await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: testOwnerId,
         category: item.category,
         location: item.location,
@@ -324,13 +383,7 @@ export const get = query({
     const identity = await ctx.auth.getUserIdentity();
     const items = await ctx.db.query("items").order("desc").collect();
 
-    const activeUnavailableOwners = new Set<string>();
-    const ownerBlocks = await ctx.db.query("owner_unavailability").collect();
-    for (const block of ownerBlocks) {
-      if (isRangeActiveNow(block)) {
-        activeUnavailableOwners.add(block.ownerId);
-      }
-    }
+    const activeUnavailableOwners = await getActiveUnavailableOwners(ctx);
 
     if (!identity) {
       return Promise.all(
@@ -384,6 +437,171 @@ export const getByOwner = query({
         }),
       ),
     );
+  },
+});
+
+const itemCategoryArrayValidator = v.array(
+  v.union(
+    v.literal("kitchen"),
+    v.literal("furniture"),
+    v.literal("electronics"),
+    v.literal("clothing"),
+    v.literal("books"),
+    v.literal("sports"),
+    v.literal("other"),
+  ),
+);
+
+async function getActiveUnavailableOwners(ctx: QueryCtx): Promise<Set<string>> {
+  const activeUnavailableOwners = new Set<string>();
+  const ownerBlocks = await ctx.db.query("owner_unavailability").collect();
+  for (const block of ownerBlocks) {
+    if (isRangeActiveNow(block)) {
+      activeUnavailableOwners.add(block.ownerId);
+    }
+  }
+  return activeUnavailableOwners;
+}
+
+async function searchOwnerIds(
+  ctx: QueryCtx,
+  queryText: string,
+  limit: number,
+): Promise<string[]> {
+  const query = queryText.trim();
+  if (!query) return [];
+
+  const owners = await ctx.db
+    .query("users")
+    .withSearchIndex("search_public_users", (q) =>
+      q.search("publicSearchText", query),
+    )
+    .take(limit);
+
+  return owners.map((owner) => owner.clerkId);
+}
+
+function itemMatchesFilters(args: {
+  item: Doc<"items">;
+  queryText: string;
+  categories: string[];
+  giveawayOnly: boolean;
+  hideMyItems: boolean;
+  viewerId?: string;
+  activeUnavailableOwners: Set<string>;
+}): boolean {
+  if (args.activeUnavailableOwners.has(args.item.ownerId)) return false;
+  if (args.hideMyItems && args.viewerId === args.item.ownerId) return false;
+  if (args.giveawayOnly && !args.item.giveaway) return false;
+  if (
+    args.categories.length > 0 &&
+    (!args.item.category || !args.categories.includes(args.item.category))
+  ) {
+    return false;
+  }
+
+  const queryText = args.queryText.trim().toLowerCase();
+  if (!queryText) return true;
+
+  const searchText =
+    args.item.searchText ??
+    buildItemSearchText({
+      name: args.item.name,
+      description: args.item.description,
+    });
+  return searchText.toLowerCase().includes(queryText);
+}
+
+export const searchDiscovery = query({
+  args: {
+    queryText: v.string(),
+    ownerQueries: v.array(v.string()),
+    selectedOwnerIds: v.array(v.string()),
+    categories: itemCategoryArrayValidator,
+    giveawayOnly: v.boolean(),
+    hideMyItems: v.boolean(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const viewerId = identity?.subject;
+    const limit = Math.min(Math.max(args.limit ?? 50, 1), 100);
+    const queryText = args.queryText.trim();
+    const activeUnavailableOwners = await getActiveUnavailableOwners(ctx);
+    const claimedItemIds = viewerId
+      ? await getActiveClaimedItemIds(ctx, viewerId)
+      : undefined;
+
+    const ownerIds = new Set(args.selectedOwnerIds);
+    for (const ownerQuery of args.ownerQueries) {
+      const matches = await searchOwnerIds(ctx, ownerQuery, 8);
+      for (const ownerId of matches) ownerIds.add(ownerId);
+    }
+
+    let candidates: Doc<"items">[];
+
+    if (ownerIds.size > 0) {
+      const byOwner = await Promise.all(
+        Array.from(ownerIds).map((ownerId) =>
+          ctx.db
+            .query("items")
+            .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+            .order("desc")
+            .collect(),
+        ),
+      );
+      candidates = byOwner
+        .flat()
+        .sort((a, b) => b._creationTime - a._creationTime);
+    } else if (queryText) {
+      const indexedCandidates = await ctx.db
+        .query("items")
+        .withSearchIndex("search_items", (q) =>
+          q.search("searchText", queryText),
+        )
+        .take(100);
+      const legacyCandidates = await ctx.db
+        .query("items")
+        .filter((q) => q.eq(q.field("searchText"), undefined))
+        .collect();
+      candidates = [
+        ...indexedCandidates,
+        ...legacyCandidates.filter((item) =>
+          itemMatchesFilters({
+            item,
+            queryText,
+            categories: [],
+            giveawayOnly: false,
+            hideMyItems: false,
+            viewerId,
+            activeUnavailableOwners: new Set(),
+          }),
+        ),
+      ];
+    } else {
+      candidates = await ctx.db.query("items").order("desc").collect();
+    }
+
+    const filtered = candidates
+      .filter((item) =>
+        itemMatchesFilters({
+          item,
+          queryText: ownerIds.size > 0 ? queryText : "",
+          categories: args.categories,
+          giveawayOnly: args.giveawayOnly,
+          hideMyItems: args.hideMyItems,
+          viewerId,
+          activeUnavailableOwners,
+        }),
+      )
+      .slice(0, limit);
+
+    return resolveDiscoveryItems({
+      ctx,
+      items: filtered,
+      viewerId,
+      claimedItemIds,
+    });
   },
 });
 
@@ -603,6 +821,10 @@ export const create = mutation({
     const itemId = await ctx.db.insert("items", {
       name: args.name,
       description: args.description,
+      searchText: buildItemSearchText({
+        name: args.name,
+        description: args.description,
+      }),
       ownerId,
       giveaway: args.giveaway,
       minLeaseDays: args.minLeaseDays,
@@ -665,7 +887,13 @@ export const update = mutation({
       maxLeaseDays: fields.maxLeaseDays ?? item.maxLeaseDays,
     });
 
-    await ctx.db.patch(id, fields);
+    await ctx.db.patch(id, {
+      ...fields,
+      searchText: buildItemSearchText({
+        name: fields.name ?? item.name,
+        description: fields.description ?? item.description,
+      }),
+    });
   },
 });
 

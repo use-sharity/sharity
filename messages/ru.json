@@ -697,7 +697,7 @@
     }
   },
   "ItemList": {
-    "searchPlaceholder": "Поиск доступных вещей...",
+    "searchPlaceholder": "Искать вещи или @владельца...",
     "giveaway": "Подарок",
     "loadingMap": "Загрузка карты...",
     "loading": "Загрузка...",

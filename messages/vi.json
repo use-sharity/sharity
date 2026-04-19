@@ -697,7 +697,7 @@
     }
   },
   "ItemList": {
-    "searchPlaceholder": "Tìm đồ...",
+    "searchPlaceholder": "Tìm đồ hoặc @chủ...",
     "giveaway": "Đồ tặng",
     "loadingMap": "Đang tải bản đồ...",
     "loading": "Đang tải...",

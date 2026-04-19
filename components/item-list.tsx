@@ -1,22 +1,25 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-
-import { DiscoveryItemsList } from "@/components/discovery-items-list";
-import { CategoryFilter } from "./category-filter";
-import type { ItemCategory } from "@/lib/constants";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import { SharePrompt } from "@/components/share-prompt";
-import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
 import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
+import { DiscoveryItemsList } from "@/components/discovery-items-list";
+import {
+  OwnerSearchInput,
+  type SelectedOwner,
+} from "@/components/owner-search-input";
+import { SharePrompt } from "@/components/share-prompt";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
+import type { ItemCategory } from "@/lib/constants";
+import { parseItemSearchQuery } from "@/lib/item-search";
+import { cn } from "@/lib/utils";
+import { api } from "../convex/_generated/api";
+import { CategoryFilter } from "./category-filter";
 
 // Dynamic import to avoid SSR hydration issues with Leaflet
 function ItemsMapLoading() {
@@ -44,46 +47,38 @@ export function ItemList({
   onEmptyMakeRequest?: () => void;
 }) {
   const t = useTranslations("ItemList");
-  const items = useQuery(api.items.get);
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const [search, setSearch] = useState(() => urlQuery);
+  const [selectedOwners, setSelectedOwners] = useState<SelectedOwner[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<ItemCategory[]>(
     [],
   );
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [giveawayOnly, setGiveawayOnly] = useState(false);
   const [hideMyItems, setHideMyItems] = useState(false);
+  const parsedSearch = useMemo(() => parseItemSearchQuery(search), [search]);
 
-  const filteredItems = items?.filter((item) => {
-    const needle = search.trim().toLowerCase();
-    const itemText = `${item.name} ${item.description ?? ""}`.toLowerCase();
-
-    const matchesSearch = needle.length === 0 || itemText.includes(needle);
-
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      (item.category !== undefined &&
-        selectedCategories.includes(item.category));
-
-    const matchesGiveaway = !giveawayOnly || Boolean(item.giveaway);
-
-    const matchesOwnership = !hideMyItems || !item.isOwn;
-
-    return (
-      matchesSearch && matchesCategory && matchesGiveaway && matchesOwnership
-    );
+  const items = useQuery(api.items.searchDiscovery, {
+    queryText: parsedSearch.itemQuery,
+    ownerQueries: parsedSearch.ownerQueries,
+    selectedOwnerIds: selectedOwners.map((owner) => owner.userId),
+    categories: selectedCategories,
+    giveawayOnly,
+    hideMyItems,
+    limit: 50,
   });
 
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
-          <Input
+          <OwnerSearchInput
             placeholder={t("searchPlaceholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1"
+            onChange={setSearch}
+            selectedOwners={selectedOwners}
+            onSelectedOwnersChange={setSelectedOwners}
           />
           <div className="flex border rounded-md">
             <Button
@@ -140,8 +135,8 @@ export function ItemList({
             <p>{t("loading")}</p>
           ) : (
             <>
-              <ItemsMap items={filteredItems || []} />
-              {filteredItems?.filter((i) => i.location).length === 0 && (
+              <ItemsMap items={items || []} />
+              {items?.filter((i) => i.location).length === 0 && (
                 <p className="text-sm text-muted-foreground text-center">
                   {t("noLocationItems")}
                 </p>
@@ -151,13 +146,13 @@ export function ItemList({
         </div>
       ) : (
         <DiscoveryItemsList
-          items={items === undefined ? undefined : (filteredItems ?? [])}
+          items={items}
           loadingLabel={t("loading")}
           emptyContent={
             <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
           }
           afterList={
-            onEmptyMakeRequest && filteredItems && filteredItems.length > 0 ? (
+            onEmptyMakeRequest && items && items.length > 0 ? (
               <WishlistPromptCard onMakeRequest={onEmptyMakeRequest} />
             ) : null
           }
