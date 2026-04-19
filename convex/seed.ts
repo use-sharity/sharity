@@ -1,11 +1,248 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 // The ONLY two real Google-authenticated users
 const USER_A = "user_38gb4lqLetM0bfE5ChI8DYn5ZLN";
 const USER_B = "user_38Te2S572G8xjj9FNCq8szncRAl";
+
+// ---------------------------------------------------------------------------
+// Preview deployment seeding
+// ---------------------------------------------------------------------------
+
+/**
+ * Hardcoded Cloudinary image fixtures for preview deployments.
+ * Populate by running against prod:
+ *   npx convex run seed:dumpImageFixtures --prod
+ * then reading imageCloudinary fields from the result.
+ * Items missing from this list silently show no images.
+ */
+const PREVIEW_IMAGE_FIXTURES: Array<{
+  name: string;
+  publicId: string;
+  secureUrl: string;
+}> = [
+  // Uses Cloudinary's public demo cloud — valid Cloudinary URLs, no upload needed.
+  // Covers item names produced by fullResetAndSeed and seedCalendarTestData.
+  {
+    name: "Camping Tent",
+    publicId: "cld-sample",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+  },
+  {
+    name: "Camping Tent (2-person)",
+    publicId: "cld-sample",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+  },
+  {
+    name: "Electric Drill",
+    publicId: "cld-sample-2",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+  },
+  {
+    name: "Yoga Mat",
+    publicId: "cld-sample-3",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+  },
+  {
+    name: "Instant Pot",
+    publicId: "cld-sample-4",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+  },
+  {
+    name: "Mountain Bike",
+    publicId: "cld-sample-5",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+  },
+  {
+    name: "DSLR Camera",
+    publicId: "sample",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+  },
+  {
+    name: "Portable Projector",
+    publicId: "cld-sample-2",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+  },
+  {
+    name: "Stand Mixer",
+    publicId: "cld-sample-3",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+  },
+  // Calendar test items
+  {
+    name: "[CAL] Camping Tent",
+    publicId: "cld-sample",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+  },
+  {
+    name: "[CAL] Electric Drill",
+    publicId: "cld-sample-2",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+  },
+  {
+    name: "[CAL] Stand-Up Paddleboard",
+    publicId: "cld-sample-4",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+  },
+  {
+    name: "[CAL] Projector",
+    publicId: "cld-sample-5",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+  },
+  {
+    name: "[CAL] Bike Rack",
+    publicId: "cld-sample-3",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+  },
+  {
+    name: "[CAL] Pressure Washer",
+    publicId: "sample",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+  },
+  {
+    name: "[CAL] Sewing Machine",
+    publicId: "cld-sample-2",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+  },
+  {
+    name: "[CAL] Telescope",
+    publicId: "cld-sample-4",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+  },
+  {
+    name: "[CAL] Waffle Iron",
+    publicId: "cld-sample-5",
+    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+  },
+];
+
+// Bumping this version string forces existing preview deployments to re-seed
+// on the next --preview-run invocation.
+const SEED_MARKER_KEY = "seed:preview-init:v1";
+
+/**
+ * Idempotency guard — returns true when the seed marker row exists,
+ * meaning all seed steps completed successfully on a prior run.
+ */
+export const checkSeedMarker = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const row = await ctx.db
+      .query("email_log")
+      .withIndex("by_key", (q) => q.eq("key", SEED_MARKER_KEY))
+      .first();
+    return row !== null;
+  },
+});
+
+/**
+ * Write the sentinel row that marks a successful seed run.
+ * Called as the last step of initPreview so partial failures leave no marker.
+ */
+export const writeSeedMarker = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const exists = await ctx.db
+      .query("email_log")
+      .withIndex("by_key", (q) => q.eq("key", SEED_MARKER_KEY))
+      .first();
+    if (!exists) {
+      await ctx.db.insert("email_log", {
+        key: SEED_MARKER_KEY,
+        sentAt: Date.now(),
+      });
+    }
+  },
+});
+
+/**
+ * Patch images on seeded items using hardcoded Cloudinary fixtures.
+ * Called from initPreview after data mutations complete.
+ */
+export const patchCloudinaryImages = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    let patched = 0;
+    for (const fixture of PREVIEW_IMAGE_FIXTURES) {
+      const items = await ctx.db
+        .query("items")
+        .filter((q) => q.eq(q.field("name"), fixture.name))
+        .collect();
+      for (const item of items) {
+        await ctx.db.patch(item._id, {
+          imageCloudinary: [
+            { publicId: fixture.publicId, secureUrl: fixture.secureUrl },
+          ],
+        });
+        patched++;
+      }
+    }
+    return { patched };
+  },
+});
+
+/**
+ * Entry point for --preview-run in Convex preview deployments.
+ * Idempotent: skips if the seed marker row exists (written only after all steps
+ * succeed), so a partial failure on a prior run will retry on next deploy.
+ * Called via: npx convex deploy --cmd 'pnpm build' --preview-run 'seed:initPreview'
+ */
+export const initPreview = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const done = await ctx.runQuery(internal.seed.checkSeedMarker, {});
+    if (done) return { skipped: true, reason: "already seeded" };
+
+    await ctx.runMutation(internal.seed.fullResetAndSeed, {});
+    await ctx.runMutation(internal.seed.setupJourneyTestScenarios, {});
+    await ctx.runMutation(internal.seed.seedCalendarTestData, {});
+    await ctx.runMutation(internal.seed.patchCloudinaryImages, {});
+    await ctx.runMutation(internal.seed.writeSeedMarker, {});
+    return { seeded: true };
+  },
+});
+
+/**
+ * Dump current Cloudinary image data from items as ready-to-paste fixture entries.
+ * Run against prod to populate PREVIEW_IMAGE_FIXTURES:
+ *   npx convex run seed:dumpImageFixtures --prod
+ * Copy the output array into PREVIEW_IMAGE_FIXTURES above.
+ */
+export const dumpImageFixtures = query({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("items").collect();
+    const fixtures: Array<{
+      name: string;
+      publicId: string;
+      secureUrl: string;
+    }> = [];
+    for (const item of items) {
+      if (!item.imageCloudinary || item.imageCloudinary.length === 0) continue;
+      const first = item.imageCloudinary[0];
+      if (!first) continue;
+      fixtures.push({
+        name: item.name,
+        publicId: first.publicId,
+        secureUrl: first.secureUrl,
+      });
+    }
+    return fixtures;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Debug / dev helpers
+// ---------------------------------------------------------------------------
 
 /**
  * Debug: Check current user's identity and what items they should see.
@@ -1280,7 +1517,7 @@ export const seedClaimsForRating = mutation({
  * Full reset and seed: clean dummy data, add items, create claims.
  * Run this single mutation to prepare database for rating testing.
  */
-export const fullResetAndSeed = mutation({
+export const fullResetAndSeed = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
@@ -1896,12 +2133,13 @@ export const setupBorrowedItemForTesting = mutation({
 
 /**
  * Setup journey test scenarios: 11 items at different lifecycle stages.
+ * @internal use initPreview for preview deployments
  * Each item has a claim with the exact set of events to visualize that stage.
  * Idempotent: deletes all items with "[TEST] Journey:" prefix first.
  *
  * Run with: npx convex run seed:setupJourneyTestScenarios
  */
-export const setupJourneyTestScenarios = mutation({
+export const setupJourneyTestScenarios = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
@@ -2497,7 +2735,7 @@ export const setupJourneyTestScenarios = mutation({
  *
  * Run with: npx convex run seed:seedCalendarTestData
  */
-export const seedCalendarTestData = mutation({
+export const seedCalendarTestData = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
