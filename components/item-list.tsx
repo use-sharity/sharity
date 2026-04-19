@@ -2,21 +2,24 @@
 
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { List, Map } from "lucide-react";
+import { Layers, List, Map } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
 import { DiscoveryItemsList } from "@/components/discovery-items-list";
 import { CategoryFilter } from "./category-filter";
+import { DiscoverDeck } from "./discover-deck";
+import { PullToRefresh } from "./pull-to-refresh";
 import type { ItemCategory } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { SharePrompt } from "@/components/share-prompt";
 import { WishlistPromptCard } from "@/components/wishlist/wishlist-empty-card";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 // Dynamic import to avoid SSR hydration issues with Leaflet
 function ItemsMapLoading() {
@@ -36,12 +39,19 @@ const ItemsMap = dynamic(
   },
 );
 
-type ViewMode = "list" | "map";
+type ViewMode = "discover" | "list" | "map";
+
+function getInitialViewMode(): ViewMode {
+  if (typeof window === "undefined") return "list";
+  return window.matchMedia("(max-width: 767px)").matches ? "discover" : "list";
+}
 
 export function ItemList({
   onEmptyMakeRequest,
+  hero,
 }: {
   onEmptyMakeRequest?: () => void;
+  hero?: ReactNode;
 }) {
   const t = useTranslations("ItemList");
   const items = useQuery(api.items.get);
@@ -54,6 +64,10 @@ export function ItemList({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [giveawayOnly, setGiveawayOnly] = useState(false);
   const [hideMyItems, setHideMyItems] = useState(false);
+
+  useEffect(() => {
+    setViewMode(getInitialViewMode());
+  }, []);
 
   const filteredItems = items?.filter((item) => {
     const needle = search.trim().toLowerCase();
@@ -75,9 +89,42 @@ export function ItemList({
     );
   });
 
+  const discoverItems = filteredItems
+    ? [...filteredItems].sort((a, b) => b._creationTime - a._creationTime)
+    : [];
+
+  const isDiscover = viewMode === "discover";
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+
+  const itemsLoaded = items !== undefined;
+  useEffect(() => {
+    if (!isDiscover) return;
+    // On mobile the viewport is scroll-locked (see PullToRefresh), so
+    // scrollIntoView would leave the page frozen mid-scroll and hide the
+    // header. Desktop still uses scrollIntoView to focus the deck.
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) return;
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        controlsRef.current?.scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [isDiscover, itemsLoaded]);
+
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-col gap-3">
+      {isDiscover && <PullToRefresh />}
+      {hero}
+      <div ref={controlsRef} className="flex flex-col gap-3 scroll-mt-4">
         <div className="flex gap-2">
           <Input
             placeholder={t("searchPlaceholder")}
@@ -89,11 +136,18 @@ export function ItemList({
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setViewMode("discover")}
+              className={cn("rounded-r-none", isDiscover && "bg-muted")}
+              aria-label="Discover (swipe)"
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setViewMode("list")}
-              className={cn(
-                "rounded-r-none",
-                viewMode === "list" && "bg-muted",
-              )}
+              className={cn("rounded-none", viewMode === "list" && "bg-muted")}
+              aria-label="List"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -102,6 +156,7 @@ export function ItemList({
               size="icon"
               onClick={() => setViewMode("map")}
               className={cn("rounded-l-none", viewMode === "map" && "bg-muted")}
+              aria-label="Map"
             >
               <Map className="h-4 w-4" />
             </Button>
@@ -132,9 +187,17 @@ export function ItemList({
         </div>
       </div>
 
-      <SharePrompt />
+      {!isDiscover && <SharePrompt />}
 
-      {viewMode === "map" ? (
+      {isDiscover ? (
+        items === undefined ? (
+          <p className="text-center text-muted-foreground py-16">
+            {t("loading")}
+          </p>
+        ) : (
+          <DiscoverDeck items={discoverItems} />
+        )
+      ) : viewMode === "map" ? (
         <div className="space-y-2">
           {items === undefined ? (
             <p>{t("loading")}</p>

@@ -34,6 +34,7 @@ import type * as notifications from "../notifications.js";
 import type * as ratings from "../ratings.js";
 import type * as resendClient from "../resendClient.js";
 import type * as seed from "../seed.js";
+import type * as seedDemo from "../seedDemo.js";
 import type * as users from "../users.js";
 import type * as wishlist from "../wishlist.js";
 
@@ -70,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   ratings: typeof ratings;
   resendClient: typeof resendClient;
   seed: typeof seed;
+  seedDemo: typeof seedDemo;
   users: typeof users;
   wishlist: typeof wishlist;
 }>;

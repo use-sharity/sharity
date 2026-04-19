@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 
 import {
   SignInButton,
@@ -62,9 +63,15 @@ function SharityLogo({ className }: { className?: string }) {
 
 export function AppHeader() {
   const t = useTranslations("AppHeader");
+  const searchParams = useSearchParams();
+  const variant = searchParams.get("v");
+  const isSlim = variant === "slim";
   return (
-    <header className="w-full flex justify-center">
-      <div className="w-full max-w-4xl flex items-center gap-2 p-4 md:px-8 md:py-5">
+    <header
+      className={`w-full justify-center ${isSlim ? "hidden md:flex" : "flex"}`}
+      style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
+    >
+      <div className="w-full max-w-4xl flex items-center px-3 py-1.5 md:px-8 md:py-5 relative">
         <Link
           href="/"
           className="flex-shrink-0 hover:opacity-80 transition-opacity"
@@ -87,7 +94,7 @@ export function AppHeader() {
         </SignedOut>
 
         <SignedIn>
-          <nav className="hidden md:flex items-center gap-2 ml-auto mr-8">
+          <nav className="hidden md:flex items-center justify-center gap-2 absolute left-1/2 -translate-x-1/2">
             <Link href="/">
               <Button variant="ghost" size="sm">
                 <Search className="h-4 w-4 mr-1" />

@@ -481,6 +481,27 @@
     letter-spacing: var(--tracking-normal);
   }
 
+  /* Full viewport lock for the discover/swipe view. Native iOS PTR is
+   * sacrificed here — a custom PTR (see components/pull-to-refresh.tsx)
+   * detects a downward pull from the top and reloads. No height lock so
+   * the header/tabbar keep their natural flow positions; overflow+touch-
+   * action together kill scroll and rubber-band on iOS. */
+  html.scroll-locked,
+  html.scroll-locked body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .perspective-1000 {
     perspective: 1000px;
   }
