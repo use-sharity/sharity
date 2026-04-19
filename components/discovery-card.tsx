@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-
+import { useState } from "react";
+import { ItemImageCarousel } from "@/components/item-image-carousel";
+import { ItemMetaRow } from "@/components/item-meta-row";
+import { BorrowerRequestPanel } from "@/components/lease/borrower-request-panel";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,15 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { UserLink } from "@/components/user-link";
-import { ItemImageCarousel } from "@/components/item-image-carousel";
-import { ItemMetaRow } from "@/components/item-meta-row";
-import { BorrowerRequestPanel } from "@/components/lease/borrower-request-panel";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { UserLink } from "@/components/user-link";
 import type { Doc } from "@/convex/_generated/dataModel";
 import type { ItemCategory } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export interface DiscoveryCardItem extends Doc<"items"> {
   imageUrls?: string[];
@@ -28,6 +27,11 @@ export interface DiscoveryCardItem extends Doc<"items"> {
   location?: { lat: number; lng: number; address?: string; ward?: string };
   isRequested?: boolean;
   isOwn?: boolean;
+  owner?: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 interface DiscoveryCardProps {
@@ -83,7 +87,11 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
 
       <CardFooter>
         <div className="flex justify-between items-center w-full">
-          <UserLink userId={item.ownerId} size="sm" />
+          <UserLink
+            userId={item.ownerId}
+            size="sm"
+            initialUserInfo={item.owner}
+          />
           {item.isOwn ? (
             <Button variant="outline" size="sm" asChild>
               <Link href={`/item/${item._id}`}>{claimLabel}</Link>

@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { buildItemSearchText, buildUserPublicSearchText } from "./searchText";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -557,6 +558,10 @@ export const nuclearReset = mutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: USER_A,
         category: item.category,
         location: item.location,
@@ -575,6 +580,10 @@ export const nuclearReset = mutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: USER_B,
         category: item.category,
         location: item.location,
@@ -1351,6 +1360,10 @@ export const seedItemsForRealUsers = mutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: REAL_USER_A,
         category: item.category,
       });
@@ -1370,6 +1383,10 @@ export const seedItemsForRealUsers = mutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: REAL_USER_B,
         category: item.category,
       });
@@ -1655,6 +1672,10 @@ export const fullResetAndSeed = internalMutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: REAL_USER_A,
         category: item.category,
       });
@@ -1671,6 +1692,10 @@ export const fullResetAndSeed = internalMutation({
       const itemId = await ctx.db.insert("items", {
         name: item.name,
         description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
         ownerId: REAL_USER_B,
         category: item.category,
       });
@@ -2632,6 +2657,10 @@ export const setupJourneyTestScenarios = internalMutation({
       const itemId = await ctx.db.insert("items", {
         name: scenario.name,
         description: `Test scenario for journey visualization: ${scenario.name.replace(TEST_PREFIX, "").trim()}`,
+        searchText: buildItemSearchText({
+          name: scenario.name,
+          description: `Test scenario for journey visualization: ${scenario.name.replace(TEST_PREFIX, "").trim()}`,
+        }),
         ownerId: USER_A,
         category: "other",
       });
@@ -3197,6 +3226,7 @@ export const seedCalendarTestData = internalMutation({
       await ctx.db.insert("users", {
         clerkId: OTHER,
         name: "Alex",
+        publicSearchText: buildUserPublicSearchText({ name: "Alex" }),
         createdAt: now,
         updatedAt: now,
       });
@@ -3208,6 +3238,10 @@ export const seedCalendarTestData = internalMutation({
       const itemId = await ctx.db.insert("items", {
         name: s.name,
         description: `Calendar test item`,
+        searchText: buildItemSearchText({
+          name: s.name,
+          description: `Calendar test item`,
+        }),
         ownerId: s.ownerId,
         category: "other",
       });

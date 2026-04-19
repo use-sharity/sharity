@@ -6,6 +6,7 @@ export default defineSchema({
   items: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
+    searchText: v.optional(v.string()),
     ownerId: v.string(), // For MVP, we'll just store a string ID
     giveaway: v.optional(v.boolean()),
     minLeaseDays: v.optional(v.number()),
@@ -31,7 +32,12 @@ export default defineSchema({
         ward: v.optional(v.string()), // Public display name (district/ward)
       }),
     ),
-  }).index("by_owner", ["ownerId"]),
+  })
+    .index("by_owner", ["ownerId"])
+    .searchIndex("search_items", {
+      searchField: "searchText",
+      filterFields: ["ownerId"],
+    }),
   item_activity: defineTable({
     itemId: v.id("items"),
     type: v.union(
@@ -159,6 +165,7 @@ export default defineSchema({
     clerkId: v.string(), // Clerk user ID (identity.subject)
     email: v.optional(v.string()), // Synced from Clerk via webhook
     name: v.optional(v.string()),
+    publicSearchText: v.optional(v.string()),
     avatarStorageId: v.optional(v.id("_storage")),
     avatarCloudinary: v.optional(vCloudinaryRef),
     address: v.optional(v.string()),
@@ -180,7 +187,11 @@ export default defineSchema({
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_clerk_id", ["clerkId"]),
+  })
+    .index("by_clerk_id", ["clerkId"])
+    .searchIndex("search_public_users", {
+      searchField: "publicSearchText",
+    }),
 
   // Ratings for lenders and borrowers
   ratings: defineTable({
