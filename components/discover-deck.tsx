@@ -1,19 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	AnimatePresence,
-	type PanInfo,
+	animate,
 	motion,
+	type PanInfo,
 	useMotionValue,
+	useMotionValueEvent,
 	useTransform,
 } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { RefreshCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-
-import { Doc } from "../convex/_generated/dataModel";
-import { type ItemCategory } from "@/lib/constants";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ClaimItemBack } from "@/components/claim-item-back";
+import { DiscoverCard } from "@/components/discover-card";
+import { ItemCardContext } from "@/components/item-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -22,9 +23,8 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import { DiscoverCard } from "@/components/discover-card";
-import { ItemCardContext } from "@/components/item-card";
-import { ClaimItemBack } from "@/components/claim-item-back";
+import { type ItemCategory } from "@/lib/constants";
+import { Doc } from "../convex/_generated/dataModel";
 
 type Item = Doc<"items"> & {
 	imageUrls?: string[];
@@ -35,40 +35,24 @@ type Item = Doc<"items"> & {
 const SWIPE_DISTANCE_THRESHOLD = 110;
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const FLY_DISTANCE = 600;
-// Pointer movement above this counts as a swipe intent, not a tap. Framer's
-// internal drag threshold is ~3px which is too permissive — a short flick
-// under it never fires onDragStart, so justDraggedRef stays false and onTap
-// navigates to /item/:id. Isis reported this on 2026-04-18.
-// Value tuned for touch: iOS fingers commonly jitter 8-12px during a tap
-// (finger roll + contact area), so 8px was silently swallowing real taps on
-// device. 16px keeps the 30px flick regression suppressed while letting a
-// normal tap through. See e2e/discover-swipe.spec.ts.
 const TAP_MAX_MOVEMENT_PX = 16;
-// Only two cards in the DOM at once: the top one the user interacts with,
-// and the "already-there" card directly beneath it. The under-card is at
-// the EXACT same visual state as top — same scale, same y, same opacity.
-// It's only hidden by z-index. When the top flies off, the under-card
-// doesn't animate anywhere — it's revealed in place. This is the Tinder
-// feel; a promote-from-peek spring always reads as a second animation
-// running concurrently with the flyOff and that reads as flicker.
 const STACK_DEPTH = 2;
 
 export function DiscoverDeck({ items }: { items: Item[] }) {
 	const router = useRouter();
 	const [index, setIndex] = useState(0);
 	const [fosterItem, setFosterItem] = useState<Item | null>(null);
-
-	const current = items[index];
-	const visible = items.slice(index, index + STACK_DEPTH);
+	// Ids of cards whose exit animation is still playing. They remain mounted
+	// so the card's React subtree (and its motion value) survives through the
+	// animation — no AnimatePresence, no popLayout, no "exit evaluated after
+	// unmount" race. See framer-motion#2416.
+	const [exitingIds, setExitingIds] = useState<string[]>([]);
 
 	const handleDismiss = useCallback(
 		(itemId: string, direction: 1 | -1) => {
-			// Advance the index immediately; AnimatePresence keeps the
-			// exiting card mounted while its exit animation plays. The new
-			// top (previously peek at stackPos=1) simultaneously animates
-			// its layout props from peek-state to top-state via the shared
-			// spring transition — that's the morph that used to require
-			// layoutId gymnastics, now falls out of the architecture.
+			setExitingIds((prev) =>
+				prev.includes(itemId) ? prev : [...prev, itemId],
+			);
 			setIndex((i) => i + 1);
 			if (direction === 1) {
 				const item = items.find((it) => it._id === itemId);
@@ -78,6 +62,10 @@ export function DiscoverDeck({ items }: { items: Item[] }) {
 		[items],
 	);
 
+	const handleExitComplete = useCallback((itemId: string) => {
+		setExitingIds((prev) => prev.filter((id) => id !== itemId));
+	}, []);
+
 	const handleTap = useCallback(
 		(itemId: string) => {
 			router.push(`/item/${itemId}`);
@@ -85,44 +73,61 @@ export function DiscoverDeck({ items }: { items: Item[] }) {
 		[router],
 	);
 
-	if (!current) {
+	const current = items[index];
+
+	if (!current && exitingIds.length === 0) {
 		return (
 			<EmptyState onReset={() => setIndex(0)} hasItems={items.length > 0} />
 		);
 	}
+
+	const stack = items.slice(index, index + STACK_DEPTH);
+	// Cards still playing their exit animation. These sit on top of the stack
+	// via zIndex. Rendered in insertion order so a newer exit paints over an
+	// older one (rare: only happens on a burst of rapid swipes).
+	const exitingItems = exitingIds
+		.map((id) => items.find((it) => it._id === id))
+		.filter((it): it is Item => !!it);
+
+	const rendered = new Set<string>();
+	const slots: Array<{ item: Item; isExiting: boolean; stackPos: number }> = [];
+	for (const item of exitingItems) {
+		if (rendered.has(item._id)) continue;
+		rendered.add(item._id);
+		slots.push({ item, isExiting: true, stackPos: 0 });
+	}
+	stack.forEach((item, stackPos) => {
+		if (rendered.has(item._id)) return;
+		rendered.add(item._id);
+		slots.push({ item, isExiting: false, stackPos });
+	});
 
 	return (
 		<div
 			className="flex flex-col items-center w-full"
 			data-testid="discover-deck-root"
 			data-index={index}
-			data-current-id={current._id}
+			data-current-id={current?._id}
 			data-total={items.length}
 		>
 			<div
 				className="relative w-full max-w-md mx-auto"
 				style={{
-					// Fit between the sticky controls above and the mobile tab bar
-					// below. `svh` (small viewport height) accounts for mobile
-					// browser UI so the card doesn't duck under the bottom nav on
-					// the first paint. Clamped so desktop keeps a sane max size.
-					// Sub value matched to items-map.tsx so both views have the
-					// same visual gap above the tab bar.
 					height:
 						"min(560px, calc(100svh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
 				}}
 			>
-				<AnimatePresence mode="popLayout" initial={false}>
-					{visible.map((item, stackPos) => (
-						<SwipeCard
-							key={item._id}
-							item={item}
-							stackPos={stackPos}
-							onDismiss={handleDismiss}
-							onTap={handleTap}
-						/>
-					))}
-				</AnimatePresence>
+				{slots.map(({ item, isExiting, stackPos }) => (
+					<SwipeCard
+						key={item._id}
+						item={item}
+						stackPos={stackPos}
+						isExiting={isExiting}
+						onDismiss={handleDismiss}
+						onExitComplete={handleExitComplete}
+						onTap={handleTap}
+					/>
+				))}
 			</div>
 
 			<Sheet
@@ -159,41 +164,72 @@ export function DiscoverDeck({ items }: { items: Item[] }) {
 interface SwipeCardProps {
 	item: Item;
 	stackPos: number;
+	isExiting: boolean;
 	onDismiss: (itemId: string, direction: 1 | -1) => void;
+	onExitComplete: (itemId: string) => void;
 	onTap: (itemId: string) => void;
 }
 
-function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
-	// Each card owns its own motion value — this is the architectural shift
-	// that kills the "stale ±600" cascade (old Trap 4). A card that becomes
-	// top is a freshly-mounted React subtree with a fresh motion value at 0;
-	// no useLayoutEffect reset, no shared state to desynchronise.
+function SwipeCard({
+	item,
+	stackPos,
+	isExiting,
+	onDismiss,
+	onExitComplete,
+	onTap,
+}: SwipeCardProps) {
 	const x = useMotionValue(0);
-	const rotate = useTransform(x, [-200, 0, 200], [-15, 0, 15]);
+	// rotate is a standalone motion value (not a useTransform) so we can
+	// drive it imperatively on exit — giving the card a velocity-scaled spin
+	// that continues while it flies out. During drag it's kept in sync with
+	// x via useMotionValueEvent below.
+	const rotate = useMotionValue(0);
 	const fosterOpacity = useTransform(x, [40, 140], [0, 1]);
 	const skipOpacity = useTransform(x, [-140, -40], [1, 0]);
 
-	const isTop = stackPos === 0;
-	const [isExiting, setIsExiting] = useState(false);
+	const isTop = stackPos === 0 && !isExiting;
 
-	// Tap detection runs off NATIVE pointerdown/pointerup listeners rather
-	// than framer-motion's onTap. Reason: framer's onTap is unreliable when
-	// drag is on the same element (user report 2026-04-18: "tap sometimes
-	// fires, mostly doesn't"). Native pointer events are deterministic — we
-	// measure movement between pointerdown and pointerup ourselves and decide.
+	// Direction is latched in onDragEnd from info.offset.x. Do NOT re-read
+	// x.get() — framer-motion snaps the motion value toward the drag
+	// constraints as soon as drag ends, so the sign can invert by the time
+	// an effect runs.
+	const exitDirectionRef = useRef<1 | -1>(1);
+
+	// Imperative exit animation. Started synchronously from onDragEnd so it
+	// preempts framer-motion's internal dragElastic snap-back animation (which
+	// otherwise fires in the same tick and starts pulling x toward 0 before
+	// our effect would commit). Kept alive via ref so unmount can stop it.
+	const onExitCompleteRef = useRef(onExitComplete);
+	onExitCompleteRef.current = onExitComplete;
+	const exitAnimRef = useRef<ReturnType<typeof animate> | null>(null);
+	useEffect(() => {
+		return () => {
+			exitAnimRef.current?.stop();
+			exitAnimRef.current = null;
+		};
+	}, []);
+
+	// Native pointerdown/pointerup for tap detection — framer's onTap is
+	// unreliable when drag lives on the same element.
 	const justDraggedRef = useRef(false);
 	const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 	const dragRef = useRef<HTMLDivElement | null>(null);
-	// Captured at render time so the native listener (which closes over the
-	// initial mount's values) can read the latest state via ref. React state
-	// in the listener would be stale after re-renders.
 	const isTopRef = useRef(false);
 	const isExitingRef = useRef(false);
 	const onTapRef = useRef(onTap);
 	const itemIdRef = useRef(item._id);
-	isTopRef.current = stackPos === 0;
+	isTopRef.current = isTop;
+	isExitingRef.current = isExiting;
 	onTapRef.current = onTap;
 	itemIdRef.current = item._id;
+
+	// During drag, mirror x → rotate (±18° at the drag boundaries). When an
+	// exit animation is in flight we hand control to the imperative animate()
+	// call so the card can spin with release-velocity while flying out.
+	useMotionValueEvent(x, "change", (v) => {
+		if (exitAnimRef.current) return;
+		rotate.set(Math.max(-18, Math.min(18, v / 11)));
+	});
 
 	useEffect(() => {
 		const el = dragRef.current;
@@ -204,8 +240,6 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 		const onUp = (e: PointerEvent) => {
 			const start = pointerStartRef.current;
 			pointerStartRef.current = null;
-			// Guard order matches priority: not top / exiting / drag just
-			// happened → not a tap. These bail before the movement check.
 			if (!isTopRef.current || isExitingRef.current) return;
 			if (justDraggedRef.current) return;
 			if (!start) return;
@@ -217,10 +251,6 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 			pointerStartRef.current = null;
 		};
 		el.addEventListener("pointerdown", onDown);
-		// Bubble phase — framer-motion's drag listeners run in capture phase,
-		// so onDragEnd has already set justDraggedRef synchronously by the
-		// time this fires. (Reset via setTimeout in onDragEnd happens after
-		// the current event dispatch completes, so it doesn't race us.)
 		el.addEventListener("pointerup", onUp);
 		el.addEventListener("pointercancel", onCancel);
 		return () => {
@@ -239,7 +269,6 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 			justDraggedRef.current = false;
 		}, 0);
 		if (isExiting) return;
-		// Diagonal guard — require horizontal dominance.
 		if (Math.abs(info.offset.x) < Math.abs(info.offset.y)) return;
 		const distanceHit = Math.abs(info.offset.x) > SWIPE_DISTANCE_THRESHOLD;
 		const velocityHit =
@@ -247,63 +276,83 @@ function SwipeCard({ item, stackPos, onDismiss, onTap }: SwipeCardProps) {
 			Math.abs(info.offset.x) > 30;
 		if (!distanceHit && !velocityHit) return;
 		const direction: 1 | -1 = info.offset.x > 0 ? 1 : -1;
-		setIsExiting(true);
-		// Fire dismiss synchronously — parent advances the index, this card
-		// transitions to AnimatePresence's exit phase (popLayout removes it
-		// from layout flow, the peek promotes via spring layout animation).
+		exitDirectionRef.current = direction;
+		// Start the exit animation in the same tick as drag-end, BEFORE
+		// framer-motion's internal dragElastic snap-back gets to pull x
+		// toward 0. animate() on the same motion value supersedes any
+		// concurrent animation, so whichever order they initialise in,
+		// ours wins the motion value.
+		exitAnimRef.current?.stop();
+		const controls = animate(x, direction * FLY_DISTANCE, {
+			type: "spring",
+			stiffness: 180,
+			damping: 22,
+			mass: 0.8,
+		});
+		exitAnimRef.current = controls;
+		// Velocity-scaled spin during exit. The card keeps rotating while it
+		// flies out — faster flick = more spin. Clamped so extreme flicks
+		// don't produce cartoonish cartwheels. `velocity` seeds the spring's
+		// initial angular velocity so it feels continuous from the gesture.
+		const vx = info.velocity.x;
+		const rotateTarget = Math.max(-35, Math.min(35, vx / 40 + direction * 18));
+		animate(rotate, rotateTarget, {
+			type: "spring",
+			stiffness: 120,
+			damping: 18,
+			mass: 0.6,
+			velocity: vx / 12,
+		});
+		const itemId = item._id;
+		controls.then(() => {
+			if (exitAnimRef.current !== controls) return;
+			exitAnimRef.current = null;
+			onExitCompleteRef.current(itemId);
+		});
 		onDismiss(item._id, direction);
 	};
-
-	// Keep exit ref in sync so the native pointerup listener sees the latest
-	// value without re-binding the effect.
-	isExitingRef.current = isExiting;
-
-	const exitDirection = useRef<1 | -1>(1);
-	if (isExiting) {
-		// Record direction from current x position so the exit variant flies
-		// the correct way. This read happens during render, which is fine —
-		// we only branch on isExiting which is a stable state during exit.
-		exitDirection.current = x.get() >= 0 ? 1 : -1;
-	}
 
 	return (
 		<motion.div
 			ref={dragRef}
-			data-testid={isTop && !isExiting ? "discover-top-card" : undefined}
+			data-testid={isTop ? "discover-top-card" : undefined}
 			data-stack-pos={stackPos}
 			data-item-id={item._id}
+			data-exiting={isExiting ? "true" : undefined}
 			className="absolute inset-0 cursor-grab active:cursor-grabbing touch-pan-y"
 			style={{
-				x: isTop ? x : 0,
-				rotate: isTop ? rotate : 0,
-				zIndex: STACK_DEPTH - stackPos,
-				pointerEvents: isTop && !isExiting ? "auto" : "none",
+				// The top card (and any exiting card — which keeps its captured x
+				// while the imperative animation plays) rides its motion value.
+				// Under-card stays pinned at 0.
+				x: stackPos === 0 ? x : 0,
+				rotate: stackPos === 0 ? rotate : 0,
+				// Pivot at bottom edge so the card rotates as if hinged from
+				// the hand, not spinning around its center. This is the single
+				// biggest tactile difference vs Tinder/Hinge.
+				originY: 1,
+				// Exiting cards paint above the promoted under-card.
+				zIndex: isExiting ? 100 : STACK_DEPTH - stackPos,
+				pointerEvents: isTop ? "auto" : "none",
 			}}
-			drag={isTop && !isExiting ? "x" : false}
+			drag={isTop ? "x" : false}
 			dragDirectionLock
 			dragConstraints={{ left: 0, right: 0 }}
 			dragElastic={0.65}
+			// Snap-back spring when the drag is under-threshold. Default is
+			// critically damped (sluggish); this gives a single satisfying
+			// bounce then settles. Does NOT affect our imperative exit
+			// animation (dragMomentum={false} kills inertia entirely).
+			dragTransition={{ bounceStiffness: 300, bounceDamping: 25 }}
+			// Kill framer's post-release momentum/snap-back. Without this,
+			// framer-motion fires its own spring toward dragConstraints right
+			// after onDragEnd runs, which races with our imperative animate()
+			// on the same motion value — sometimes the snap-back wins and the
+			// card yanks toward 0 before flying off, or flies in the wrong
+			// direction entirely. With momentum off, x stays exactly where the
+			// finger released it until our animate() takes over.
+			dragMomentum={false}
 			onDragStart={onDragStart}
 			onDragEnd={onDragEnd}
-			// No animate/transition props on the stack-position changes —
-			// the under-card is already mounted at the same transform as
-			// the top. When the top exits, this card is simply revealed by
-			// z-index; there is nothing to interpolate. Removing the
-			// promote animation removes the "flicker" the user was seeing:
-			// previously the peek at opacity 0.94 / scale 0.94 sprung up
-			// to 1/1 at the same time the top flew off, and the two
-			// concurrent animations read as jitter.
-			exit={{
-				x: exitDirection.current * FLY_DISTANCE,
-				opacity: 0,
-				rotate: exitDirection.current * 18,
-				transition: {
-					type: "spring",
-					stiffness: 180,
-					damping: 22,
-					mass: 0.8,
-				},
-			}}
 		>
 			<DiscoverCard item={item} imagePriority={isTop} />
 
