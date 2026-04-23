@@ -6,6 +6,7 @@ import {
   Clock,
   X,
   AlertTriangle,
+  MessageCircle,
   Package,
   PackageCheck,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { format } from "date-fns";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/routing";
 
 import type { LeaseActivityEvent } from "./lease-activity-timeline";
 import { LeaseActionDialog } from "./lease-action-dialog";
@@ -160,6 +162,19 @@ export function LeaseClaimCard(props: {
   const approvePickupWindow = useMutation(api.items.approvePickupWindow);
   const proposeReturnWindow = useMutation(api.items.proposeReturnWindow);
   const approveReturnWindow = useMutation(api.items.approveReturnWindow);
+  const startConversation = useMutation(api.messaging.startConversation);
+  const router = useRouter();
+
+  const handleMessage = async () => {
+    const otherUserId = isOwner ? claim.claimerId : (ownerId ?? "");
+    if (!otherUserId) return;
+    const conversationId = await startConversation({
+      otherUserId,
+      itemId,
+      claimId: claim._id,
+    });
+    router.push(`/chat/${conversationId}`);
+  };
 
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -465,6 +480,16 @@ export function LeaseClaimCard(props: {
                   {t("actions.approve")}
                 </>
               )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleMessage}
+              title={t("actions.message")}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
             </Button>
 
             {rejectClaim ? (

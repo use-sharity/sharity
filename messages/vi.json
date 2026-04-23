@@ -98,7 +98,8 @@
     "giveaway": "Tặng",
     "loan": "Mượn",
     "locationAvailable": "Có vị trí",
-    "yourItem": "Đồ của bạn"
+    "yourItem": "Đồ của bạn",
+    "messageOwner": "Nhắn tin"
   },
   "ItemForm": {
     "giveawayMode": "Tặng",
@@ -341,7 +342,8 @@
       "rejectRequest": "Từ chối yêu cầu",
       "sendProposal": "Gửi đề xuất",
       "view": "Xem",
-      "confirm": "Xác nhận"
+      "confirm": "Xác nhận",
+      "message": "Nhắn tin"
     },
     "rejectDialog": {
       "titleGiveaway": "Từ chối yêu cầu tặng",
@@ -448,7 +450,8 @@
     "showInactive": "Hiện cũ",
     "pickPickupDay": "Chọn ngày nhận",
     "giveawayNote": "Tặng luôn, không cần trả lại.",
-    "request": "Gửi yêu cầu"
+    "request": "Gửi yêu cầu",
+    "chatWithOwner": "Nhắn tin với chủ đồ"
   },
   "Calendar": {
     "title": "Lịch",

@@ -1,0 +1,6 @@
+# Repo-local Codex configuration.
+# Official Codex docs recommend AGENTS.md for reusable guidance and repo-local
+# config for durable project behavior.
+
+project_doc_max_bytes = 65536
+project_doc_fallback_filenames = ["CLAUDE.md"]

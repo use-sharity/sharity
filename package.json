@@ -12,6 +12,8 @@
     "prepare": "husky",
     "test": "vitest run",
     "test:watch": "vitest",
+    "memory:audit": "python3 scripts/context_memory_audit.py --days 30",
+    "memory:catchup": "python3 scripts/sharity_memory_catchup.py --check",
     "posthog:dashboard": "tsx scripts/sync-posthog-dashboard.ts",
     "eval": "promptfoo eval -c evals/promptfooconfig.yaml",
     "eval:view": "promptfoo eval -c evals/promptfooconfig.yaml && promptfoo view"

@@ -1,0 +1,16 @@
+ M app/[locale]/item/[id]/page.tsx
+ M components/app-header.tsx
+ M components/discovery-card.tsx
+ M components/lease/lease-claim-card.tsx
+ M convex/_generated/api.d.ts
+ M convex/items.ts
+ M convex/schema.ts
+ M messages/en.json
+ M messages/ru.json
+ M messages/vi.json
+?? .agents/
+?? .codex/
+?? AGENTS.md
+?? app/[locale]/chat/
+?? components/chat/
+?? convex/messaging.ts

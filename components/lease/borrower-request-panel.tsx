@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useMutation } from "convex/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { AvailabilityToggle } from "@/components/notifications/availability-toggle";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,6 +21,7 @@ import { LeaseClaimCard } from "./lease-claim-card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/routing";
 
 function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -275,6 +276,8 @@ export function BorrowerRequestActions() {
 
   const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
+  const startConversation = useMutation(api.messaging.startConversation);
+  const router = useRouter();
   const [showInactive, setShowInactive] = React.useState(false);
 
   const hasActiveBorrow = React.useMemo(() => {
@@ -288,6 +291,27 @@ export function BorrowerRequestActions() {
         !req.missingAt,
     );
   }, [myRequests]);
+
+  const approvedClaim = React.useMemo(() => {
+    return (myRequests ?? []).find(
+      (req) =>
+        req.status === "approved" &&
+        !req.returnedAt &&
+        !req.transferredAt &&
+        !req.expiredAt &&
+        !req.missingAt,
+    );
+  }, [myRequests]);
+
+  const handleChatWithOwner = async () => {
+    if (!approvedClaim) return;
+    const conversationId = await startConversation({
+      otherUserId: item.ownerId,
+      itemId: item._id,
+      claimId: approvedClaim._id,
+    });
+    router.push(`/chat/${conversationId}`);
+  };
 
   return (
     <>
@@ -314,6 +338,17 @@ export function BorrowerRequestActions() {
             )}
           </Button>
           {!hasActiveBorrow && <AvailabilityToggle id={item._id} />}
+          {approvedClaim && isAuthenticated && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 gap-1"
+              onClick={handleChatWithOwner}
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t("chatWithOwner")}
+            </Button>
+          )}
         </div>
         {!isAuthenticated && (
           <span className="text-sm text-muted-foreground">

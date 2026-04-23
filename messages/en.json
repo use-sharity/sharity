@@ -98,7 +98,8 @@
     "giveaway": "Pass On",
     "loan": "Loan",
     "locationAvailable": "Location available",
-    "yourItem": "Your Item"
+    "yourItem": "Your Item",
+    "messageOwner": "Message"
   },
   "ItemForm": {
     "giveawayMode": "Pass On",
@@ -341,7 +342,8 @@
       "rejectRequest": "Reject request",
       "sendProposal": "Send proposal",
       "view": "View",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "message": "Message"
     },
     "rejectDialog": {
       "titleGiveaway": "Reject pass on request",
@@ -448,7 +450,8 @@
     "showInactive": "Show Inactive",
     "pickPickupDay": "Pick a pickup day",
     "giveawayNote": "Pass On: no return needed. Ownership transfers after pickup.",
-    "request": "Request"
+    "request": "Request",
+    "chatWithOwner": "Chat with owner"
   },
   "Calendar": {
     "title": "Calendar",

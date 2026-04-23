@@ -1,0 +1,2 @@
+codex_agent_id=019dbc0b-0097-74d1-953d-fc4fed9dae7e
+claude_session_id=66538

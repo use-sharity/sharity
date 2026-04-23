@@ -1,0 +1,14 @@
+
+> sharity@0.1.0 test /Users/dmitrysurkov/Developer/Personal/sharity-benchmarks/claude-in-app-chat-20260424-032033
+> vitest run
+
+
+ RUN  v4.1.2 /Users/dmitrysurkov/Developer/Personal/sharity-benchmarks/claude-in-app-chat-20260424-032033
+
+
+ Test Files  3 passed (3)
+      Tests  29 passed (29)
+   Start at  03:49:35
+   Duration  272ms (transform 119ms, setup 0ms, import 300ms, tests 27ms, environment 0ms)
+
+exit=0

@@ -1,0 +1,9 @@
+ app/[locale]/item/[id]/page.tsx |  8 ++++++++
+ components/app-header.tsx       |  3 +++
+ convex/_generated/api.d.ts      |  2 ++
+ convex/items.ts                 | 28 ++++++++++++++++++++++++++++
+ convex/schema.ts                | 31 +++++++++++++++++++++++++++++++
+ messages/en.json                | 20 ++++++++++++++++++++
+ messages/ru.json                | 20 ++++++++++++++++++++
+ messages/vi.json                | 20 ++++++++++++++++++++
+ 8 files changed, 132 insertions(+)

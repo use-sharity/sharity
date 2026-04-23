@@ -29,6 +29,7 @@ import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as mediaTypes from "../mediaTypes.js";
 import type * as media_migrations from "../media_migrations.js";
+import type * as messaging from "../messaging.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as ratings from "../ratings.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   items: typeof items;
   mediaTypes: typeof mediaTypes;
   media_migrations: typeof media_migrations;
+  messaging: typeof messaging;
   migrations: typeof migrations;
   notifications: typeof notifications;
   ratings: typeof ratings;

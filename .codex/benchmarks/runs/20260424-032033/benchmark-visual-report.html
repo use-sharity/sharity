@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Sharity Chat Benchmark Visual Report</title>
+	<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+	<style>
+		:root {
+			--bg: #f7f4ef;
+			--panel: #ffffff;
+			--ink: #18312d;
+			--muted: #65746f;
+			--line: #d9ded9;
+			--claude: #8f5f38;
+			--codex: #2f746b;
+			--warn: #b85c38;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			background: var(--bg);
+			color: var(--ink);
+			font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		}
+		main {
+			max-width: 1180px;
+			margin: 0 auto;
+			padding: 28px;
+		}
+		header {
+			display: flex;
+			justify-content: space-between;
+			gap: 24px;
+			align-items: end;
+			margin-bottom: 22px;
+		}
+		h1, h2, h3, p { margin: 0; }
+		h1 { font-size: 28px; letter-spacing: 0; }
+		h2 { font-size: 18px; margin-bottom: 12px; }
+		.subtitle { color: var(--muted); margin-top: 6px; max-width: 720px; }
+		.badge {
+			border: 1px solid var(--line);
+			background: #fffaf3;
+			border-radius: 999px;
+			padding: 7px 11px;
+			white-space: nowrap;
+			font-weight: 600;
+		}
+		.grid {
+			display: grid;
+			grid-template-columns: 1.25fr 0.75fr;
+			gap: 16px;
+		}
+		.panel {
+			background: var(--panel);
+			border: 1px solid var(--line);
+			border-radius: 8px;
+			padding: 18px;
+			box-shadow: 0 8px 24px rgba(24, 49, 45, 0.06);
+		}
+		.chart {
+			width: 100%;
+			height: 430px;
+		}
+		.scorecards {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+		}
+		.scorecard {
+			border: 1px solid var(--line);
+			border-radius: 8px;
+			padding: 14px;
+			background: #fbfcfa;
+		}
+		.score {
+			font-size: 34px;
+			font-weight: 750;
+			margin-top: 6px;
+		}
+		.codex { color: var(--codex); }
+		.claude { color: var(--claude); }
+		.note {
+			margin-top: 12px;
+			color: var(--muted);
+			font-size: 13px;
+		}
+		.rows {
+			display: grid;
+			gap: 10px;
+		}
+		.row {
+			display: grid;
+			grid-template-columns: 150px 1fr 48px;
+			gap: 10px;
+			align-items: center;
+		}
+		.track {
+			position: relative;
+			height: 10px;
+			background: #e8ebe7;
+			border-radius: 999px;
+			overflow: hidden;
+		}
+		.fill {
+			position: absolute;
+			inset: 0 auto 0 0;
+			border-radius: inherit;
+		}
+		.fill.claude-bg { background: var(--claude); }
+		.fill.codex-bg { background: var(--codex); }
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 4px;
+		}
+		th, td {
+			text-align: left;
+			border-bottom: 1px solid var(--line);
+			padding: 9px 6px;
+			vertical-align: top;
+		}
+		th { color: var(--muted); font-weight: 650; }
+		.verdict {
+			background: #eef7f2;
+			border-color: #c8dfd2;
+		}
+		.warn {
+			background: #fff5ef;
+			border-color: #efd1c1;
+		}
+		@media (max-width: 900px) {
+			main { padding: 16px; }
+			header, .grid, .scorecards { display: block; }
+			.panel { margin-bottom: 14px; }
+			.chart { height: 360px; }
+			.row { grid-template-columns: 120px 1fr 42px; }
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<header>
+			<div>
+				<h1>Sharity In-App Chat Benchmark</h1>
+				<p class="subtitle">Claude Code vs Codex GPT-5.5, same base commit and same context pack. Static/code verification is measured; browser realtime evidence remains blocked by local env setup.</p>
+			</div>
+			<div class="badge">Winner: Codex GPT-5.5</div>
+		</header>
+
+		<section class="grid">
+			<div class="panel">
+				<h2>Apache ECharts View</h2>
+				<div id="echarts" class="chart" aria-label="Apache ECharts benchmark radar and scores"></div>
+			</div>
+			<div class="panel verdict">
+				<h2>Final Score</h2>
+				<div class="scorecards">
+					<div class="scorecard">
+						<h3>Claude</h3>
+						<div class="score claude">21.2</div>
+						<p class="note">out of 35</p>
+					</div>
+					<div class="scorecard">
+						<h3>Codex GPT-5.5</h3>
+						<div class="score codex">23.6</div>
+						<p class="note">out of 35</p>
+					</div>
+				</div>
+				<p class="note">Codex wins on product coverage: more entry points, broader claim lifecycle system messages, and better changed-files lint result.</p>
+			</div>
+		</section>
+
+		<section class="panel" style="margin-top:16px">
+			<h2>Pure HTML/CSS View (No Apache ECharts)</h2>
+			<div class="rows" id="css-bars"></div>
+		</section>
+
+		<section class="grid" style="margin-top:16px">
+			<div class="panel">
+				<h2>Verification</h2>
+				<table>
+					<thead><tr><th>Check</th><th>Claude</th><th>Codex GPT-5.5</th></tr></thead>
+					<tbody>
+						<tr><td>TypeScript</td><td>pass</td><td>pass</td></tr>
+						<tr><td>Unit tests</td><td>29/29 pass</td><td>29/29 pass</td></tr>
+						<tr><td>Convex codegen</td><td>blocked initially by env</td><td>blocked initially by env</td></tr>
+						<tr><td>Changed-files ESLint</td><td>fail on touched pre-existing lint issue</td><td>pass</td></tr>
+						<tr><td>Browser evidence</td><td>not measured in original run</td><td>not measured in original run</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="panel warn">
+				<h2>Fairness Caveat</h2>
+				<p>The original benchmark did not copy working Convex/Clerk browser env into both worktrees, so Playwright/live realtime UX was not fairly measured. Local Convex deployments were later configured for manual inspection.</p>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		const labels = [
+			"Requirement coverage",
+			"Convex/auth",
+			"Pattern fit",
+			"UI/i18n",
+			"Verification",
+			"Maintainability",
+			"Browser evidence",
+		];
+		const claude = [3.2, 3.9, 3.7, 3.8, 2.4, 3.7, 0.5];
+		const codex = [4.4, 4.2, 4.0, 4.0, 3.0, 3.5, 0.5];
+
+		const chart = echarts.init(document.getElementById("echarts"));
+		chart.setOption({
+			color: ["#8f5f38", "#2f746b"],
+			tooltip: { trigger: "axis" },
+			legend: { bottom: 0, data: ["Claude", "Codex GPT-5.5"] },
+			radar: {
+				indicator: labels.map((name) => ({ name, max: 5 })),
+				radius: "63%",
+				axisName: { color: "#18312d", fontSize: 12 },
+				splitLine: { lineStyle: { color: "#d9ded9" } },
+				splitArea: { areaStyle: { color: ["#ffffff", "#f7f4ef"] } },
+			},
+			series: [{
+				type: "radar",
+				data: [
+					{ value: claude, name: "Claude", areaStyle: { opacity: 0.15 } },
+					{ value: codex, name: "Codex GPT-5.5", areaStyle: { opacity: 0.18 } },
+				],
+			}],
+		});
+		window.addEventListener("resize", () => chart.resize());
+
+		const bars = document.getElementById("css-bars");
+		labels.forEach((label, index) => {
+			for (const [agent, values, cls] of [
+				["Claude", claude, "claude-bg"],
+				["Codex", codex, "codex-bg"],
+			]) {
+				const row = document.createElement("div");
+				row.className = "row";
+				row.innerHTML = `
+					<div>${label}<br><span style="color:var(--muted);font-size:12px">${agent}</span></div>
+					<div class="track"><div class="fill ${cls}" style="width:${values[index] * 20}%"></div></div>
+					<div>${values[index].toFixed(1)}</div>
+				`;
+				bars.appendChild(row);
+			}
+		});
+	</script>
+</body>
+</html>

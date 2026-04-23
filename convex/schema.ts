@@ -222,4 +222,43 @@ export default defineSchema({
     userId: v.string(),
     clearedAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  // User-to-user conversations (scoped to an item to prevent spam)
+  conversations: defineTable({
+    participantIds: v.array(v.string()), // Clerk user ids, sorted ascending
+    itemId: v.id("items"),
+    claimId: v.optional(v.id("claims")),
+    lastMessageAt: v.number(),
+    lastMessagePreview: v.string(),
+    lastMessageSenderId: v.string(), // "system" for system messages
+    createdAt: v.number(),
+  })
+    .index("by_participants_item", ["participantIds", "itemId"])
+    .index("by_lastMessageAt", ["lastMessageAt"])
+    .index("by_item", ["itemId"]),
+
+  conversation_messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.string(), // Clerk user id, or "system"
+    body: v.string(),
+    type: v.union(v.literal("text"), v.literal("system")),
+    systemEvent: v.optional(
+      v.union(
+        v.literal("claim_requested"),
+        v.literal("claim_approved"),
+        v.literal("claim_rejected"),
+        v.literal("picked_up"),
+        v.literal("returned"),
+      ),
+    ),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId", "createdAt"]),
+
+  conversation_reads: defineTable({
+    userId: v.string(),
+    conversationId: v.id("conversations"),
+    lastReadAt: v.number(),
+  })
+    .index("by_user_conversation", ["userId", "conversationId"])
+    .index("by_user", ["userId"]),
 });

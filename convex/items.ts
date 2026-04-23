@@ -1217,6 +1217,19 @@ export const requestItem = mutation({
       });
     }
 
+    // Open/ensure conversation for this claim and post system message
+    const claimerName = borrowerProfile?.name ?? "Someone";
+    const fmtDate = (ts: number) => new Date(ts).toISOString().slice(0, 10);
+    const conversationId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId,
+      body: `${claimerName} requested this item from ${fmtDate(args.startDate)} to ${fmtDate(args.endDate)}.`,
+      systemEvent: "claim_requested",
+    });
+
     // Schedule auto-expiry at the start date
     await ctx.scheduler.runAt(
       args.startDate,
@@ -1313,6 +1326,19 @@ export const approveClaim = mutation({
         },
       });
     }
+
+    // Chat: system message for approval
+    const approveConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    const fmtDateApprove = (ts: number) =>
+      new Date(ts).toISOString().slice(0, 10);
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: approveConvId,
+      body: `Request approved — pickup window: ${fmtDateApprove(claim.startDate)} to ${fmtDateApprove(claim.endDate)}.`,
+      systemEvent: "claim_approved",
+    });
 
     // We no longer set isAvailable to false globally, as it depends on dates.
 
@@ -2044,6 +2070,17 @@ export const markPickedUp = mutation({
         createdAt,
       });
     }
+
+    // Chat: system message for pickup
+    const pickupConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: pickupConvId,
+      body: "Item picked up.",
+      systemEvent: "picked_up",
+    });
   },
 });
 
@@ -2203,6 +2240,17 @@ export const markReturned = mutation({
       isRead: false,
       createdAt,
     });
+
+    // Chat: system message for return
+    const returnConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: returnConvId,
+      body: "Item returned.",
+      systemEvent: "returned",
+    });
   },
 });
 
@@ -2259,6 +2307,17 @@ export const rejectClaim = mutation({
         },
       });
     }
+
+    // Chat: system message for rejection
+    const rejectConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: rejectConvId,
+      body: "Request declined.",
+      systemEvent: "claim_rejected",
+    });
   },
 });
 

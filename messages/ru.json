@@ -98,7 +98,8 @@
     "giveaway": "Подарок",
     "loan": "Аренда",
     "locationAvailable": "Место указано",
-    "yourItem": "Твоя вещь"
+    "yourItem": "Твоя вещь",
+    "messageOwner": "Написать"
   },
   "ItemForm": {
     "giveawayMode": "Подарок",
@@ -341,7 +342,8 @@
       "rejectRequest": "Отклонить запрос",
       "sendProposal": "Отправить предложение",
       "view": "Открыть",
-      "confirm": "Подтвердить"
+      "confirm": "Подтвердить",
+      "message": "Написать"
     },
     "rejectDialog": {
       "titleGiveaway": "Отклонить запрос на подарок",
@@ -448,7 +450,8 @@
     "showInactive": "Показать неактивные",
     "pickPickupDay": "Выбери день получения",
     "giveawayNote": "Подарок: возврат не нужен. Вещь станет твоей после получения.",
-    "request": "Запросить"
+    "request": "Запросить",
+    "chatWithOwner": "Написать владельцу"
   },
   "Calendar": {
     "title": "Календарь",

@@ -1,0 +1,14 @@
+
+> sharity@0.1.0 test /Users/dmitrysurkov/Developer/Personal/sharity-benchmarks/codex-in-app-chat-20260424-032033
+> vitest run
+
+
+ RUN  v4.1.2 /Users/dmitrysurkov/Developer/Personal/sharity-benchmarks/codex-in-app-chat-20260424-032033
+
+
+ Test Files  3 passed (3)
+      Tests  29 passed (29)
+   Start at  03:49:35
+   Duration  274ms (transform 127ms, setup 0ms, import 306ms, tests 27ms, environment 0ms)
+
+exit=0

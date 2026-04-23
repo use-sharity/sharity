@@ -1,0 +1,9 @@
+agent=codex
+branch=bench/codex-in-app-chat-20260424-032033
+worktree=/Users/dmitrysurkov/Developer/Personal/sharity-benchmarks/codex-in-app-chat-20260424-032033
+base_ref=origin/main
+start_commit=c7ff8d051f292c3c39dffc10359035dbcb08de90
+## bench/codex-in-app-chat-20260424-032033...origin/main
+?? .agents/
+?? .codex/
+?? AGENTS.md

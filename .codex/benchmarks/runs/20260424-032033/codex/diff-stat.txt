@@ -1,0 +1,11 @@
+ app/[locale]/item/[id]/page.tsx       |  16 +++-
+ components/app-header.tsx             |  27 +++++++
+ components/discovery-card.tsx         |  46 ++++++-----
+ components/lease/lease-claim-card.tsx |  10 +++
+ convex/_generated/api.d.ts            |   2 +
+ convex/items.ts                       | 141 +++++++++++++++++++++++++++++++++-
+ convex/schema.ts                      |  66 ++++++++++++++++
+ messages/en.json                      |  49 +++++++++++-
+ messages/ru.json                      |  49 +++++++++++-
+ messages/vi.json                      |  49 +++++++++++-
+ 10 files changed, 426 insertions(+), 29 deletions(-)

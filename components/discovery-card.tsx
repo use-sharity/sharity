@@ -1,13 +1,17 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { useMutation } from "convex/react";
+import { useRouter } from "@/i18n/routing";
 import { ItemImageCarousel } from "@/components/item-image-carousel";
 import { ItemMetaRow } from "@/components/item-meta-row";
 import { BorrowerRequestPanel } from "@/components/lease/borrower-request-panel";
 import { Button } from "@/components/ui/button";
+import { api } from "@/convex/_generated/api";
 import {
   Card,
   CardContent,
@@ -42,6 +46,17 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const t = useTranslations("DiscoveryCard");
   const tCategories = useTranslations("Categories");
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const startConversation = useMutation(api.messaging.startConversation);
+
+  const handleMessageOwner = async () => {
+    const conversationId = await startConversation({
+      otherUserId: item.ownerId,
+      itemId: item._id,
+    });
+    router.push(`/chat/${conversationId}`);
+  };
 
   const claimLabel = item.isOwn
     ? t("yourItem")
@@ -92,26 +107,39 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
             size="sm"
             initialUserInfo={item.owner}
           />
-          {item.isOwn ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/item/${item._id}`}>{claimLabel}</Link>
-            </Button>
-          ) : (
-            <Button
-              variant={isExpanded ? "secondary" : "default"}
-              size="sm"
-              onClick={() => setIsExpanded((v) => !v)}
-              aria-expanded={isExpanded}
-              className="gap-1"
-            >
-              {claimLabel}
-              {isExpanded ? (
-                <ChevronUp className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {isSignedIn && !item.isOwn && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMessageOwner}
+                className="gap-1"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                {t("messageOwner")}
+              </Button>
+            )}
+            {item.isOwn ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/item/${item._id}`}>{claimLabel}</Link>
+              </Button>
+            ) : (
+              <Button
+                variant={isExpanded ? "secondary" : "default"}
+                size="sm"
+                onClick={() => setIsExpanded((v) => !v)}
+                aria-expanded={isExpanded}
+                className="gap-1"
+              >
+                {claimLabel}
+                {isExpanded ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </CardFooter>
 

@@ -11,7 +11,9 @@
 .vercel
 .yarn/*
 *.pem
+*.py[cod]
 *.tsbuildinfo
+__pycache__/
 /.next/
 /.pnp
 /build
@@ -50,3 +52,9 @@ yarn-error.log*
 /playwright/.cache/
 playwright/.auth/
 .worktrees
+/excalidraw.log
+
+# Local memory catch-up state/logs
+/.codex/memory/.catchup-state.json
+/.codex/memory/.catchup.lock
+/.codex/memory/catchup-logs/
