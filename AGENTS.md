@@ -1,4 +1,39 @@
 <!-- claude2codex:begin -->
+# PROJECT IDENTITY GUARD
+
+This is the canonical active Sharity project:
+
+```text
+/Users/dmitrysurkov/Developer/Personal/sharity-vinhloc
+```
+
+If a prompt, worker packet, browser URL, handoff, or orchestrator metadata points
+to `dalat-sharity`, treat that as stale/legacy unless the user explicitly says
+to work on Dalat Sharity. For Sharity product work, code edits, dev servers, and
+verification must happen in this repository.
+
+For local app verification, treat Convex as required runtime infrastructure:
+before browser or Playwright checks, confirm both `next dev` and `pnpm convex:dev`
+are running from this repository. Do not treat a loaded Next.js page as a valid
+Sharity check if the Convex dev process/database has not been verified.
+
+## Two-User Browser Testing Guard
+
+When testing Sharity flows that involve owner/requester, always use two browser
+contexts that are explicitly signed in as different Clerk users. Do not assume a
+window is authenticated just because a Playwright `storageState` file exists:
+auth state is origin-specific, so localhost cookies/localStorage do not log in a
+Cloudflare tunnel URL. For Cloudflare/iPhone testing, sign in on the tunnel
+origin with `@clerk/testing/playwright` (`clerk.signIn`) for each user and wait
+for `.cl-userButtonTrigger` before handing the windows to Dmitry. If old
+Playwright Chrome windows are open, close the Chrome-for-Testing sessions first,
+then open exactly two fresh windows.
+
+Default test users:
+
+- USER_A: `E2E_USER_A_EMAIL` / `user_38Te2S572G8xjj9FNCq8szncRAl`
+- USER_B: `E2E_USER_B_EMAIL` / `user_38gb4lqLetM0bfE5ChI8DYn5ZLN`
+
 # Sharity (Vinh Loc Edition)
 
 Платформа для sharing economy — люди одалживают и находят вещи для временного использования.

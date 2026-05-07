@@ -5,13 +5,15 @@ This is the compact context entrypoint for Codex runs in this repository.
 ## Load Order
 
 1. `AGENTS.md` is automatically loaded by Codex and contains the broad project rules.
-2. Use repo skills in `.agents/skills` for progressive disclosure:
+2. `context/bootstrap.md` is the project bootstrap packet for orchestrators and
+   project-scoped worker sessions.
+3. Use repo skills in `.agents/skills` for progressive disclosure:
    - `sharity-context` for task bootstrap.
    - `sharity-convex` for Convex backend work.
    - `sharity-react` for UI work.
    - `sharity-playwright` for browser/E2E verification.
    - `sharity-benchmark` for Claude versus Codex comparisons.
-3. Read only the context notes needed for the current task:
+4. Read only the context notes needed for the current task:
    - `convex.md`
    - `react-ui.md`
    - `testing.md`
