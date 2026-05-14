@@ -5,6 +5,7 @@ import type {
   EventClickArg,
   EventInput,
 } from "@fullcalendar/core";
+import type FullCalendar from "@fullcalendar/react";
 import { useMutation, useQuery } from "convex/react";
 import type { DateRange } from "react-day-picker";
 import dynamic from "next/dynamic";
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import type { CalendarEvent } from "@/convex/items";
 
 import { CalendarEventPopover } from "./calendar-event-popover";
@@ -45,7 +47,7 @@ interface FullCalendarWrapperProps {
   onEventClick: (arg: EventClickArg) => void;
   onDatesSet: (arg: DatesSetArg) => void;
   selectable: boolean;
-  calendarRef: React.RefObject<any>;
+  calendarRef: React.RefObject<FullCalendar | null>;
   locale: string;
 }
 
@@ -215,7 +217,7 @@ export function EnhancedCalendar() {
   const locale = useLocale();
   const t = useTranslations("Calendar");
   const dateLocale = getDateLocale(locale);
-  const calendarRef = useRef<any>(null);
+  const calendarRef = useRef<FullCalendar | null>(null);
   const [calendarTitle, setCalendarTitle] = useState("");
 
   const [dateRange, setDateRange] = useState<{
@@ -250,7 +252,10 @@ export function EnhancedCalendar() {
   }));
   const upNextEvents = useQuery(api.items.getCalendarEvents, upNextRange);
 
-  const calendarEvents: CalendarEvent[] = rawEvents ?? [];
+  const calendarEvents = useMemo<CalendarEvent[]>(
+    () => rawEvents ?? [],
+    [rawEvents],
+  );
 
   const vacationLabel = t("popover.vacation");
   const fcEvents = useMemo(
@@ -304,7 +309,7 @@ export function EnhancedCalendar() {
       // The query prefixes vacation IDs with "vacation-" to avoid collisions
       const rawId = id.replace("vacation-", "");
       await deleteVacationRange({
-        id: rawId as any,
+        id: rawId as Id<"owner_unavailability">,
       });
     },
     [deleteVacationRange],

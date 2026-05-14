@@ -1,6 +1,5 @@
 import { clerkSetup } from "@clerk/testing/playwright";
-import { type FullConfig } from "@playwright/test";
 
-export default async function globalSetup(_: FullConfig) {
+export default async function globalSetup() {
   await clerkSetup({ dotenv: true });
 }

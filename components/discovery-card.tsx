@@ -1,17 +1,12 @@
 "use client";
 
-import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
-import { useRouter } from "@/i18n/routing";
+import { MessageCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ItemImageCarousel } from "@/components/item-image-carousel";
 import { ItemMetaRow } from "@/components/item-meta-row";
-import { BorrowerRequestPanel } from "@/components/lease/borrower-request-panel";
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
 import {
   Card,
   CardContent,
@@ -19,11 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { UserLink } from "@/components/user-link";
+import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { Link, useRouter } from "@/i18n/routing";
 import type { ItemCategory } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 
 export interface DiscoveryCardItem extends Doc<"items"> {
   imageUrls?: string[];
@@ -43,7 +38,6 @@ interface DiscoveryCardProps {
 }
 
 export function DiscoveryCard({ item }: DiscoveryCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const t = useTranslations("DiscoveryCard");
   const tCategories = useTranslations("Categories");
   const { isSignedIn } = useAuth();
@@ -119,43 +113,16 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
                 {t("messageOwner")}
               </Button>
             )}
-            {item.isOwn ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/item/${item._id}`}>{claimLabel}</Link>
-              </Button>
-            ) : (
-              <Button
-                variant={isExpanded ? "secondary" : "default"}
-                size="sm"
-                onClick={() => setIsExpanded((v) => !v)}
-                aria-expanded={isExpanded}
-                className="gap-1"
-              >
-                {claimLabel}
-                {isExpanded ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            )}
+            <Button
+              variant={item.isOwn ? "outline" : "default"}
+              size="sm"
+              asChild
+            >
+              <Link href={`/item/${item._id}`}>{claimLabel}</Link>
+            </Button>
           </div>
         </div>
       </CardFooter>
-
-      <div
-        className={cn(
-          "grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out",
-          isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        )}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <Separator />
-          <div className="px-6 pt-4 pb-2 space-y-4">
-            <BorrowerRequestPanel item={item} fullWidth embedded />
-          </div>
-        </div>
-      </div>
     </Card>
   );
 }

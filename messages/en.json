@@ -326,12 +326,20 @@
       "picked_up": "In use",
       "transferred": "Transferred",
       "returned": "Completed",
-      "expired": "Expired",
-      "past_due": "Past due",
+      "expired": "Pickup missed",
+      "past_due": "Start date passed",
       "missing": "Missing",
       "unknown": "Unknown"
     },
     "pastDueMessage": "This request has passed its start date and can no longer be approved.",
+    "due": {
+      "title": "Return deadline: {date}",
+      "safe": "Due {date}",
+      "soon": "Due soon: {date}",
+      "urgent": "Due now: {date}",
+      "overdue": "Overdue: {date}",
+      "complete": "Due {date}"
+    },
     "actions": {
       "cancel": "Cancel",
       "cancelling": "Cancelling...",
@@ -343,7 +351,159 @@
       "sendProposal": "Send proposal",
       "view": "View",
       "confirm": "Confirm",
-      "message": "Message"
+      "message": "Message",
+      "iReceivedItem": "I received the item",
+      "returnItem": "Return item",
+      "markReturned": "Item returned",
+      "markPickupMissed": "Mark pickup missed",
+      "markMissing": "Mark item missing"
+    },
+    "chat": {
+      "title": "Request chat",
+      "empty": "Open chat with this requester",
+      "unread": "new"
+    },
+    "nextAction": {
+      "title": {
+        "action": "Next: your action",
+        "waiting": "Next: waiting",
+        "next": "Next",
+        "done": "Next: complete",
+        "problem": "Next: recover"
+      },
+      "required": "Required:",
+      "optional": "Optional:",
+      "owner": {
+        "requested": "Owner: approve or reject this request now. Use the main buttons below.",
+        "approvedBeforeStart": "Owner: agreed pickup time is {time}. The borrower can confirm receipt after handoff.",
+        "approvedBeforeStartWithReschedule": "Owner: the foster period starts {time}. Pickup time can be agreed below.",
+        "awaitingPickup": "Borrower: confirm receipt when the item is in their hands. Owner can mark pickup missed if the handoff did not happen.",
+        "pickupProposalNeedsApproval": "Owner: approve the proposed pickup time if it works, or suggest a different time.",
+        "pickupProposalPending": "Borrower: approve the proposed pickup time before the receive button unlocks.",
+        "earlyPickupReady": "Borrower: confirm receipt during the agreed pickup window.",
+        "pickupRequired": "Hand over the item and wait for the borrower to confirm receipt.",
+        "pickupOptional": "Set an exact pickup time below so both people see the same plan.",
+        "pickupApprovalRequired": "Approve the proposed pickup time or suggest another.",
+        "pickupPendingRequired": "Wait for the borrower to approve the pickup time you proposed.",
+        "pickupApprovedRequired": "Meet during the approved pickup window and wait for borrower confirmation.",
+        "pickupOptionalSuggestAnother": "Suggest another pickup time if this one does not work.",
+        "pickupOptionalChange": "Suggest a different pickup time if the plan changed.",
+        "awaitingReturnRequest": "Borrower: request return from this card when ready. Owner waits for that request.",
+        "returnProposalNeedsApproval": "Owner: review the proposed return details below. Approve them if they work, or suggest another plan.",
+        "returnProposalPending": "Owner: waiting for the borrower to approve the return details you proposed.",
+        "returnRequested": "Owner: confirm “Item returned” once the item is back with you.",
+        "returned": "This lease is complete. No further action is needed.",
+        "transferred": "This giveaway is complete. No further action is needed.",
+        "rejected": "This request was rejected. The borrower can choose new dates and send a new request.",
+        "expired": "Pickup was missed. Message the borrower or ask them to create a new request with workable dates.",
+        "pastDue": "The requested start date passed before approval. Ask the borrower to send a new request.",
+        "missing": "The item is marked missing. Use chat to coordinate recovery or resolution.",
+        "fallback": "Review the timeline below and coordinate in chat."
+      },
+      "borrower": {
+        "requested": "Owner: approve or reject your request. You can message them or cancel this request.",
+        "approvedBeforeStart": "Borrower: agreed pickup time is {time}. You can confirm receipt after handoff.",
+        "approvedBeforeStartWithReschedule": "Borrower: the foster period starts {time}. Pickup time can be agreed below.",
+        "awaitingPickup": "Borrower: tap “I received the item” when the item is in your hands.",
+        "pickupProposalNeedsApproval": "Borrower: approve the proposed pickup time if it works, or suggest a different time.",
+        "pickupProposalPending": "Owner: approve your proposed pickup time before the receive button unlocks.",
+        "earlyPickupReady": "Borrower: tap “I received the item” during the agreed pickup window.",
+        "pickupRequired": "Meet the owner and tap “I received the item” once the item is in your hands.",
+        "pickupOptional": "Set an exact pickup time below so both people see the same plan.",
+        "pickupApprovalRequired": "Approve the proposed pickup time or suggest another.",
+        "pickupPendingRequired": "Wait for the owner to approve the pickup time you proposed.",
+        "pickupApprovedRequired": "Meet during the approved pickup window and confirm receipt after handoff.",
+        "pickupOptionalSuggestAnother": "Suggest another pickup time if this one does not work.",
+        "pickupOptionalChange": "Suggest a different pickup time if the plan changed.",
+        "awaitingReturn": "Borrower: request return when you are ready to give the item back. Choose a meeting time so the owner knows what to approve.",
+        "returnProposalNeedsApproval": "Borrower: review the return details below. Approve them if they work, or suggest another plan.",
+        "returnProposalPending": "Owner: approve your proposed return details. Then they confirm once the item is back.",
+        "returnRequested": "Owner: confirm the return once the item is back with them.",
+        "returned": "This lease is complete. No further action is needed.",
+        "transferred": "This giveaway is complete. No further action is needed.",
+        "rejected": "This request was rejected. Choose new dates and send a new request if you still need the item.",
+        "expired": "Pickup was missed. Choose new dates and send a fresh request if you still need the item.",
+        "pastDue": "This request started in the past and cannot be approved. Choose new dates and send a fresh request.",
+        "missing": "The item is marked missing. Message the owner to coordinate the next step.",
+        "fallback": "Review the timeline below and coordinate in chat."
+      }
+    },
+    "journey": {
+      "steps": {
+        "requested": "Requested",
+        "approved": "Approved",
+        "arrangePickup": "Arrange pickup",
+        "pickedUp": "Picked up",
+        "returned": "Returned",
+        "transferred": "Transferred"
+      },
+      "stepper": {
+        "steps": {
+          "requested": "Request",
+          "approved": "Approved",
+          "pickup_proposed": "Pickup plan",
+          "pickup_approved": "Pickup ok",
+          "picked_up": "Received",
+          "return_proposed": "Return plan",
+          "return_approved": "Return ok",
+          "returned": "Returned",
+          "transferred": "Transferred"
+        },
+        "terminal": {
+          "rejected": "Rejected",
+          "expired": "Pickup missed",
+          "missing": "Missing",
+          "past_due": "Past due"
+        }
+      },
+      "turn": {
+        "yourTurn": "Your turn",
+        "waiting": "Waiting",
+        "nextStep": "Next step",
+        "ownerApproveRequest": "Approve or reject this request.",
+        "borrowerWaitForApproval": "The owner needs to approve the request.",
+        "borrowerReceiveItem": "Tap “I received the item” when the item is in your hands.",
+        "ownerWaitForReceived": "The borrower needs to confirm they received the item.",
+        "borrowerReturnWhenReady": "When you are ready, request return from this card.",
+        "borrowerWaitForReturnConfirm": "The owner needs to confirm the item is back.",
+        "ownerConfirmReturn": "When the item is back, tap “Item returned”.",
+        "ownerConfirmRequestedReturn": "The borrower requested return. Confirm once the item is back.",
+        "borrowerWaitForStart": "Pickup is scheduled for {time}. The receive button unlocks then.",
+        "ownerWaitForStart": "Pickup is scheduled for {time}. Waiting until then.",
+        "ownerWaitForReturnRequest": "Waiting for the borrower to request return."
+      },
+      "pickupTitle": "Arrange pickup",
+      "pickupHelper": "Sharity keeps the pickup plan here, so a shared external messenger is optional.",
+      "returnTitle": "Arrange return",
+      "returnHelper": "Use this in-app plan as the shared reference until the item is back.",
+      "place": {
+        "pickup": "Suggested place",
+        "return": "Return place",
+        "fallback": "Agree in Sharity before meeting"
+      },
+      "time": {
+        "pickup": "Agreed pickup time",
+        "return": "Agreed return time"
+      },
+      "note": {
+        "title": "Coordination note",
+        "body": "Confirm the plan here. WhatsApp, Telegram, or phone can help later, but they are not required."
+      },
+      "next": {
+        "label": "Next:",
+        "suggestPickup": "Save the agreed pickup details.",
+        "suggestReturn": "Choose a return meeting time and send it to the owner.",
+        "waitingForApproval": "Waiting for the other person to approve these details.",
+        "approveWindow": "Approve these details or suggest another plan.",
+        "waitForWindow": "Confirm when the handoff is done.",
+        "windowPassed": "This plan has passed. Suggest another plan.",
+        "confirmPickup": "Confirm pickup now.",
+        "confirmReturn": "Confirm return now."
+      },
+      "detailsSaved": "Details saved",
+      "suggestAnother": "Suggest another",
+      "suggestPickupTime": "Save pickup details",
+      "suggestReturnTime": "Request return"
     },
     "rejectDialog": {
       "titleGiveaway": "Reject pass on request",
@@ -353,6 +513,20 @@
       "reasonLabel": "Reason (optional, but recommended)",
       "reasonPlaceholder": "Let them know why..."
     },
+    "expiredDialog": {
+      "titleGiveaway": "Mark pickup missed",
+      "titleLease": "Mark pickup missed",
+      "descGiveaway": "The requester did not pick up the item. This ends the giveaway request and frees the item for a new request.",
+      "descLease": "The borrower did not pick up the item. This ends the lease request and frees the dates for a new request.",
+      "noteLabel": "Notes (optional)",
+      "notePlaceholder": "What happened at pickup..."
+    },
+    "missingDialog": {
+      "title": "Mark item missing",
+      "description": "The item was not returned as expected. Use this only when chat coordination has not resolved it.",
+      "noteLabel": "Notes (optional)",
+      "notePlaceholder": "Details about the missing item..."
+    },
     "intraday": {
       "note": "Intraday lease: pickup & return happen within the selected hours. Use the pickup and return time proposals below to agree on exact windows."
     },
@@ -360,9 +534,9 @@
       "proposedApproved": "Pickup proposed & approved:",
       "proposed": "Pickup proposed:",
       "pendingApproval": "Pending approval.",
-      "propose": "Propose pickup time",
-      "change": "Change pickup time",
-      "sentToast": "Pickup request sent. Now please wait for approval from your counterpart. Nothing to do for now",
+      "propose": "Propose pickup details",
+      "change": "Change pickup details",
+      "sentToast": "Pickup details saved in chat.",
       "confirmTitle": "Confirm item pickup",
       "confirmDesc": "Record that the item has been picked up. Photos help document the item's condition.",
       "confirmAction": "Confirm pickup",
@@ -371,18 +545,41 @@
       "photoLabel": "Photos (optional)",
       "confirmedToast": "Pickup confirmed",
       "approving": "Approving...",
-      "approve": "Approve pickup time",
-      "approvedToast": "Pickup time approved. Waiting for confirmation from your counterpart.",
+      "approve": "Approve pickup details",
+      "approveReschedule": "Approve pickup time",
+      "approvedToast": "Pickup details approved. Waiting for confirmation from your counterpart.",
+      "planTitle": "Pickup time",
+      "planDialogTitle": "Set pickup time",
+      "planDialogDesc": "This is the meeting time for handoff. It is separate from the foster period dates.",
+      "notSet": "No pickup time set yet.",
+      "notSetHint": "The request reserves the item for the foster period. Use this optional step to agree on the exact handoff time.",
+      "optionalPill": "Optional",
+      "pendingPill": "Needs approval",
+      "approvedPill": "Approved",
+      "placeLabel": "Place:",
+      "noteDetailsLabel": "Note:",
+      "suggestTime": "Suggest pickup time",
+      "rescheduleTitle": "Propose pickup time",
+      "rescheduleDesc": "Use this when both people can meet earlier than the original request window.",
+      "rescheduleHint": "Can meet earlier? Suggest a pickup time and wait for the other person to approve it.",
+      "rescheduleProposed": "Pickup time proposed:",
+      "rescheduleApproved": "Pickup time approved:",
+      "suggestEarlier": "Suggest earlier pickup",
+      "suggestDifferentTime": "Suggest different time",
       "windowPassed": "This window has passed. It will auto-expire soon.",
-      "confirmAvailable": "Confirm is available during {start}–{end}."
+      "confirmAvailable": "Confirm is available during {start}–{end}.",
+      "waitForApproval": "Wait for the other person to approve these pickup details.",
+      "waitForBorrower": "Waiting for the borrower to confirm they received the item.",
+      "availableLater": "Receive after {time}",
+      "waitForStart": "The foster period starts {time}."
     },
     "return": {
       "proposedApproved": "Return proposed & approved:",
       "proposed": "Return proposed:",
       "pendingApproval": "Pending approval.",
-      "propose": "Propose return time",
-      "change": "Change return time",
-      "sentToast": "Return request sent. Now please wait for approval from your counterpart. Nothing to do for now",
+      "propose": "Propose return details",
+      "change": "Change return details",
+      "sentToast": "Return request sent to the owner.",
       "confirmTitle": "Confirm item return",
       "confirmDesc": "Record that the item has been returned. Photos help document the item's condition.",
       "confirmAction": "Confirm return",
@@ -391,10 +588,21 @@
       "photoLabel": "Photos (optional)",
       "confirmedToast": "Return confirmed",
       "approving": "Approving...",
-      "approve": "Approve return time",
-      "approvedToast": "Return time approved. Waiting for confirmation from your counterpart.",
+      "approve": "Approve return details",
+      "approvedToast": "Return details approved. Waiting for confirmation from your counterpart.",
       "windowPassed": "This window has passed. It will auto-expire soon.",
-      "confirmAvailable": "Confirm is available during {start}–{end}."
+      "confirmAvailable": "Confirm is available during {start}–{end}.",
+      "waitForApproval": "Wait for the other person to approve these return details.",
+      "requesting": "Sending...",
+      "requested": "Return requested",
+      "approved": "Return details approved",
+      "meetingTimeLabel": "Meeting time:",
+      "notSet": "Not set yet",
+      "noNote": "None",
+      "setMeetingTimeHint": "Suggest another plan with a meeting time before this can be approved.",
+      "setMeetingTimeFirst": "Set meeting time first",
+      "placeLabel": "Place:",
+      "noteDetailsLabel": "Note:"
     }
   },
   "LeaseActivity": {
@@ -419,7 +627,25 @@
     }
   },
   "LeaseProposeWindow": {
-    "defaultDescription": "Choose a 1-hour window on {date}.",
+    "defaultDescription": "Pick one meeting time. Sharity will save it as the handoff time.",
+    "dateTimeLabel": "Meeting starts",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "hourLabel": "Hour",
+    "minuteLabel": "Minute",
+    "quick": {
+      "soon": "Soon",
+      "thirty": "+30 min",
+      "hour": "+1 hour",
+      "tomorrow": "Tomorrow"
+    },
+    "windowPreview": "Meeting time: {time}",
+    "futureError": "Choose a future time.",
+    "placeLabel": "Place",
+    "placePlaceholder": "Lobby, gate, cafe, or exact address",
+    "detailsLabel": "Note",
+    "detailsPlaceholder": "Optional context for the handoff",
+    "detailsHint": "Date, time, and place are saved as structured fields and logged in chat.",
     "hourWindow": "Hour window",
     "selectHour": "Select an hour",
     "proposed": "Proposed: {date} {window}",
@@ -439,19 +665,35 @@
     "errors": {
       "startTimeFuture": "Start time must be in the future",
       "endTimeAfterStart": "End time must be after start time",
-      "hoursNotAvailable": "Selected hours are not available"
+      "hoursNotAvailable": "Selected hours are not available",
+      "datesNotAvailable": "Selected dates are not available",
+      "blockedByUnavailableRange": "Blocked by an existing booking: {range}",
+      "blockedByMissingItem": "Blocked by an unresolved missing-item session: {range}",
+      "overlappingRequest": "You already have a request for these dates"
     },
     "requesting": "Requesting...",
-    "requestToBorrow": "Request to Foster",
+    "requestToBorrow": "Request period",
+    "selectDatesToRequest": "Next: choose the foster period: the days you want the item reserved for you.",
+    "readyToRequest": "Next: request this period. Pickup time is coordinated after approval.",
+    "requestLockedOpenWorkflow": "Next: finish or cancel your current request before sending another one.",
     "signInToRequest": "Sign in to request",
-    "intradayNote": "For intraday requests, pickup & return time is arranged via proposed and approved hour windows after approval.",
+    "intradayNote": "The calendar reserves the item. Exact pickup and return meeting times are arranged after approval.",
     "yourRequests": "Your Requests",
     "hideInactive": "Hide Inactive",
     "showInactive": "Show Inactive",
     "pickPickupDay": "Pick a pickup day",
     "giveawayNote": "Pass On: no return needed. Ownership transfers after pickup.",
     "request": "Request",
-    "chatWithOwner": "Chat with owner"
+    "chatWithOwner": "Chat with owner",
+    "messageOwner": "Message owner",
+    "planDates": "Foster period",
+    "fosterPeriodHelp": "Choose when you want to have the item. Meeting time for pickup and return is coordinated after the owner approves.",
+    "selectHoursTitle": "Select same-day hours",
+    "selectHoursDescription": "These hours are the time you want to have the item on that day.",
+    "selectHours": "Select hours",
+    "changeHours": "Change hours ({range})",
+    "saveHours": "Save hours",
+    "cancel": "Cancel"
   },
   "Calendar": {
     "title": "Calendar",
@@ -752,6 +994,7 @@
     "hideInactive": "Hide Inactive",
     "showInactive": "Show Inactive",
     "noRequests": "No requests yet.",
+    "noActiveRequests": "No active requests. Use Show Inactive to review completed ones.",
     "availabilityAndRequests": "Availability & Requests",
     "activity": "Activity",
     "checkAvailabilityAndRequest": "Check Availability & Request",
@@ -763,6 +1006,8 @@
     "toggleInactiveRequests": "Toggle inactive requests"
   },
   "ItemActivity": {
+    "title": "Activity",
+    "titleWithCount": "Activity ({count})",
     "system": "System",
     "itemCreated": "Item created",
     "giveawayApproved": "Pass on approved",
@@ -774,6 +1019,10 @@
     "borrower": "Fosterer: ",
     "loading": "Loading activity…",
     "noActivity": "No activity yet.",
+    "noFilteredActivity": "No activity for this user.",
+    "allUsers": "All users",
+    "showMore": "Show more",
+    "showLess": "Collapse",
     "by": "by "
   },
   "Categories": {
@@ -823,5 +1072,43 @@
     "asLender": "As Sharer",
     "asBorrower": "As Fosterer",
     "photoAlt": "Rating photo {index}"
+  },
+  "ChatCoordination": {
+    "pickupTitle": "Pickup plan",
+    "returnTitle": "Return plan",
+    "pickupFallback": "Pick a date, time, and place here. Sharity will log the plan in chat.",
+    "returnFallback": "Pick a return date, time, and place here. Sharity will log the plan in chat.",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "placeLabel": "Place",
+    "placePlaceholder": "Lobby, gate, cafe, or exact address",
+    "detailsLabel": "Note",
+    "detailsPlaceholder": "Optional context for the handoff",
+    "status": {
+      "empty": "No plan",
+      "pending": "Needs approval",
+      "approved": "Approved"
+    },
+    "actions": {
+      "savePickup": "Save pickup plan",
+      "saveReturn": "Save return plan",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "approvePickup": "Approve pickup",
+      "approveReturn": "Approve return",
+      "approving": "Approving...",
+      "iReceivedItem": "I received it",
+      "returnItem": "Return item",
+      "markReturned": "Item returned"
+    },
+    "hint": {
+      "canApprove": "This was suggested by the other person. Approve it here or save a different plan.",
+      "saveToChange": "Saving a new plan updates the checklist and adds a system card to this chat."
+    },
+    "toast": {
+      "saved": "Plan saved in chat",
+      "approved": "Plan approved",
+      "milestoneSaved": "Updated"
+    }
   }
 }

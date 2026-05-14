@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, MapPin, Star } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useState } from "react";
 import { toast } from "sonner";
 import { ItemActivityTimeline } from "@/components/item-activity-timeline";
 import { BorrowerRequestPanel } from "@/components/lease/borrower-request-panel";
@@ -31,15 +31,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ItemImageCarousel } from "@/components/item-image-carousel";
-import { Toggle } from "@/components/ui/toggle";
-import { ItemCalendar } from "@/components/item-calendar";
 import { isCloudinaryImageUrl } from "@/components/cloudinary-image";
 import { cn } from "@/lib/utils";
-import { useItemCalendar } from "@/hooks/use-item-calendar";
 import { useTrackedPickup } from "@/hooks/use-tracked-pickup";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
+
+function isActiveOwnerRequest(request: Doc<"claims">) {
+  if (request.status === "pending") return !request.expiredAt;
+  if (request.status !== "approved") return false;
+  return !(request.returnedAt || request.transferredAt || request.expiredAt);
+}
 
 export default function ItemDetailPage({
   params,
@@ -71,74 +74,24 @@ export default function ItemDetailPage({
   // UI State
   const [isEditing, setIsEditing] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
-  const [selectedRatingClaim, setSelectedRatingClaim] = useState<{
+  type SelectedRatingClaim = {
     claimId: Id<"claims">;
     targetRole: "lender" | "borrower";
     itemName: string;
-  } | null>(null);
-  const claimCardRefs = useRef<Map<Id<"claims">, HTMLDivElement>>(new Map());
-
-  const focusClaimCard = (claimId: Id<"claims">) => {
-    const el = claimCardRefs.current.get(claimId);
-    if (!el) return;
-    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    el.focus();
   };
 
-  // Auto-open rating dialog if rateClaimId is in URL params
-  useEffect(() => {
-    const rateClaimId = searchParams.get("rateClaimId");
-    const targetRoleParam = searchParams.get("targetRole");
-    const targetRole: "lender" | "borrower" | null =
-      targetRoleParam === "lender" || targetRoleParam === "borrower"
-        ? targetRoleParam
-        : null;
-
-    if (rateClaimId && targetRole && pendingRatings && item) {
-      const pendingRating = pendingRatings.find(
-        (p) => p.claimId === rateClaimId && p.targetRole === targetRole,
-      );
-
-      if (pendingRating && !selectedRatingClaim) {
-        setSelectedRatingClaim({
-          claimId: rateClaimId as Id<"claims">,
-          targetRole,
-          itemName: pendingRating.itemName,
-        });
-        // Clean up URL params
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("rateClaimId");
-        newUrl.searchParams.delete("targetRole");
-        router.replace(newUrl.pathname + newUrl.search, { scroll: false });
-      }
-    }
-  }, [searchParams, pendingRatings, item, selectedRatingClaim, router]);
+  const [manualRatingClaim, setManualRatingClaim] =
+    useState<SelectedRatingClaim | null>(null);
+  const [dismissedRatingKey, setDismissedRatingKey] = useState<string | null>(
+    null,
+  );
 
   const ownerRequests = ((item?.requests ?? []) as Doc<"claims">[]) ?? [];
-  const ownerCalendarState = useItemCalendar({
-    mode: "owner",
-    itemId: id,
-    requests: ownerRequests,
-    months: 2,
-    onFocusClaim: focusClaimCard,
-  });
 
-  const requestsToShow = ownerRequests.filter((req) => {
-    if (showInactive) return true;
-    // Active means:
-    // 1. Pending
-    // 2. Approved AND NOT (returned OR transferred OR expired OR missing)
-    if (req.status === "pending") return true;
-    if (req.status === "approved") {
-      return (
-        !req.returnedAt &&
-        !req.transferredAt &&
-        !req.expiredAt &&
-        !req.missingAt
-      );
-    }
-    return false;
-  });
+  const requestsToShow = showInactive
+    ? ownerRequests
+    : ownerRequests.filter(isActiveOwnerRequest);
+  const displayedRequestCount = requestsToShow.length;
 
   const approveClaimAction = async (
     args: Parameters<typeof approveClaim>[0],
@@ -177,6 +130,40 @@ export default function ItemDetailPage({
 
   const pendingRatingsForItem =
     pendingRatings?.filter((pending) => pending.itemId === id) ?? [];
+  const rateClaimId = searchParams.get("rateClaimId");
+  const targetRoleParam = searchParams.get("targetRole");
+  const targetRole =
+    targetRoleParam === "lender" || targetRoleParam === "borrower"
+      ? targetRoleParam
+      : null;
+  const ratingUrlKey =
+    rateClaimId && targetRole ? `${rateClaimId}:${targetRole}` : null;
+  const urlRating = pendingRatingsForItem.find(
+    (pending) =>
+      pending.claimId === rateClaimId && pending.targetRole === targetRole,
+  );
+  const selectedRatingClaim =
+    manualRatingClaim ??
+    (urlRating && ratingUrlKey !== dismissedRatingKey
+      ? {
+          claimId: urlRating.claimId as Id<"claims">,
+          targetRole: urlRating.targetRole,
+          itemName: urlRating.itemName,
+        }
+      : null);
+  const clearRatingSelection = () => {
+    setManualRatingClaim(null);
+    if (ratingUrlKey) setDismissedRatingKey(ratingUrlKey);
+    if (rateClaimId || targetRoleParam) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("rateClaimId");
+      nextParams.delete("targetRole");
+      const query = nextParams.toString();
+      router.replace(query ? `?${query}` : window.location.pathname, {
+        scroll: false,
+      });
+    }
+  };
 
   const getRatingPrompt = (
     isGiveaway: boolean,
@@ -210,7 +197,6 @@ export default function ItemDetailPage({
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4 text-yellow-500" />
             <p className="text-sm font-medium">
-              {tDetail("rate")}{" "}
               {pendingRatingsForItem.length > 1
                 ? tDetail("rateTransactions")
                 : tDetail("rateTransaction")}
@@ -240,7 +226,7 @@ export default function ItemDetailPage({
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      setSelectedRatingClaim({
+                      setManualRatingClaim({
                         claimId: pending.claimId as Id<"claims">,
                         targetRole: pending.targetRole,
                         itemName: pending.itemName,
@@ -256,14 +242,6 @@ export default function ItemDetailPage({
         </CardContent>
       </Card>
     ) : null;
-
-  const ownerCalendar = item.isOwner ? (
-    <div className="bg-white border rounded-lg p-4 w-full">
-      <div className="flex justify-center w-full max-w-full">
-        <ItemCalendar {...ownerCalendarState.calendarProps} />
-      </div>
-    </div>
-  ) : null;
 
   const imageSection =
     imageUrls.length > 0 ? (
@@ -437,7 +415,9 @@ export default function ItemDetailPage({
       </div>
       <Dialog
         open={selectedRatingClaim !== null}
-        onOpenChange={() => setSelectedRatingClaim(null)}
+        onOpenChange={(open) => {
+          if (!open) clearRatingSelection();
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -448,8 +428,8 @@ export default function ItemDetailPage({
               claimId={selectedRatingClaim.claimId}
               targetRole={selectedRatingClaim.targetRole}
               itemName={selectedRatingClaim.itemName}
-              onSuccess={() => setSelectedRatingClaim(null)}
-              onCancel={() => setSelectedRatingClaim(null)}
+              onSuccess={clearRatingSelection}
+              onCancel={clearRatingSelection}
             />
           )}
         </DialogContent>
@@ -462,39 +442,29 @@ export default function ItemDetailPage({
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-base font-semibold">
-            {tDetail("requests", { count: item.requests?.length || 0 })}
+            {tDetail("requests", { count: displayedRequestCount })}
           </h3>
-          <Toggle
-            pressed={showInactive}
-            onPressedChange={setShowInactive}
+          <Button
+            type="button"
+            onClick={() => setShowInactive((value) => !value)}
+            aria-pressed={showInactive}
             variant="outline"
             size="sm"
             aria-label={tDetail("toggleInactiveRequests")}
           >
             {showInactive ? tDetail("hideInactive") : tDetail("showInactive")}
-          </Toggle>
+          </Button>
         </div>
-        {item.requests && item.requests.length > 0 ? (
+        {requestsToShow.length > 0 ? (
           <div className="space-y-4">
             {requestsToShow.map((claim) => (
-              <div
-                key={claim._id}
-                tabIndex={-1}
-                ref={(el) => {
-                  if (el) claimCardRefs.current.set(claim._id, el);
-                  else claimCardRefs.current.delete(claim._id);
-                }}
-                className={cn(
-                  "outline-none scroll-mt-24",
-                  ownerCalendarState.hoveredClaimId === claim._id &&
-                    "ring-2 ring-primary rounded-lg",
-                )}
-              >
+              <div key={claim._id} className="outline-none scroll-mt-24">
                 <LeaseClaimCard
                   itemId={item._id}
                   claim={claim}
                   viewerRole="owner"
                   isGiveaway={Boolean(item.giveaway)}
+                  coordinationAddress={item.location?.address}
                   approveClaim={approveClaimAction}
                   rejectClaim={rejectClaimAction}
                   markPickedUp={markPickedUpAction}
@@ -505,6 +475,10 @@ export default function ItemDetailPage({
               </div>
             ))}
           </div>
+        ) : item.requests && item.requests.length > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {tDetail("noActiveRequests")}
+          </p>
         ) : (
           <p className="text-gray-500">{tDetail("noRequests")}</p>
         )}
@@ -517,10 +491,8 @@ export default function ItemDetailPage({
       <h2 className="text-lg font-semibold">
         {tDetail("availabilityAndRequests")}
       </h2>
-      {ownerCalendar}
       <div>{ownerActionsSection}</div>
       <div className="border-t pt-6">
-        <h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
         <ItemActivityTimeline
           events={activity}
           isGiveaway={Boolean(item.giveaway)}
@@ -551,7 +523,6 @@ export default function ItemDetailPage({
       ) : null}
       <BorrowerRequestPanel item={item} fullWidth />
       <div className="border-t pt-6">
-        <h3 className="text-base font-semibold mb-3">{tDetail("activity")}</h3>
         <ItemActivityTimeline
           events={activity}
           isGiveaway={Boolean(item.giveaway)}

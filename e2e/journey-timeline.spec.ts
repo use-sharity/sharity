@@ -90,6 +90,9 @@ test.describe("Journey Timeline", () => {
       // Wait for the claim card to render
       const card = page.locator('[data-testid="claim-card"]').first();
       await expect(card).toBeVisible({ timeout: 15_000 });
+      await expect(card.getByTestId("lease-next-action")).toContainText(
+        "Next:",
+      );
 
       // Verify completed steps (green checkmark dots)
       const completedDots = card.locator(".rounded-full.bg-emerald-500");

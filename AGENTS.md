@@ -12,6 +12,14 @@ to `dalat-sharity`, treat that as stale/legacy unless the user explicitly says
 to work on Dalat Sharity. For Sharity product work, code edits, dev servers, and
 verification must happen in this repository.
 
+## Chat Title Marker
+
+For new Sharity conversations, make the project visible immediately. Start the
+first substantive assistant response with `🫱 Sharity:` when it fits naturally,
+and use the same marker in short labels or suggested chat names. This helps the
+app's auto-generated chat titles stay grouped by project even when the UI has no
+tags.
+
 For local app verification, treat Convex as required runtime infrastructure:
 before browser or Playwright checks, confirm both `next dev` and `pnpm convex:dev`
 are running from this repository. Do not treat a loaded Next.js page as a valid

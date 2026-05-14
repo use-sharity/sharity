@@ -3,25 +3,29 @@
 import { ItemList } from "@/components/item-list";
 import { OnboardingCarousel } from "@/components/onboarding-carousel";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useRouter } from "@/i18n/routing";
 
 const ONBOARDING_STORAGE_KEY = "sharity.onboarding.v1.seen";
 
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
 export default function Home() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useLocalStorage<boolean>(
     ONBOARDING_STORAGE_KEY,
     false,
   );
-  const [isClient, setIsClient] = useState(false);
+  const isClient = useIsClient();
   const t = useTranslations("Home");
   const router = useRouter();
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const shouldShowOnboarding = isClient && !hasSeenOnboarding;
 

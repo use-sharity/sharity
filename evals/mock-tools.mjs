@@ -11,11 +11,6 @@ const { mdLink } = sharryTools.default ?? sharryTools;
 
 const { jsonSchema, tool } = await import("ai");
 
-const ONE_DAY = 86400000;
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-const T = today.getTime();
-
 function s(description) {
   return { type: "string", description };
 }
@@ -255,7 +250,7 @@ export function buildMockTools(locale = "en") {
         properties: { itemName: s("Name of the user's item") },
         required: ["itemName"],
       }),
-      execute: async ({ itemName }) => ({
+			execute: async () => ({
         itemName: "Electric Drill",
         claims: [
           {

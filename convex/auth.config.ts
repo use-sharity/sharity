@@ -5,7 +5,7 @@ if (!CLERK_ISSUER_URL) {
   );
 }
 
-export default {
+const authConfig = {
   providers: [
     {
       domain: CLERK_ISSUER_URL,
@@ -13,3 +13,5 @@ export default {
     },
   ],
 };
+
+export default authConfig;

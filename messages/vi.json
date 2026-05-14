@@ -326,12 +326,20 @@
       "picked_up": "Đang mượn",
       "transferred": "Đã giao",
       "returned": "Đã trả",
-      "expired": "Hết hạn",
-      "past_due": "Quá hạn",
+      "expired": "Lỡ nhận đồ",
+      "past_due": "Ngày bắt đầu đã qua",
       "missing": "Báo mất",
       "unknown": "Không xác định"
     },
     "pastDueMessage": "Đã quá giờ bắt đầu, không thể duyệt.",
+    "due": {
+      "title": "Hạn trả: {date}",
+      "safe": "Hẹn trả {date}",
+      "soon": "Sắp đến hạn: {date}",
+      "urgent": "Đến hạn: {date}",
+      "overdue": "Quá hạn: {date}",
+      "complete": "Hẹn trả {date}"
+    },
     "actions": {
       "cancel": "Hủy",
       "cancelling": "Đang hủy...",
@@ -343,7 +351,159 @@
       "sendProposal": "Gửi đề xuất",
       "view": "Xem",
       "confirm": "Xác nhận",
-      "message": "Nhắn tin"
+      "message": "Nhắn tin",
+      "iReceivedItem": "Tôi đã nhận đồ",
+      "returnItem": "Trả đồ",
+      "markReturned": "Đồ đã được trả",
+      "markPickupMissed": "Đánh dấu lỡ nhận",
+      "markMissing": "Đánh dấu thất lạc"
+    },
+    "chat": {
+      "title": "Chat yêu cầu",
+      "empty": "Mở chat với người này",
+      "unread": "mới"
+    },
+    "nextAction": {
+      "title": {
+        "action": "Tiếp theo: bạn cần làm",
+        "waiting": "Tiếp theo: đang chờ",
+        "next": "Tiếp theo",
+        "done": "Tiếp theo: đã xong",
+        "problem": "Tiếp theo: xử lý"
+      },
+      "required": "Bắt buộc:",
+      "optional": "Tuỳ chọn:",
+      "owner": {
+        "requested": "Chủ đồ: duyệt hoặc từ chối yêu cầu này ngay. Dùng các nút chính bên dưới.",
+        "approvedBeforeStart": "Chủ đồ: giờ nhận đã thống nhất là {time}. Người mượn xác nhận sau khi nhận đồ.",
+        "approvedBeforeStartWithReschedule": "Chủ đồ: thời gian mượn bắt đầu {time}. Có thể thống nhất giờ nhận cụ thể bên dưới.",
+        "awaitingPickup": "Người mượn: xác nhận nhận đồ khi đồ đã trong tay. Chủ đồ có thể đánh dấu lỡ nhận nếu không bàn giao được.",
+        "pickupProposalNeedsApproval": "Chủ đồ: duyệt giờ nhận được đề xuất nếu phù hợp, hoặc đề xuất giờ khác.",
+        "pickupProposalPending": "Người mượn: cần duyệt giờ nhận được đề xuất trước khi nút nhận mở.",
+        "earlyPickupReady": "Người mượn: xác nhận nhận đồ trong khung giờ đã thống nhất.",
+        "pickupRequired": "Bàn giao đồ và chờ người mượn xác nhận đã nhận.",
+        "pickupOptional": "Đặt giờ nhận cụ thể bên dưới để cả hai cùng thấy một kế hoạch.",
+        "pickupApprovalRequired": "Duyệt giờ nhận được đề xuất hoặc đề xuất giờ khác.",
+        "pickupPendingRequired": "Chờ người mượn duyệt giờ nhận bạn đã đề xuất.",
+        "pickupApprovedRequired": "Gặp trong khung giờ nhận đã duyệt và chờ người mượn xác nhận.",
+        "pickupOptionalSuggestAnother": "Đề xuất giờ nhận khác nếu giờ này không phù hợp.",
+        "pickupOptionalChange": "Đề xuất giờ nhận khác nếu kế hoạch thay đổi.",
+        "awaitingReturnRequest": "Người mượn: yêu cầu trả đồ từ thẻ này khi sẵn sàng. Chủ đồ chờ yêu cầu đó.",
+        "returnProposalNeedsApproval": "Chủ đồ: xem chi tiết trả bên dưới. Duyệt nếu phù hợp, hoặc đề xuất phương án khác.",
+        "returnProposalPending": "Chủ đồ: đang chờ người mượn duyệt chi tiết trả mà bạn đã đề xuất.",
+        "returnRequested": "Chủ đồ: xác nhận “Đồ đã được trả” khi đồ đã quay lại.",
+        "returned": "Lượt mượn đã hoàn tất. Không cần làm gì thêm.",
+        "transferred": "Món tặng đã hoàn tất. Không cần làm gì thêm.",
+        "rejected": "Yêu cầu đã bị từ chối. Người mượn có thể chọn ngày mới và gửi yêu cầu mới.",
+        "expired": "Đã lỡ nhận đồ. Nhắn người mượn hoặc yêu cầu họ tạo yêu cầu mới với ngày phù hợp.",
+        "pastDue": "Ngày bắt đầu đã qua trước khi duyệt. Hãy yêu cầu người mượn gửi yêu cầu mới.",
+        "missing": "Đồ được đánh dấu thất lạc. Dùng chat để phối hợp xử lý.",
+        "fallback": "Xem dòng thời gian bên dưới và phối hợp trong chat."
+      },
+      "borrower": {
+        "requested": "Chủ đồ: duyệt hoặc từ chối yêu cầu của bạn. Bạn có thể nhắn tin hoặc hủy yêu cầu.",
+        "approvedBeforeStart": "Người mượn: giờ nhận đã thống nhất là {time}. Bạn xác nhận sau khi nhận đồ.",
+        "approvedBeforeStartWithReschedule": "Người mượn: thời gian mượn bắt đầu {time}. Có thể thống nhất giờ nhận cụ thể bên dưới.",
+        "awaitingPickup": "Người mượn: bấm “Tôi đã nhận đồ” khi đồ đã trong tay bạn.",
+        "pickupProposalNeedsApproval": "Người mượn: duyệt giờ nhận được đề xuất nếu phù hợp, hoặc đề xuất giờ khác.",
+        "pickupProposalPending": "Chủ đồ: cần duyệt giờ bạn đề xuất trước khi nút nhận mở.",
+        "earlyPickupReady": "Người mượn: bấm “Tôi đã nhận đồ” trong khung giờ đã thống nhất.",
+        "pickupRequired": "Gặp chủ đồ và bấm “Tôi đã nhận đồ” khi đồ đã trong tay bạn.",
+        "pickupOptional": "Đặt giờ nhận cụ thể bên dưới để cả hai cùng thấy một kế hoạch.",
+        "pickupApprovalRequired": "Duyệt giờ nhận được đề xuất hoặc đề xuất giờ khác.",
+        "pickupPendingRequired": "Chờ chủ đồ duyệt giờ nhận bạn đã đề xuất.",
+        "pickupApprovedRequired": "Gặp trong khung giờ nhận đã duyệt và xác nhận sau khi nhận đồ.",
+        "pickupOptionalSuggestAnother": "Đề xuất giờ nhận khác nếu giờ này không phù hợp.",
+        "pickupOptionalChange": "Đề xuất giờ nhận khác nếu kế hoạch thay đổi.",
+        "awaitingReturn": "Người mượn: yêu cầu trả khi bạn sẵn sàng trả đồ. Chọn giờ gặp để chủ đồ biết cần duyệt gì.",
+        "returnProposalNeedsApproval": "Người mượn: xem chi tiết trả bên dưới. Duyệt nếu phù hợp, hoặc đề xuất phương án khác.",
+        "returnProposalPending": "Chủ đồ: duyệt chi tiết trả bạn đã đề xuất. Sau đó họ xác nhận khi đồ đã quay lại.",
+        "returnRequested": "Chủ đồ: xác nhận trả khi đồ đã quay lại.",
+        "returned": "Lượt mượn đã hoàn tất. Không cần làm gì thêm.",
+        "transferred": "Món tặng đã hoàn tất. Không cần làm gì thêm.",
+        "rejected": "Yêu cầu đã bị từ chối. Chọn ngày mới và gửi yêu cầu mới nếu bạn vẫn cần món này.",
+        "expired": "Đã lỡ nhận đồ. Chọn ngày mới và gửi yêu cầu mới nếu bạn vẫn cần món này.",
+        "pastDue": "Yêu cầu bắt đầu trong quá khứ nên không thể duyệt. Chọn ngày mới và gửi yêu cầu mới.",
+        "missing": "Đồ được đánh dấu thất lạc. Nhắn chủ đồ để thống nhất bước tiếp theo.",
+        "fallback": "Xem dòng thời gian bên dưới và phối hợp trong chat."
+      }
+    },
+    "journey": {
+      "steps": {
+        "requested": "Đã gửi yêu cầu",
+        "approved": "Đã duyệt",
+        "arrangePickup": "Sắp xếp nhận",
+        "pickedUp": "Đã nhận",
+        "returned": "Đã trả",
+        "transferred": "Đã giao"
+      },
+      "stepper": {
+        "steps": {
+          "requested": "Yêu cầu",
+          "approved": "Đã duyệt",
+          "pickup_proposed": "Kế hoạch nhận",
+          "pickup_approved": "Nhận OK",
+          "picked_up": "Đã nhận",
+          "return_proposed": "Kế hoạch trả",
+          "return_approved": "Trả OK",
+          "returned": "Đã trả",
+          "transferred": "Đã giao"
+        },
+        "terminal": {
+          "rejected": "Từ chối",
+          "expired": "Lỡ nhận",
+          "missing": "Báo mất",
+          "past_due": "Quá hạn"
+        }
+      },
+      "turn": {
+        "yourTurn": "Đến lượt bạn",
+        "waiting": "Đang chờ",
+        "nextStep": "Bước tiếp theo",
+        "ownerApproveRequest": "Duyệt hoặc từ chối yêu cầu này.",
+        "borrowerWaitForApproval": "Chủ sở hữu cần duyệt yêu cầu.",
+        "borrowerReceiveItem": "Bấm “Tôi đã nhận đồ” khi đồ đã ở trong tay bạn.",
+        "ownerWaitForReceived": "Người mượn cần xác nhận đã nhận đồ.",
+        "borrowerReturnWhenReady": "Khi sẵn sàng, yêu cầu trả đồ từ thẻ này.",
+        "borrowerWaitForReturnConfirm": "Chủ sở hữu cần xác nhận đồ đã quay lại.",
+        "ownerConfirmReturn": "Khi đồ đã quay lại, bấm “Đồ đã được trả”.",
+        "ownerConfirmRequestedReturn": "Người mượn đã yêu cầu trả. Xác nhận khi đồ đã quay lại.",
+        "borrowerWaitForStart": "Lịch nhận là {time}. Nút nhận sẽ mở lúc đó.",
+        "ownerWaitForStart": "Lịch nhận là {time}. Đang chờ đến lúc đó.",
+        "ownerWaitForReturnRequest": "Đang chờ người mượn yêu cầu trả đồ."
+      },
+      "pickupTitle": "Sắp xếp nhận đồ",
+      "pickupHelper": "Sharity lưu kế hoạch nhận ở đây, nên không bắt buộc dùng chung WhatsApp hay Telegram.",
+      "returnTitle": "Sắp xếp trả đồ",
+      "returnHelper": "Dùng kế hoạch trong app làm điểm tham chiếu chung cho đến khi đồ được trả.",
+      "place": {
+        "pickup": "Địa điểm đề xuất",
+        "return": "Địa điểm trả",
+        "fallback": "Thống nhất trong Sharity trước khi gặp"
+      },
+      "time": {
+        "pickup": "Giờ nhận đã thống nhất",
+        "return": "Giờ trả đã thống nhất"
+      },
+      "note": {
+        "title": "Ghi chú phối hợp",
+        "body": "Xác nhận kế hoạch ở đây. WhatsApp, Telegram hoặc điện thoại có thể hỗ trợ, nhưng không bắt buộc."
+      },
+      "next": {
+        "label": "Tiếp theo:",
+        "suggestPickup": "Lưu chi tiết nhận đã thống nhất.",
+        "suggestReturn": "Chọn giờ gặp để trả đồ và gửi cho chủ đồ.",
+        "waitingForApproval": "Đang chờ bên kia duyệt các chi tiết này.",
+        "approveWindow": "Duyệt chi tiết này hoặc đề xuất kế hoạch khác.",
+        "waitForWindow": "Xác nhận khi đã bàn giao xong.",
+        "windowPassed": "Kế hoạch này đã qua. Hãy đề xuất kế hoạch khác.",
+        "confirmPickup": "Xác nhận nhận đồ bây giờ.",
+        "confirmReturn": "Xác nhận trả đồ bây giờ."
+      },
+      "detailsSaved": "Đã lưu chi tiết",
+      "suggestAnother": "Đề xuất giờ khác",
+      "suggestPickupTime": "Lưu chi tiết nhận",
+      "suggestReturnTime": "Yêu cầu trả đồ"
     },
     "rejectDialog": {
       "titleGiveaway": "Từ chối yêu cầu tặng",
@@ -353,6 +513,20 @@
       "reasonLabel": "Lý do (tuỳ chọn)",
       "reasonPlaceholder": "Nói ngắn gọn..."
     },
+    "expiredDialog": {
+      "titleGiveaway": "Đánh dấu lỡ nhận",
+      "titleLease": "Đánh dấu lỡ nhận",
+      "descGiveaway": "Người nhận không đến lấy đồ. Yêu cầu tặng sẽ kết thúc và món đồ có thể được yêu cầu lại.",
+      "descLease": "Người mượn không nhận đồ. Yêu cầu mượn sẽ kết thúc và ngày đó có thể được yêu cầu lại.",
+      "noteLabel": "Ghi chú (tuỳ chọn)",
+      "notePlaceholder": "Chuyện gì đã xảy ra lúc nhận..."
+    },
+    "missingDialog": {
+      "title": "Đánh dấu đồ thất lạc",
+      "description": "Đồ không được trả như dự kiến. Chỉ dùng khi chat chưa giải quyết được.",
+      "noteLabel": "Ghi chú (tuỳ chọn)",
+      "notePlaceholder": "Chi tiết về món đồ..."
+    },
     "intraday": {
       "note": "Mượn trong ngày: chốt giờ nhận/trả qua đề xuất và duyệt."
     },
@@ -360,9 +534,9 @@
       "proposedApproved": "Giờ nhận (đã duyệt):",
       "proposed": "Giờ nhận (đề xuất):",
       "pendingApproval": "Chờ duyệt.",
-      "propose": "Đề xuất giờ nhận",
-      "change": "Thay đổi giờ nhận",
-      "sentToast": "Đã gửi giờ nhận. Chờ duyệt.",
+      "propose": "Đề xuất chi tiết nhận",
+      "change": "Thay đổi chi tiết nhận",
+      "sentToast": "Đã lưu chi tiết nhận trong chat.",
       "confirmTitle": "Xác nhận nhận đồ",
       "confirmDesc": "Xác nhận đã nhận. Có thể chụp ảnh để lưu tình trạng.",
       "confirmAction": "Xác nhận nhận",
@@ -371,18 +545,41 @@
       "photoLabel": "Ảnh (tuỳ chọn)",
       "confirmedToast": "Đã xác nhận nhận",
       "approving": "Đang duyệt...",
-      "approve": "Duyệt giờ nhận",
-      "approvedToast": "Đã duyệt giờ nhận. Chờ bên kia xác nhận.",
+      "approve": "Duyệt chi tiết nhận",
+      "approveReschedule": "Duyệt giờ nhận",
+      "approvedToast": "Đã duyệt chi tiết nhận. Chờ bên kia xác nhận.",
+      "planTitle": "Giờ nhận đồ",
+      "planDialogTitle": "Đặt giờ nhận đồ",
+      "planDialogDesc": "Đây là giờ gặp để bàn giao. Nó tách riêng khỏi ngày mượn.",
+      "notSet": "Chưa đặt giờ nhận cụ thể.",
+      "notSetHint": "Yêu cầu giữ món đồ cho thời gian mượn. Bước tuỳ chọn này lưu giờ bàn giao cụ thể.",
+      "optionalPill": "Tuỳ chọn",
+      "pendingPill": "Cần duyệt",
+      "approvedPill": "Đã duyệt",
+      "placeLabel": "Địa điểm:",
+      "noteDetailsLabel": "Ghi chú:",
+      "suggestTime": "Đề xuất giờ nhận",
+      "rescheduleTitle": "Đề xuất giờ nhận",
+      "rescheduleDesc": "Dùng khi cả hai có thể gặp sớm hơn khung giờ ban đầu.",
+      "rescheduleHint": "Có thể gặp sớm hơn? Hãy đề xuất giờ nhận và chờ bên kia duyệt.",
+      "rescheduleProposed": "Giờ nhận đã đề xuất:",
+      "rescheduleApproved": "Giờ nhận đã duyệt:",
+      "suggestEarlier": "Đề xuất nhận sớm hơn",
+      "suggestDifferentTime": "Đề xuất giờ khác",
       "windowPassed": "Giờ này đã qua, sắp hết hạn.",
-      "confirmAvailable": "Xác nhận rảnh {start}–{end}."
+      "confirmAvailable": "Xác nhận rảnh {start}–{end}.",
+      "waitForApproval": "Chờ bên kia duyệt chi tiết nhận.",
+      "waitForBorrower": "Đang chờ người mượn xác nhận đã nhận đồ.",
+      "availableLater": "Nhận sau {time}",
+      "waitForStart": "Thời gian mượn bắt đầu {time}."
     },
     "return": {
       "proposedApproved": "Giờ trả (đã duyệt):",
       "proposed": "Giờ trả (đề xuất):",
       "pendingApproval": "Chờ duyệt.",
-      "propose": "Đề xuất giờ trả",
-      "change": "Thay đổi giờ trả",
-      "sentToast": "Đã gửi giờ trả. Chờ duyệt.",
+      "propose": "Đề xuất chi tiết trả",
+      "change": "Thay đổi chi tiết trả",
+      "sentToast": "Đã gửi yêu cầu trả cho chủ sở hữu.",
       "confirmTitle": "Xác nhận trả đồ",
       "confirmDesc": "Xác nhận đã trả. Có thể chụp ảnh để lưu tình trạng.",
       "confirmAction": "Xác nhận trả",
@@ -391,10 +588,21 @@
       "photoLabel": "Ảnh (tuỳ chọn)",
       "confirmedToast": "Đã xác nhận trả",
       "approving": "Đang duyệt...",
-      "approve": "Duyệt giờ trả",
-      "approvedToast": "Đã duyệt giờ trả. Chờ bên kia xác nhận.",
+      "approve": "Duyệt chi tiết trả",
+      "approvedToast": "Đã duyệt chi tiết trả. Chờ bên kia xác nhận.",
       "windowPassed": "Giờ này đã qua, sắp hết hạn.",
-      "confirmAvailable": "Xác nhận rảnh {start}–{end}."
+      "confirmAvailable": "Xác nhận rảnh {start}–{end}.",
+      "waitForApproval": "Chờ bên kia duyệt chi tiết trả.",
+      "requesting": "Đang gửi...",
+      "requested": "Đã yêu cầu trả",
+      "approved": "Đã duyệt chi tiết trả",
+      "meetingTimeLabel": "Giờ gặp:",
+      "notSet": "Chưa đặt",
+      "noNote": "Không có",
+      "setMeetingTimeHint": "Hãy đề xuất kế hoạch khác có giờ gặp trước khi duyệt.",
+      "setMeetingTimeFirst": "Đặt giờ gặp trước",
+      "placeLabel": "Địa điểm:",
+      "noteDetailsLabel": "Ghi chú:"
     }
   },
   "LeaseActivity": {
@@ -419,7 +627,25 @@
     }
   },
   "LeaseProposeWindow": {
-    "defaultDescription": "Chọn khung 1h vào ngày {date}.",
+    "defaultDescription": "Chọn một giờ gặp. Sharity sẽ lưu làm giờ bàn giao.",
+    "dateTimeLabel": "Bắt đầu gặp",
+    "dateLabel": "Ngày",
+    "timeLabel": "Giờ",
+    "hourLabel": "Giờ",
+    "minuteLabel": "Phút",
+    "quick": {
+      "soon": "Sớm",
+      "thirty": "+30 phút",
+      "hour": "+1 giờ",
+      "tomorrow": "Ngày mai"
+    },
+    "windowPreview": "Giờ gặp: {time}",
+    "futureError": "Chọn thời gian trong tương lai.",
+    "placeLabel": "Địa điểm",
+    "placePlaceholder": "Sảnh, cổng, quán cafe hoặc địa chỉ cụ thể",
+    "detailsLabel": "Ghi chú",
+    "detailsPlaceholder": "Ngữ cảnh thêm cho lúc bàn giao",
+    "detailsHint": "Ngày, giờ và địa điểm được lưu thành trường riêng và ghi lại trong chat.",
     "hourWindow": "Khung giờ",
     "selectHour": "Chọn giờ",
     "proposed": "Đề xuất: {date} {window}",
@@ -439,19 +665,35 @@
     "errors": {
       "startTimeFuture": "Thời gian bắt đầu phải ở tương lai",
       "endTimeAfterStart": "Thời gian kết thúc phải sau thời gian bắt đầu",
-      "hoursNotAvailable": "Giờ đã chọn không có sẵn"
+      "hoursNotAvailable": "Giờ đã chọn không có sẵn",
+      "datesNotAvailable": "Ngày đã chọn không có sẵn",
+      "blockedByUnavailableRange": "Bị chặn bởi lượt đặt hiện có: {range}",
+      "blockedByMissingItem": "Bị chặn bởi phiên đang đánh dấu đồ bị thất lạc: {range}",
+      "overlappingRequest": "Bạn đã có yêu cầu trong những ngày này"
     },
     "requesting": "Đang gửi...",
-    "requestToBorrow": "Xin mượn",
+    "requestToBorrow": "Xin giữ thời gian",
+    "selectDatesToRequest": "Tiếp theo: chọn khoảng thời gian bạn muốn món đồ được giữ cho bạn.",
+    "readyToRequest": "Tiếp theo: gửi yêu cầu cho khoảng thời gian này. Giờ gặp sẽ chốt sau khi duyệt.",
+    "requestLockedOpenWorkflow": "Tiếp theo: hoàn tất hoặc hủy yêu cầu hiện tại trước khi gửi yêu cầu mới.",
     "signInToRequest": "Đăng nhập để gửi yêu cầu",
-    "intradayNote": "Mượn trong ngày: chốt giờ nhận/trả qua đề xuất và duyệt.",
+    "intradayNote": "Lịch này giữ món đồ cho bạn. Giờ gặp để nhận/trả sẽ chốt sau khi được duyệt.",
     "yourRequests": "Yêu cầu của mình",
     "hideInactive": "Ẩn cũ",
     "showInactive": "Hiện cũ",
     "pickPickupDay": "Chọn ngày nhận",
     "giveawayNote": "Tặng luôn, không cần trả lại.",
     "request": "Gửi yêu cầu",
-    "chatWithOwner": "Nhắn tin với chủ đồ"
+    "chatWithOwner": "Nhắn tin với chủ đồ",
+    "messageOwner": "Nhắn tin chủ đồ",
+    "planDates": "Thời gian giữ đồ",
+    "fosterPeriodHelp": "Chọn thời gian bạn muốn dùng món đồ. Giờ gặp để nhận và trả sẽ chốt sau khi chủ đồ duyệt.",
+    "selectHoursTitle": "Chọn giờ trong ngày",
+    "selectHoursDescription": "Các giờ này là thời gian bạn muốn dùng món đồ trong ngày đó.",
+    "selectHours": "Chọn giờ",
+    "changeHours": "Đổi giờ ({range})",
+    "saveHours": "Lưu giờ",
+    "cancel": "Huỷ"
   },
   "Calendar": {
     "title": "Lịch",
@@ -752,6 +994,7 @@
     "hideInactive": "Ẩn cũ",
     "showInactive": "Hiện cũ",
     "noRequests": "Chưa có yêu cầu.",
+    "noActiveRequests": "Không có yêu cầu đang mở. Bấm “Hiện cũ” để xem các yêu cầu đã xong.",
     "availabilityAndRequests": "Rảnh & yêu cầu",
     "activity": "Hoạt động",
     "checkAvailabilityAndRequest": "Xem rảnh & gửi yêu cầu",
@@ -763,6 +1006,8 @@
     "toggleInactiveRequests": "Ẩn/hiện yêu cầu cũ"
   },
   "ItemActivity": {
+    "title": "Hoạt động",
+    "titleWithCount": "Hoạt động ({count})",
     "system": "Hệ thống",
     "itemCreated": "Đã đăng đồ",
     "giveawayApproved": "Duyệt tặng",
@@ -774,6 +1019,10 @@
     "borrower": "Người mượn:",
     "loading": "Đang tải...",
     "noActivity": "Chưa có gì.",
+    "noFilteredActivity": "Không có hoạt động cho người này.",
+    "allUsers": "Tất cả người dùng",
+    "showMore": "Hiện thêm",
+    "showLess": "Thu gọn",
     "by": "bởi"
   },
   "Categories": {
@@ -823,5 +1072,43 @@
     "asLender": "Là người cho mượn",
     "asBorrower": "Là người mượn",
     "photoAlt": "Ảnh đánh giá {index}"
+  },
+  "ChatCoordination": {
+    "pickupTitle": "Kế hoạch nhận đồ",
+    "returnTitle": "Kế hoạch trả đồ",
+    "pickupFallback": "Chọn ngày, giờ và địa điểm tại đây. Sharity sẽ ghi lại kế hoạch trong chat.",
+    "returnFallback": "Chọn ngày, giờ và địa điểm trả đồ tại đây. Sharity sẽ ghi lại kế hoạch trong chat.",
+    "dateLabel": "Ngày",
+    "timeLabel": "Giờ",
+    "placeLabel": "Địa điểm",
+    "placePlaceholder": "Sảnh, cổng, quán cafe hoặc địa chỉ cụ thể",
+    "detailsLabel": "Ghi chú",
+    "detailsPlaceholder": "Ngữ cảnh thêm cho lúc bàn giao",
+    "status": {
+      "empty": "Chưa có kế hoạch",
+      "pending": "Cần duyệt",
+      "approved": "Đã duyệt"
+    },
+    "actions": {
+      "savePickup": "Lưu kế hoạch nhận",
+      "saveReturn": "Lưu kế hoạch trả",
+      "saving": "Đang lưu...",
+      "cancel": "Hủy",
+      "approvePickup": "Duyệt nhận đồ",
+      "approveReturn": "Duyệt trả đồ",
+      "approving": "Đang duyệt...",
+      "iReceivedItem": "Tôi đã nhận",
+      "returnItem": "Trả đồ",
+      "markReturned": "Đồ đã được trả"
+    },
+    "hint": {
+      "canApprove": "Người kia đã đề xuất. Bạn có thể duyệt tại đây hoặc lưu kế hoạch khác.",
+      "saveToChange": "Lưu kế hoạch mới sẽ cập nhật checklist và thêm thẻ hệ thống vào chat này."
+    },
+    "toast": {
+      "saved": "Đã lưu kế hoạch trong chat",
+      "approved": "Đã duyệt kế hoạch",
+      "milestoneSaved": "Đã cập nhật"
+    }
   }
 }

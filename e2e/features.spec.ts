@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import { expect, test } from "@playwright/test";
 
 // These tests verify the features added in feat/14-visualize-item-journey.
@@ -5,28 +6,34 @@ import { expect, test } from "@playwright/test";
 // Auth state is loaded from storageState files (see auth.setup.ts).
 
 test.describe("Items I'm Borrowing", () => {
+  test.beforeAll(() => {
+    execSync("npx convex run seed:setupBorrowedItemForTesting", {
+      cwd: process.cwd(),
+      timeout: 30_000,
+      encoding: "utf-8",
+    });
+  });
+
   test("shows borrowing section with badge count on /my-items", async ({
     page,
   }) => {
     await page.goto("/my-items");
 
-    // Section heading should be visible
-    const section = page.getByText("Items I'm Borrowing");
-    await expect(section).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("tab", { name: "Fostering" })).toBeVisible({
+      timeout: 10_000,
+    });
 
-    // Should show a count badge (any number)
-    const badge = page
-      .locator("text=Items I'm Borrowing")
-      .locator("..")
-      .locator("span")
-      .filter({ hasText: /^\d+$/ });
-    await expect(badge).toBeVisible();
+    const borrowedFrom = page.getByText(/Borrowed from/);
+    const emptyState = page.getByText("You're not fostering any items.");
+    await expect(borrowedFrom.first().or(emptyState)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("borrowed items show owner name and due dates", async ({ page }) => {
     await page.goto("/my-items");
 
-    await page.waitForSelector("text=Items I'm Borrowing", {
+    await expect(page.getByRole("tab", { name: "Fostering" })).toBeVisible({
       timeout: 10_000,
     });
 
@@ -95,26 +102,22 @@ test.describe("Past Due Badge", () => {
   });
 });
 
-test.describe("Time Slot Grouping", () => {
-  test("propose pickup dialog groups hours by time of day", async ({
+test.describe("Meetup Details", () => {
+  test("propose pickup dialog accepts free-form meetup details", async ({
     page,
   }) => {
     await page.goto("/my-items");
 
     await page.waitForSelector("text=My Items", { timeout: 10_000 });
 
-    // Find and click "Propose pickup time" button if available
-    const proposeBtn = page.getByText("Propose pickup time").first();
+    const proposeBtn = page.getByText("Save pickup details").first();
     if ((await proposeBtn.count()) > 0) {
       await proposeBtn.click();
 
-      // Check that the hour groups are displayed
-      await expect(page.getByText("Morning (6-11)")).toBeVisible({
+      await expect(page.getByLabel("Agreed details")).toBeVisible({
         timeout: 5_000,
       });
-      await expect(page.getByText("Afternoon (12-17)")).toBeVisible();
-      await expect(page.getByText("Evening (18-23)")).toBeVisible();
-      await expect(page.getByText("Night (0-5)")).toBeVisible();
+      await expect(page.getByPlaceholder(/Tomorrow at 15:20/i)).toBeVisible();
     }
   });
 });

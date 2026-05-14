@@ -20,6 +20,13 @@ async function assertParticipant(
   }
 }
 
+function latestByType<T extends Doc<"lease_activity">>(
+  events: Doc<"lease_activity">[],
+  type: T["type"],
+): Doc<"lease_activity"> | undefined {
+  return events.find((event) => event.type === type);
+}
+
 // ---------------------------------------------------------------------------
 // startConversation — idempotent: returns existing _id if already present
 // ---------------------------------------------------------------------------
@@ -152,9 +159,17 @@ export const sendSystemMessage = internalMutation({
       v.literal("claim_requested"),
       v.literal("claim_approved"),
       v.literal("claim_rejected"),
+      v.literal("pickup_proposed"),
+      v.literal("pickup_approved"),
+      v.literal("return_proposed"),
+      v.literal("return_approved"),
       v.literal("picked_up"),
       v.literal("returned"),
     ),
+    systemWindowStartAt: v.optional(v.number()),
+    systemWindowEndAt: v.optional(v.number()),
+    systemPlace: v.optional(v.string()),
+    systemNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -165,6 +180,10 @@ export const sendSystemMessage = internalMutation({
       body: args.body,
       type: "system",
       systemEvent: args.systemEvent,
+      systemWindowStartAt: args.systemWindowStartAt,
+      systemWindowEndAt: args.systemWindowEndAt,
+      systemPlace: args.systemPlace,
+      systemNote: args.systemNote,
       createdAt: now,
     });
 
@@ -322,6 +341,57 @@ export const listMyConversations = query({
   },
 });
 
+export const getClaimConversationSummary = query({
+  args: {
+    itemId: v.id("items"),
+    claimId: v.id("claims"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const me = identity.subject;
+
+    const claim = await ctx.db.get(args.claimId);
+    if (!claim) return null;
+    if (claim.itemId !== args.itemId) throw new Error("Mismatch item/claim");
+
+    const item = await ctx.db.get(args.itemId);
+    if (!item) return null;
+    if (me !== item.ownerId && me !== claim.claimerId) {
+      throw new Error("Unauthorized");
+    }
+
+    const participantIds = sortedParticipants(item.ownerId, claim.claimerId);
+    const conversation = await ctx.db
+      .query("conversations")
+      .withIndex("by_participants_item", (q) =>
+        q.eq("participantIds", participantIds).eq("itemId", args.itemId),
+      )
+      .filter((q) => q.eq(q.field("claimId"), args.claimId))
+      .first();
+
+    if (!conversation) return null;
+
+    const readRow = await ctx.db
+      .query("conversation_reads")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", me).eq("conversationId", conversation._id),
+      )
+      .first();
+    const lastReadAt = readRow?.lastReadAt ?? 0;
+
+    return {
+      _id: conversation._id,
+      lastMessagePreview: conversation.lastMessagePreview,
+      lastMessageAt: conversation.lastMessageAt,
+      lastMessageSenderId: conversation.lastMessageSenderId,
+      hasUnread:
+        conversation.lastMessageAt > lastReadAt &&
+        conversation.lastMessageSenderId !== me,
+    };
+  },
+});
+
 // ---------------------------------------------------------------------------
 // getConversation — for thread header
 // ---------------------------------------------------------------------------
@@ -356,6 +426,72 @@ export const getConversation = query({
         clerkId: otherClerkId,
         name: otherUser?.name ?? null,
         avatar: otherUser?.avatarCloudinary?.secureUrl ?? null,
+      },
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// getConversationCoordination — active pickup/return plan for chat action card
+// ---------------------------------------------------------------------------
+
+export const getConversationCoordination = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const me = identity.subject;
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Not found");
+    await assertParticipant(conversation.participantIds, me);
+
+    if (!conversation.claimId) return null;
+
+    const claim = await ctx.db.get(conversation.claimId);
+    if (!claim) return null;
+
+    const item = await ctx.db.get(claim.itemId);
+    if (!item) return null;
+
+    if (!conversation.participantIds.includes(item.ownerId)) return null;
+    if (!conversation.participantIds.includes(claim.claimerId)) return null;
+
+    const events = await ctx.db
+      .query("lease_activity")
+      .withIndex("by_claim_createdAt", (q) => q.eq("claimId", claim._id))
+      .order("desc")
+      .take(50);
+
+    return {
+      viewerRole: me === item.ownerId ? "owner" : "borrower",
+      currentUserId: me,
+      item: {
+        _id: item._id,
+        name: item.name,
+        giveaway: item.giveaway,
+        address: item.location?.address,
+      },
+      claim: {
+        _id: claim._id,
+        itemId: claim.itemId,
+        claimerId: claim.claimerId,
+        status: claim.status,
+        startDate: claim.startDate,
+        endDate: claim.endDate,
+        pickedUpAt: claim.pickedUpAt,
+        returnedAt: claim.returnedAt,
+        transferredAt: claim.transferredAt,
+        expiredAt: claim.expiredAt,
+        missingAt: claim.missingAt,
+      },
+      pickup: {
+        proposal: latestByType(events, "lease_pickup_proposed") ?? null,
+        approval: latestByType(events, "lease_pickup_approved") ?? null,
+      },
+      return: {
+        proposal: latestByType(events, "lease_return_proposed") ?? null,
+        approval: latestByType(events, "lease_return_approved") ?? null,
       },
     };
   },

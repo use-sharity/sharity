@@ -1,12 +1,10 @@
 "use client";
 
-import { Link } from "@/i18n/routing";
-
 import {
-  SignInButton,
-  SignUpButton,
   SignedIn,
   SignedOut,
+  SignInButton,
+  SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
 import {
@@ -16,11 +14,12 @@ import {
   Search,
   User,
 } from "lucide-react";
-
-import { NotificationBell } from "@/components/notifications/notification-bell";
-import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/routing";
 
 function SharityLogo({ className }: { className?: string }) {
   return (
@@ -62,6 +61,10 @@ function SharityLogo({ className }: { className?: string }) {
 
 export function AppHeader() {
   const t = useTranslations("AppHeader");
+  const pathname = usePathname();
+  const cleanPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
+  if (cleanPath.startsWith("/chat")) return null;
+
   return (
     <header className="w-full flex justify-center">
       <div className="w-full max-w-4xl flex items-center gap-2 p-4 md:px-8 md:py-5">

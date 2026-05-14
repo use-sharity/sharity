@@ -2,11 +2,10 @@
 
 import * as React from "react";
 import { useMutation } from "convex/react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { CalendarDays, Loader2, MessageCircle } from "lucide-react";
 import { AvailabilityToggle } from "@/components/notifications/availability-toggle";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Toggle } from "@/components/ui/toggle";
 import { ItemCalendar } from "@/components/item-calendar";
 import { LeaseProposeIntradayDialog } from "@/components/lease/lease-propose-intraday-dialog";
 import {
@@ -44,6 +43,27 @@ function formatIntradayRangeLabel(range: {
   return `${pad2(startHour)}:00–${pad2(endHour)}:00`;
 }
 
+function formatDateRangeLabel(range: {
+  startDate: number;
+  endDate: number;
+}): string {
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const start = formatter.format(new Date(range.startDate));
+  const endInclusive = Math.max(range.startDate, range.endDate - 1);
+  const end = formatter.format(new Date(endInclusive));
+  return start === end ? start : `${start}-${end}`;
+}
+
+function isActiveRequest(request: Doc<"claims">): boolean {
+  if (request.status === "pending") return !request.expiredAt;
+  if (request.status !== "approved") return false;
+
+  return !request.returnedAt && !request.transferredAt && !request.expiredAt;
+}
+
 type BorrowerRequestContextValue = {
   item: Doc<"items">;
   calendar: BorrowerCalendarState;
@@ -59,6 +79,7 @@ type BorrowerRequestContextValue = {
   onIntradayDialogOpenChange: (open: boolean) => void;
   onConfirmIntraday: (startAt: number, endAt: number) => Promise<void>;
   onClaim: () => void;
+  requestBlockedReason?: string;
 };
 
 const BorrowerRequestContext =
@@ -112,6 +133,50 @@ export function BorrowerRequestProvider(props: {
       ? `${calendar.date.from.getTime()}-${calendar.date.to.getTime()}`
       : null;
   const lastSelectionKeyRef = React.useRef<string | null>(null);
+
+  const selectedDayRange = React.useMemo(() => {
+    if (!calendar.date?.from || !calendar.date?.to) return null;
+    if (isSameDay(calendar.date.from, calendar.date.to)) return null;
+    return {
+      startDate: calendar.date.from.getTime(),
+      endDate: calendar.date.to.getTime(),
+    };
+  }, [calendar.date]);
+
+  const requestBlockedReason = React.useMemo(() => {
+    if (!selectedDayRange) return undefined;
+
+    const unavailableRange = (calendar.availability ?? []).find((range) =>
+      hasOverlap(selectedDayRange, range),
+    );
+    if (unavailableRange) {
+      if (unavailableRange.kind === "missing") {
+        return t("errors.blockedByMissingItem", {
+          range: formatDateRangeLabel(unavailableRange),
+        });
+      }
+      return t("errors.blockedByUnavailableRange", {
+        range: formatDateRangeLabel(unavailableRange),
+      });
+    }
+
+    const overlapsMyActiveRequest = (calendar.myRequests ?? []).some(
+      (request) => {
+        if (request.status !== "pending" && request.status !== "approved") {
+          return false;
+        }
+        if (
+          request.status === "approved" &&
+          (request.returnedAt || request.transferredAt || request.expiredAt)
+        ) {
+          return false;
+        }
+        return hasOverlap(selectedDayRange, request);
+      },
+    );
+
+    return overlapsMyActiveRequest ? t("errors.overlappingRequest") : undefined;
+  }, [calendar.availability, calendar.myRequests, selectedDayRange, t]);
 
   React.useEffect(() => {
     if (selectionKey === lastSelectionKeyRef.current) return;
@@ -169,6 +234,11 @@ export function BorrowerRequestProvider(props: {
   };
 
   const onClaim = () => {
+    if (requestBlockedReason) {
+      toast.error(requestBlockedReason);
+      return;
+    }
+
     if (isIntradayRequired) {
       if (!intradayRange) {
         setIntradayDialogOpen(true);
@@ -209,6 +279,7 @@ export function BorrowerRequestProvider(props: {
         onIntradayDialogOpenChange: setIntradayDialogOpen,
         onConfirmIntraday,
         onClaim,
+        requestBlockedReason,
       }}
     >
       {children}
@@ -227,6 +298,7 @@ export function BorrowerRequestCalendar(props: { className?: string }) {
     onConfirmIntraday,
   } = useBorrowerRequestContext();
   const [isIntradayBusy, setIsIntradayBusy] = React.useState(false);
+  const t = useTranslations("BorrowerRequest");
 
   return (
     <>
@@ -234,18 +306,20 @@ export function BorrowerRequestCalendar(props: { className?: string }) {
       {intradayFixedDate ? (
         <div className="mt-3">
           <LeaseProposeIntradayDialog
-            title="Select hours"
-            description="Same-day requests are booked by the hour."
+            title={t("selectHoursTitle")}
+            description={t("selectHoursDescription")}
             triggerLabel={
               intradayRange
-                ? `Change hours (${formatIntradayRangeLabel(intradayRange)})`
-                : "Select hours"
+                ? t("changeHours", {
+                    range: formatIntradayRangeLabel(intradayRange),
+                  })
+                : t("selectHours")
             }
             triggerVariant="outline"
             triggerSize="sm"
             triggerClassName="w-full h-8"
-            confirmLabel="Save hours"
-            cancelLabel="Cancel"
+            confirmLabel={t("saveHours")}
+            cancelLabel={t("cancel")}
             fixedDate={intradayFixedDate}
             disabled={calendar.isSubmitting || isIntradayBusy}
             open={intradayDialogOpen}
@@ -271,6 +345,7 @@ export function BorrowerRequestActions() {
     cancelRequest,
     onClaim,
     calendar,
+    requestBlockedReason,
   } = useBorrowerRequestContext();
   const t = useTranslations("BorrowerRequest");
 
@@ -278,37 +353,42 @@ export function BorrowerRequestActions() {
   const markReturned = useMutation(api.items.markReturned);
   const startConversation = useMutation(api.messaging.startConversation);
   const router = useRouter();
-  const [showInactive, setShowInactive] = React.useState(false);
 
-  const hasActiveBorrow = React.useMemo(() => {
-    return (myRequests ?? []).some(
-      (req) =>
-        req.status === "approved" &&
-        req.pickedUpAt &&
-        !req.returnedAt &&
-        !req.transferredAt &&
-        !req.expiredAt &&
-        !req.missingAt,
-    );
-  }, [myRequests]);
+  const activeRequests = React.useMemo(
+    () => (myRequests ?? []).filter(isActiveRequest),
+    [myRequests],
+  );
+
+  const hasOpenWorkflow = React.useMemo(() => {
+    return activeRequests.length > 0;
+  }, [activeRequests]);
 
   const approvedClaim = React.useMemo(() => {
-    return (myRequests ?? []).find(
-      (req) =>
-        req.status === "approved" &&
-        !req.returnedAt &&
-        !req.transferredAt &&
-        !req.expiredAt &&
-        !req.missingAt,
-    );
-  }, [myRequests]);
+    return activeRequests.find((req) => req.status === "approved");
+  }, [activeRequests]);
 
-  const handleChatWithOwner = async () => {
-    if (!approvedClaim) return;
+  const requestActionHint = React.useMemo(() => {
+    if (hasOpenWorkflow) return t("requestLockedOpenWorkflow");
+    if (!isAuthenticated) return t("signInToRequest");
+    if (requestBlockedReason) return requestBlockedReason;
+    if (!calendar.date?.from || !calendar.date?.to) {
+      return t("selectDatesToRequest");
+    }
+    return t("readyToRequest");
+  }, [
+    calendar.date?.from,
+    calendar.date?.to,
+    hasOpenWorkflow,
+    isAuthenticated,
+    requestBlockedReason,
+    t,
+  ]);
+
+  const handleMessageOwner = async () => {
     const conversationId = await startConversation({
       otherUserId: item.ownerId,
       itemId: item._id,
-      claimId: approvedClaim._id,
+      claimId: approvedClaim?._id,
     });
     router.push(`/chat/${conversationId}`);
   };
@@ -316,38 +396,46 @@ export function BorrowerRequestActions() {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
+        <div
+          className={cn(
+            "grid w-full grid-cols-1 gap-3",
+            hasOpenWorkflow ? "sm:grid-cols-1" : "sm:grid-cols-3",
+          )}
+        >
           <Button
-            className="h-10 w-full sm:w-auto"
-            onClick={onClaim}
-            disabled={
-              !calendar.date?.from ||
-              !calendar.date?.to ||
-              isSubmitting ||
-              !isAuthenticated ||
-              isAuthLoading
-            }
+            variant={approvedClaim ? "default" : "outline"}
+            className="h-10 w-full gap-2"
+            onClick={handleMessageOwner}
+            disabled={!isAuthenticated || isAuthLoading}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                {t("requesting")}
-              </>
-            ) : (
-              t("requestToBorrow")
-            )}
+            <MessageCircle className="h-4 w-4" />
+            {t("messageOwner")}
           </Button>
-          {!hasActiveBorrow && <AvailabilityToggle id={item._id} />}
-          {approvedClaim && isAuthenticated && (
+          {!hasOpenWorkflow ? (
             <Button
-              variant="outline"
-              size="sm"
-              className="h-10 gap-1"
-              onClick={handleChatWithOwner}
+              className="h-10 w-full"
+              onClick={onClaim}
+              disabled={
+                !calendar.date?.from ||
+                !calendar.date?.to ||
+                isSubmitting ||
+                !isAuthenticated ||
+                isAuthLoading ||
+                !!requestBlockedReason
+              }
             >
-              <MessageCircle className="h-4 w-4" />
-              {t("chatWithOwner")}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                  {t("requesting")}
+                </>
+              ) : (
+                t("requestToBorrow")
+              )}
             </Button>
+          ) : null}
+          {!hasOpenWorkflow && (
+            <AvailabilityToggle id={item._id} className="w-full" />
           )}
         </div>
         {!isAuthenticated && (
@@ -355,62 +443,52 @@ export function BorrowerRequestActions() {
             {t("signInToRequest")}
           </span>
         )}
+        {isAuthenticated ? (
+          <span
+            className={cn(
+              "text-sm",
+              requestBlockedReason
+                ? "text-destructive"
+                : "text-muted-foreground",
+            )}
+          >
+            {requestActionHint}
+          </span>
+        ) : null}
         <span className="text-xs text-muted-foreground">
           {t("intradayNote")}
         </span>
       </div>
 
-      {isAuthenticated && myRequests && myRequests.length > 0 && (
+      {isAuthenticated && activeRequests.length > 0 && (
         <div className="mt-6">
-          <div className="flex justify-between items-center mb-3">
+          <div className="mb-3">
             <h4 className="font-medium">{t("yourRequests")}</h4>
-            <Toggle
-              pressed={showInactive}
-              onPressedChange={setShowInactive}
-              variant="outline"
-              size="sm"
-              aria-label="Toggle inactive requests"
-            >
-              {showInactive ? t("hideInactive") : t("showInactive")}
-            </Toggle>
           </div>
           <div className="space-y-4">
-            {myRequests
-              .filter((req) => {
-                if (showInactive) return true;
-                if (req.status === "pending") return !req.expiredAt;
-                if (req.status === "approved") {
-                  return (
-                    !req.returnedAt &&
-                    !req.transferredAt &&
-                    !req.expiredAt &&
-                    !req.missingAt
-                  );
-                }
-                return false;
-              })
-              .map((claim) => (
-                <div
-                  key={claim._id}
-                  className={cn(
-                    calendar.hoveredClaimId === claim._id &&
-                      "ring-2 ring-primary rounded-lg",
-                  )}
-                >
-                  <LeaseClaimCard
-                    itemId={item._id}
-                    claim={claim}
-                    viewerRole="borrower"
-                    isGiveaway={false}
-                    ownerId={item.ownerId}
-                    cancelClaim={async ({ claimId }) =>
-                      await cancelRequest(claimId)
-                    }
-                    markPickedUp={markPickedUp}
-                    markReturned={markReturned}
-                  />
-                </div>
-              ))}
+            {activeRequests.map((claim) => (
+              <div
+                key={claim._id}
+                className={cn(
+                  calendar.hoveredClaimId === claim._id &&
+                    "ring-2 ring-primary rounded-lg",
+                )}
+              >
+                <LeaseClaimCard
+                  itemId={item._id}
+                  claim={claim}
+                  viewerRole="borrower"
+                  isGiveaway={false}
+                  coordinationAddress={item.location?.address}
+                  ownerId={item.ownerId}
+                  cancelClaim={async ({ claimId }) =>
+                    await cancelRequest(claimId)
+                  }
+                  markPickedUp={markPickedUp}
+                  markReturned={markReturned}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -428,6 +506,8 @@ export function BorrowerRequestPanel({
   fullWidth?: boolean;
   embedded?: boolean;
 }) {
+  const t = useTranslations("BorrowerRequest");
+
   if (item.giveaway) {
     return (
       <GiveawayBorrowerRequestPanel
@@ -442,16 +522,28 @@ export function BorrowerRequestPanel({
       {embedded ? (
         <BorrowerRequestCalendar className="mx-auto" />
       ) : (
-        <div
-          className={cn(
-            "bg-white border rounded-lg p-4 w-full",
-            fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
-          )}
-        >
-          <BorrowerRequestCalendar className="mx-auto" />
-        </div>
+        <>
+          <BorrowerRequestActions />
+          <details
+            className={cn(
+              "mt-4 rounded-lg border bg-white p-4",
+              fullWidth ? undefined : "inline-block max-w-md mx-auto md:mx-0",
+            )}
+          >
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              {t("planDates")}
+            </summary>
+            <div className="mt-2 text-xs text-muted-foreground">
+              {t("fosterPeriodHelp")}
+            </div>
+            <div className="mt-4">
+              <BorrowerRequestCalendar className="mx-auto" />
+            </div>
+          </details>
+        </>
       )}
-      <BorrowerRequestActions />
+      {embedded ? <BorrowerRequestActions /> : null}
     </BorrowerRequestProvider>
   );
 }
@@ -489,19 +581,15 @@ export function GiveawayBorrowerRequestPanel({
   const markReturned = useMutation(api.items.markReturned);
 
   const [pickupDay, setPickupDay] = React.useState<Date | undefined>(undefined);
-  const [showInactive, setShowInactive] = React.useState(false);
 
-  const hasActiveBorrow = React.useMemo(() => {
-    return (myRequests ?? []).some(
-      (req) =>
-        req.status === "approved" &&
-        req.pickedUpAt &&
-        !req.returnedAt &&
-        !req.transferredAt &&
-        !req.expiredAt &&
-        !req.missingAt,
-    );
-  }, [myRequests]);
+  const activeRequests = React.useMemo(
+    () => (myRequests ?? []).filter(isActiveRequest),
+    [myRequests],
+  );
+
+  const hasOpenWorkflow = React.useMemo(() => {
+    return activeRequests.length > 0;
+  }, [activeRequests]);
 
   const disabledDayRanges = React.useMemo(() => {
     const startOfLocalDayAt = (at: number): number => {
@@ -555,7 +643,7 @@ export function GiveawayBorrowerRequestPanel({
         />
       </div>
       <div className="mt-4 flex items-center justify-between gap-2">
-        {!hasActiveBorrow && <AvailabilityToggle id={item._id} />}
+        {!hasOpenWorkflow && <AvailabilityToggle id={item._id} />}
         <Button
           size="sm"
           disabled={requestDisabled}
@@ -593,51 +681,29 @@ export function GiveawayBorrowerRequestPanel({
         </div>
       )}
 
-      {isAuthenticated && myRequests && myRequests.length > 0 ? (
+      {isAuthenticated && activeRequests.length > 0 ? (
         <div className="mt-6">
-          <div className="flex justify-between items-center mb-3">
+          <div className="mb-3">
             <h4 className="font-medium">{t("yourRequests")}</h4>
-            <Toggle
-              pressed={showInactive}
-              onPressedChange={setShowInactive}
-              variant="outline"
-              size="sm"
-              aria-label="Toggle inactive requests"
-            >
-              {showInactive ? t("hideInactive") : t("showInactive")}
-            </Toggle>
           </div>
           <div className="space-y-4">
-            {myRequests
-              .filter((req) => {
-                if (showInactive) return true;
-                if (req.status === "pending") return !req.expiredAt;
-                if (req.status === "approved") {
-                  return (
-                    !req.returnedAt &&
-                    !req.transferredAt &&
-                    !req.expiredAt &&
-                    !req.missingAt
-                  );
-                }
-                return false;
-              })
-              .map((claim) => (
-                <div key={claim._id}>
-                  <LeaseClaimCard
-                    itemId={item._id}
-                    claim={claim}
-                    viewerRole="borrower"
-                    isGiveaway
-                    ownerId={item.ownerId}
-                    cancelClaim={async ({ claimId }) =>
-                      await cancelRequest(claimId)
-                    }
-                    markPickedUp={markPickedUp}
-                    markReturned={markReturned}
-                  />
-                </div>
-              ))}
+            {activeRequests.map((claim) => (
+              <div key={claim._id}>
+                <LeaseClaimCard
+                  itemId={item._id}
+                  claim={claim}
+                  viewerRole="borrower"
+                  isGiveaway
+                  coordinationAddress={item.location?.address}
+                  ownerId={item.ownerId}
+                  cancelClaim={async ({ claimId }) =>
+                    await cancelRequest(claimId)
+                  }
+                  markPickedUp={markPickedUp}
+                  markReturned={markReturned}
+                />
+              </div>
+            ))}
           </div>
         </div>
       ) : null}

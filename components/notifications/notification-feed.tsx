@@ -11,6 +11,7 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 export function NotificationFeed() {
   const t = useTranslations("Notifications");
@@ -25,6 +26,7 @@ export function NotificationFeed() {
   const markPickedUp = useTrackedPickup();
   const markReturned = useMutation(api.items.markReturned);
   const router = useRouter();
+  const [now] = useState(() => Date.now());
 
   if (notifications === undefined) {
     return <div className="p-4 text-center">{t("loading")}</div>;
@@ -75,7 +77,6 @@ export function NotificationFeed() {
     const { itemId, claimId, windowStartAt, windowEndAt } =
       getNotificationActionContext(n);
 
-    const now = Date.now();
     const isWindowExpired =
       typeof windowEndAt === "number" && windowEndAt < now;
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { MessageCircle, Phone, Facebook, Check, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
 interface AvailableContacts {

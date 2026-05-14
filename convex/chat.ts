@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
 
 export const getUserContext = query({
   handler: async (ctx) => {
@@ -287,10 +288,13 @@ export const resolveMyBorrowedItem = query({
 });
 
 // Helper: get the timestamp of the user's last chat clear
-async function getClearedAt(ctx: { db: any }, userId: string): Promise<number> {
+async function getClearedAt(
+  ctx: Pick<QueryCtx, "db">,
+  userId: string,
+): Promise<number> {
   const record = await ctx.db
     .query("chat_cleared_at")
-    .withIndex("by_user", (q: any) => q.eq("userId", userId))
+    .withIndex("by_user", (q) => q.eq("userId", userId))
     .unique();
   return record?.clearedAt ?? 0;
 }

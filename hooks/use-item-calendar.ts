@@ -28,7 +28,21 @@ type OwnerCalendarProps = Omit<
 
 type BorrowerMonths = 1 | 2 | "responsive";
 
-type AvailabilityRange = { startDate: number; endDate: number };
+type AvailabilityRange = {
+  startDate: number;
+  endDate: number;
+  kind?: string;
+};
+type BorrowerRequest = NonNullable<
+  ReturnType<typeof useClaimItem>["myRequests"]
+>[number];
+
+function isActiveBorrowerRequest(request: BorrowerRequest): boolean {
+  if (request.status === "pending") return !request.expiredAt;
+  if (request.status !== "approved") return false;
+
+  return !request.returnedAt && !request.transferredAt && !request.expiredAt;
+}
 
 export type BorrowerCalendarConfig = {
   mode: "borrower";
@@ -169,22 +183,20 @@ export function useItemCalendar<TRequest extends OwnerRequestBase>(
   const myPendingRanges = React.useMemo(() => {
     if (!showMyRequestModifiers) return undefined;
     return (myRequests ?? [])
-      .filter((r) => r.status === "pending")
+      .filter((r) => r.status === "pending" && isActiveBorrowerRequest(r))
       .map(toDayRange);
   }, [showMyRequestModifiers, myRequests]);
 
   const myApprovedRanges = React.useMemo(() => {
     if (!showMyRequestModifiers) return undefined;
     return (myRequests ?? [])
-      .filter((r) => r.status === "approved")
+      .filter((r) => r.status === "approved" && isActiveBorrowerRequest(r))
       .map(toDayRange);
   }, [showMyRequestModifiers, myRequests]);
 
   const activeBorrowerRequests = React.useMemo(() => {
     if (config.mode !== "borrower") return [];
-    return (myRequests ?? []).filter(
-      (r) => r.status === "pending" || r.status === "approved",
-    );
+    return (myRequests ?? []).filter(isActiveBorrowerRequest);
   }, [config.mode, myRequests]);
 
   const disabledDayRanges = React.useMemo(() => {

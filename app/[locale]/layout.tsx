@@ -1,19 +1,20 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import type { Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import "leaflet/dist/leaflet.css";
 import "../globals.css";
-import { ConvexClientProvider } from "../ConvexClientProvider";
+import { AppContentShell } from "@/components/app-content-shell";
 import { AppHeader } from "@/components/app-header";
+import { ChatWidget } from "@/components/chat-widget";
+import { EnsureEmail } from "@/components/ensure-email";
+import { LocaleSync } from "@/components/locale-sync";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { PostHogIdentify } from "@/components/posthog-identify";
-import { Toaster } from "@/components/ui/sonner";
 import { ProfileProvider } from "@/components/profile-provider";
-import { ChatWidget } from "@/components/chat-widget";
-import { LocaleSync } from "@/components/locale-sync";
-import { EnsureEmail } from "@/components/ensure-email";
+import { Toaster } from "@/components/ui/sonner";
+import { ConvexClientProvider } from "../ConvexClientProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -92,7 +93,7 @@ export default async function RootLayout({
                 <LocaleSync />
                 <EnsureEmail />
                 <AppHeader />
-                <div className="pb-20 md:pb-0">{children}</div>
+                <AppContentShell>{children}</AppContentShell>
                 <MobileTabBar />
                 <Toaster />
                 <ChatWidget />

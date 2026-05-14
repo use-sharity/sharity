@@ -56,6 +56,7 @@ const emailStrings: Record<Locale, Record<string, string>> = {
     "shared.contactWhatsapp": "WhatsApp: {number}",
     "shared.contactFacebook": "Facebook: {profile}",
     "shared.contactPhone": "Phone: {number}",
+    "shared.openSharity": "Open Sharity",
 
     // ── Welcome ──
     "welcome.subject": "Welcome to Sharity!",
@@ -172,6 +173,26 @@ const emailStrings: Record<Locale, Record<string, string>> = {
       "Items can be claimed quickly. Request it now before someone else does!",
     "itemAvailable.cta": "Request It Now",
 
+    // ── Minimal Milestones ──
+    "itemReceived.subject": '"{itemName}" was received',
+    "itemReceived.preview": '"{itemName}" was received',
+    "itemReceived.heading": "Item received",
+    "itemReceived.greeting": "Hi {ownerName},",
+    "itemReceived.body":
+      "{borrowerName} confirmed receiving {itemName}. Expected return: {returnDate}.",
+    "returnRequested.subject": 'Return requested for "{itemName}"',
+    "returnRequested.preview": 'Return requested for "{itemName}"',
+    "returnRequested.heading": "Return requested",
+    "returnRequested.greeting": "Hi {ownerName},",
+    "returnRequested.body":
+      "{borrowerName} is ready to return {itemName}. Open the chat to arrange the handoff.",
+    "itemReturned.subject": '"{itemName}" was returned',
+    "itemReturned.preview": '"{itemName}" was returned',
+    "itemReturned.heading": "Item returned",
+    "itemReturned.greeting": "Hi {borrowerName},",
+    "itemReturned.body":
+      "{itemName} was marked as returned. Thanks for keeping Sharity clear and simple.",
+
     // ── Daily / Weekly Digest ──
     "digest.subject": "Your Sharity activity — {date}",
     "digest.preview": "Your Sharity activity — {date}",
@@ -208,6 +229,7 @@ const emailStrings: Record<Locale, Record<string, string>> = {
     "shared.contactWhatsapp": "WhatsApp: {number}",
     "shared.contactFacebook": "Facebook: {profile}",
     "shared.contactPhone": "Điện thoại: {number}",
+    "shared.openSharity": "Mở Sharity",
 
     // ── Welcome ──
     "welcome.subject": "Chào mừng bạn đến với Sharity!",
@@ -329,6 +351,26 @@ const emailStrings: Record<Locale, Record<string, string>> = {
       "Đồ vật có thể được yêu cầu nhanh chóng. Hãy gửi yêu cầu ngay trước người khác!",
     "itemAvailable.cta": "Yêu Cầu Ngay",
 
+    // ── Minimal Milestones ──
+    "itemReceived.subject": '"{itemName}" đã được nhận',
+    "itemReceived.preview": '"{itemName}" đã được nhận',
+    "itemReceived.heading": "Đã nhận đồ",
+    "itemReceived.greeting": "Xin chào {ownerName},",
+    "itemReceived.body":
+      "{borrowerName} đã xác nhận nhận {itemName}. Dự kiến trả: {returnDate}.",
+    "returnRequested.subject": 'Yêu cầu trả "{itemName}"',
+    "returnRequested.preview": 'Yêu cầu trả "{itemName}"',
+    "returnRequested.heading": "Yêu cầu trả đồ",
+    "returnRequested.greeting": "Xin chào {ownerName},",
+    "returnRequested.body":
+      "{borrowerName} đã sẵn sàng trả {itemName}. Mở chat để hẹn thời gian giao lại.",
+    "itemReturned.subject": '"{itemName}" đã được trả',
+    "itemReturned.preview": '"{itemName}" đã được trả',
+    "itemReturned.heading": "Đã trả đồ",
+    "itemReturned.greeting": "Xin chào {borrowerName},",
+    "itemReturned.body":
+      "{itemName} đã được đánh dấu là đã trả. Cảm ơn bạn đã giữ Sharity rõ ràng và đơn giản.",
+
     // ── Daily / Weekly Digest ──
     "digest.subject": "Hoạt động Sharity của bạn — {date}",
     "digest.preview": "Hoạt động Sharity của bạn — {date}",
@@ -365,6 +407,7 @@ const emailStrings: Record<Locale, Record<string, string>> = {
     "shared.contactWhatsapp": "WhatsApp: {number}",
     "shared.contactFacebook": "Facebook: {profile}",
     "shared.contactPhone": "Телефон: {number}",
+    "shared.openSharity": "Открыть Sharity",
 
     // ── Welcome ──
     "welcome.subject": "Добро пожаловать в Sharity!",
@@ -481,6 +524,26 @@ const emailStrings: Record<Locale, Record<string, string>> = {
     "itemAvailable.callout":
       "Вещи быстро разбирают. Отправьте заявку прямо сейчас, пока не опоздали!",
     "itemAvailable.cta": "Отправить заявку",
+
+    // ── Minimal Milestones ──
+    "itemReceived.subject": '"{itemName}" получена',
+    "itemReceived.preview": '"{itemName}" получена',
+    "itemReceived.heading": "Вещь получена",
+    "itemReceived.greeting": "Здравствуйте, {ownerName},",
+    "itemReceived.body":
+      "{borrowerName} подтвердил(а), что получил(а) {itemName}. Ожидаемый возврат: {returnDate}.",
+    "returnRequested.subject": 'Запрошен возврат "{itemName}"',
+    "returnRequested.preview": 'Запрошен возврат "{itemName}"',
+    "returnRequested.heading": "Запрошен возврат",
+    "returnRequested.greeting": "Здравствуйте, {ownerName},",
+    "returnRequested.body":
+      "{borrowerName} готов(а) вернуть {itemName}. Откройте чат, чтобы договориться о передаче.",
+    "itemReturned.subject": '"{itemName}" возвращена',
+    "itemReturned.preview": '"{itemName}" возвращена',
+    "itemReturned.heading": "Вещь возвращена",
+    "itemReturned.greeting": "Здравствуйте, {borrowerName},",
+    "itemReturned.body":
+      "{itemName} отмечена как возвращённая. Спасибо, что держите Sharity простым и понятным.",
 
     // ── Daily / Weekly Digest ──
     "digest.subject": "Ваша активность на Sharity — {date}",

@@ -26,13 +26,8 @@ function useIsMobile() {
 
 export function NotificationBell() {
   const notifications = useQuery(api.notifications.get);
-  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const unreadCount = notifications?.filter((n) => !n.isRead).length || 0;
 
@@ -44,7 +39,7 @@ export function NotificationBell() {
       onClick={isMobile ? () => setOpen(true) : undefined}
     >
       <Bell className="h-5 w-5" />
-      {mounted && unreadCount > 0 && (
+      {unreadCount > 0 && (
         <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
       )}
       <span className="sr-only">Notifications</span>

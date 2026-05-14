@@ -12,6 +12,7 @@ export interface DigestData {
   borrowerNotifications: DigestItemSummary[];
   generalNotifications: DigestItemSummary[];
   locale: Locale;
+  generatedAt: number;
 }
 
 function DigestSection({
@@ -60,7 +61,7 @@ function DigestSection({
 
 export function DailyDigestEmail(data: DigestData) {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://sharity-dalat.com";
-  const today = formatDateLocalized(Date.now(), data.locale);
+  const today = formatDateLocalized(data.generatedAt, data.locale);
 
   const titleKey =
     data.mode === "weekly" ? "digest.title.weekly" : "digest.title.daily";

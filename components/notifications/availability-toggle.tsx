@@ -5,8 +5,15 @@ import { Bell, BellOff } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 
-export function AvailabilityToggle({ id }: { id: Id<"items"> }) {
+export function AvailabilityToggle({
+  id,
+  className,
+}: {
+  id: Id<"items">;
+  className?: string;
+}) {
   const isSubscribed = useQuery(api.notifications.getAvailabilitySubscription, {
     id,
   });
@@ -25,7 +32,7 @@ export function AvailabilityToggle({ id }: { id: Id<"items"> }) {
   return (
     <Button
       variant={isSubscribed ? "secondary" : "outline"}
-      className="h-10 gap-2"
+      className={cn("h-10 gap-2", className)}
       onClick={handleToggle}
     >
       {isSubscribed ? (

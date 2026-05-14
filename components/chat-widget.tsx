@@ -5,6 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useMutation, useQuery } from "convex/react";
 import { useLocale } from "next-intl";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import React, {
   useRef,
   useEffect,
@@ -47,6 +49,21 @@ const SUPPORT_LABEL: Record<string, string> = {
   vi: "Câu hỏi?",
   ru: "Вопросы?",
 };
+
+type StatefulPart = {
+  state?: unknown;
+  input?: unknown;
+  approval?: { id?: unknown };
+};
+
+function hasPartState(part: unknown, state: string): part is StatefulPart {
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "state" in part &&
+    (part as StatefulPart).state === state
+  );
+}
 
 const SUGGESTIONS_BY_STAGE: Record<string, Record<string, string[]>> = {
   new_user: {
@@ -140,6 +157,15 @@ function renderMessageContent(text: string) {
 }
 
 export function ChatWidget() {
+  const pathname = usePathname();
+  const isUserChatRoute = /^\/[^/]+\/chat(?:\/|$)/.test(pathname);
+
+  if (isUserChatRoute) return null;
+
+  return <ChatWidgetInner />;
+}
+
+function ChatWidgetInner() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -163,11 +189,7 @@ export function ChatWidget() {
   const locale = useLocale();
   const userContext = useQuery(api.chat.getUserContext);
 
-  const localeRef = useRef(locale);
-  localeRef.current = locale;
   const { getToken, isSignedIn } = useAuth();
-  const getTokenRef = useRef(getToken);
-  getTokenRef.current = getToken;
 
   const transport = useMemo(
     () =>
@@ -175,12 +197,12 @@ export function ChatWidget() {
         api: "/api/chat",
         fetch: async (url, init) => {
           const body = JSON.parse((init?.body as string) ?? "{}");
-          body.locale = localeRef.current;
+          body.locale = locale;
           // Truncate to last 50 messages to keep LLM context bounded
           if (Array.isArray(body.messages) && body.messages.length > 50) {
             body.messages = body.messages.slice(-50);
           }
-          const token = await getTokenRef.current({ template: "convex" });
+          const token = await getToken({ template: "convex" });
           return fetch(url, {
             ...init,
             body: JSON.stringify(body),
@@ -191,7 +213,7 @@ export function ChatWidget() {
           });
         },
       }),
-    [],
+    [getToken, locale],
   );
 
   const {
@@ -209,13 +231,13 @@ export function ChatWidget() {
     sendAutomaticallyWhen: ({ messages: msgs }) => {
       const last = msgs[msgs.length - 1];
       if (last?.role !== "assistant") return false;
-      const hasPendingApproval = last.parts?.some(
-        (p: any) => "state" in p && p.state === "approval-requested",
+      const hasPendingApproval = last.parts?.some((p) =>
+        hasPartState(p, "approval-requested"),
       );
       if (hasPendingApproval) return false;
       // Auto-send when all approvals are responded to
-      const hasRespondedApproval = last.parts?.some(
-        (p: any) => "state" in p && p.state === "approval-responded",
+      const hasRespondedApproval = last.parts?.some((p) =>
+        hasPartState(p, "approval-responded"),
       );
       return !!hasRespondedApproval;
     },
@@ -573,7 +595,7 @@ export function ChatWidget() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 sm:right-6 sm:bottom-6 ${isSignedIn ? "bottom-24" : "bottom-6"}`}
+          className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
           style={{ backgroundColor: "var(--primary)" }}
           aria-label="Open chat with Sharry"
         >
@@ -791,13 +813,20 @@ export function ChatWidget() {
                         );
                       }
                       return message.parts?.map((part, idx) => {
-                        if (part.type === "file" && "url" in part) {
+                        if (
+                          part.type === "file" &&
+                          "url" in part &&
+                          typeof part.url === "string"
+                        ) {
                           return (
-                            <img
+                            <Image
                               key={idx}
-                              src={(part as any).url}
+                              src={part.url}
                               alt="Attached"
+                              width={160}
+                              height={120}
                               className="mt-1 max-h-[120px] rounded-md object-cover"
+                              unoptimized
                             />
                           );
                         }
@@ -824,17 +853,20 @@ export function ChatWidget() {
                           );
                         }
                         if (
-                          "state" in part &&
-                          part.state === "approval-requested" &&
+                          hasPartState(part, "approval-requested") &&
                           "approval" in part
                         ) {
                           const toolName = part.type.replace("tool-", "");
+                          const approvalId =
+                            typeof part.approval?.id === "string"
+                              ? part.approval.id
+                              : "";
                           return (
                             <ToolApprovalCard
                               key={idx}
                               toolName={toolName}
-                              input={(part as any).input}
-                              approvalId={(part as any).approval.id}
+                              input={part.input}
+                              approvalId={approvalId}
                               onApprove={(id) =>
                                 addToolApprovalResponse({ id, approved: true })
                               }
@@ -938,10 +970,13 @@ export function ChatWidget() {
               <div className="mb-2 flex gap-1.5 overflow-x-auto">
                 {pendingFiles.map((file, i) => (
                   <div key={i} className="relative shrink-0">
-                    <img
+                    <Image
                       src={previewUrls[i]}
                       alt={file.name}
+                      width={40}
+                      height={40}
                       className="h-10 w-10 rounded-md border object-cover"
+                      unoptimized
                     />
                     {isUploading && i >= uploadedRefs.length && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40">

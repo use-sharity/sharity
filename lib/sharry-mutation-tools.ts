@@ -100,6 +100,10 @@ function parseDate(dateStr: string): number | null {
   return isNaN(date.getTime()) ? null : date.getTime();
 }
 
+function errorMessage(error: unknown): string | undefined {
+  return error instanceof Error ? error.message : undefined;
+}
+
 const IMAGE_INDICES_PARAM = {
   type: "array" as const,
   items: { type: "number" as const },
@@ -168,8 +172,8 @@ export function buildMutationTools(
             success: `Created "${name}". ${photoNote}`,
             nextStep: `Tell the user to add location if needed. Include this markdown link in your response: ${link}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not create item." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not create item." };
         }
       },
     }),
@@ -224,8 +228,8 @@ export function buildMutationTools(
             success: `Updated "${resolved.itemName}".${photoNote}`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not update item." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not update item." };
         }
       },
     }),
@@ -251,8 +255,8 @@ export function buildMutationTools(
             success: `Deleted "${resolved.itemName}".`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not delete item." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not delete item." };
         }
       },
     }),
@@ -303,8 +307,8 @@ export function buildMutationTools(
             success: `Approved ${claim.claimerName}'s request on "${resolved.itemName}".`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not approve request." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not approve request." };
         }
       },
     }),
@@ -352,8 +356,8 @@ export function buildMutationTools(
             success: `Rejected ${claim.claimerName}'s request on "${resolved.itemName}".`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not reject request." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not reject request." };
         }
       },
     }),
@@ -392,8 +396,8 @@ export function buildMutationTools(
             success: `Request sent for ${startDate} to ${endDate}. The owner will be notified.`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not send request." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not send request." };
         }
       },
     }),
@@ -417,34 +421,41 @@ export function buildMutationTools(
             success: `Cancelled your request on "${resolved.itemName}".`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not cancel request." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not cancel request." };
         }
       },
     }),
 
     proposePickupWindow: tool({
-      description: "Propose a 1-hour pickup time for an approved item.",
+      description:
+        "Propose pickup details for an approved item. Use free-form details so the people can agree on exact time, range, place, and notes.",
       inputSchema: jsonSchema<{
         itemName: string;
         itemId?: string;
-        dateTime: string;
+        details: string;
+        dateTime?: string;
       }>({
         type: "object",
         properties: {
           itemName: stringParam("Item name"),
           itemId: ITEM_ID_PARAM,
+          details: stringParam(
+            "Pickup details, e.g. 'Tomorrow at 15:20 near the lobby, or 15:00-16:00 if traffic is bad'",
+          ),
           dateTime: stringParam(
-            "Pickup time (ISO format, e.g., 2026-03-20T14:00)",
+            "Optional exact pickup time in ISO format, e.g., 2026-03-20T15:20",
           ),
         },
-        required: ["itemName", "dateTime"],
+        required: ["itemName", "details"],
       }),
       needsApproval: true,
-      execute: async ({ itemName, itemId, dateTime }) => {
+      execute: async ({ itemName, itemId, details, dateTime }) => {
         try {
-          const ts = parseDate(dateTime);
-          if (!ts) return { error: "Could not parse date/time." };
+          const parsedDate = dateTime ? parseDate(dateTime) : null;
+          if (dateTime && !parsedDate)
+            return { error: "Could not parse date/time." };
+          const windowStartAt = parsedDate ?? undefined;
           // Try as owner first, then as borrower
           const asOwner = await resolveOwned(convex, itemName, itemId);
           if (asOwner.ok) {
@@ -456,10 +467,11 @@ export function buildMutationTools(
             await convex.mutation(api.items.proposePickupWindow, {
               itemId: asOwner.itemId,
               claimId: approved.claimId,
-              windowStartAt: ts,
+              note: details,
+              windowStartAt,
             });
             return {
-              success: `Pickup proposed for ${dateTime}.`,
+              success: `Pickup details proposed: ${details}.`,
               nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
             };
           }
@@ -468,16 +480,17 @@ export function buildMutationTools(
             await convex.mutation(api.items.proposePickupWindow, {
               itemId: asBorrower.itemId,
               claimId: asBorrower.claimId,
-              windowStartAt: ts,
+              note: details,
+              windowStartAt,
             });
             return {
-              success: `Pickup proposed for ${dateTime}.`,
+              success: `Pickup details proposed: ${details}.`,
               nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
             };
           }
           return { error: asOwner.error };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not propose pickup." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not propose pickup." };
         }
       },
     }),
@@ -522,32 +535,39 @@ export function buildMutationTools(
             };
           }
           return { error: asOwner.error };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not approve pickup." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not approve pickup." };
         }
       },
     }),
 
     proposeReturnWindow: tool({
-      description: "Propose a 1-hour return time.",
+      description:
+        "Propose return details for an active loan. Use free-form details so the people can agree on exact time, range, place, and notes.",
       inputSchema: jsonSchema<{
         itemName: string;
         itemId?: string;
-        dateTime: string;
+        details: string;
+        dateTime?: string;
       }>({
         type: "object",
         properties: {
           itemName: stringParam("Item name"),
           itemId: ITEM_ID_PARAM,
-          dateTime: stringParam("Return time (ISO format)"),
+          details: stringParam(
+            "Return details, e.g. 'Friday 18:30 at reception, or anytime 18:00-19:00'",
+          ),
+          dateTime: stringParam("Optional exact return time in ISO format"),
         },
-        required: ["itemName", "dateTime"],
+        required: ["itemName", "details"],
       }),
       needsApproval: true,
-      execute: async ({ itemName, itemId, dateTime }) => {
+      execute: async ({ itemName, itemId, details, dateTime }) => {
         try {
-          const ts = parseDate(dateTime);
-          if (!ts) return { error: "Could not parse date/time." };
+          const parsedDate = dateTime ? parseDate(dateTime) : null;
+          if (dateTime && !parsedDate)
+            return { error: "Could not parse date/time." };
+          const windowStartAt = parsedDate ?? undefined;
           const asOwner = await resolveOwned(convex, itemName, itemId);
           if (asOwner.ok) {
             const active = asOwner.claims.find(
@@ -558,10 +578,11 @@ export function buildMutationTools(
             await convex.mutation(api.items.proposeReturnWindow, {
               itemId: asOwner.itemId,
               claimId: active.claimId,
-              windowStartAt: ts,
+              note: details,
+              windowStartAt,
             });
             return {
-              success: `Return proposed for ${dateTime}.`,
+              success: `Return details proposed: ${details}.`,
               nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asOwner.itemId, locale)}`,
             };
           }
@@ -570,16 +591,17 @@ export function buildMutationTools(
             await convex.mutation(api.items.proposeReturnWindow, {
               itemId: asBorrower.itemId,
               claimId: asBorrower.claimId,
-              windowStartAt: ts,
+              note: details,
+              windowStartAt,
             });
             return {
-              success: `Return proposed for ${dateTime}.`,
+              success: `Return details proposed: ${details}.`,
               nextStep: `Include this markdown link in your response: ${itemMdLink("View item", asBorrower.itemId, locale)}`,
             };
           }
           return { error: asOwner.error };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not propose return." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not propose return." };
         }
       },
     }),
@@ -624,8 +646,8 @@ export function buildMutationTools(
             };
           }
           return { error: asOwner.error };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not approve return." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not approve return." };
         }
       },
     }),
@@ -657,8 +679,8 @@ export function buildMutationTools(
             success: `Marked "${resolved.itemName}" as picked up.`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not mark as picked up." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not mark as picked up." };
         }
       },
     }),
@@ -690,8 +712,8 @@ export function buildMutationTools(
             success: `Marked "${resolved.itemName}" as returned.`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not mark as returned." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not mark as returned." };
         }
       },
     }),
@@ -730,8 +752,8 @@ export function buildMutationTools(
             success: `Reported "${resolved.itemName}" as missing.`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not report as missing." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not report as missing." };
         }
       },
     }),
@@ -748,7 +770,7 @@ export function buildMutationTools(
         type: "object",
         properties: {
           claimId: stringParam("Claim ID for the transaction"),
-          stars: { type: "number" as any, description: "Rating 1-5 stars" },
+          stars: { type: "number" as const, description: "Rating 1-5 stars" },
           comment: stringParam("Review comment"),
           imageIndices: IMAGE_INDICES_PARAM,
         },
@@ -769,8 +791,8 @@ export function buildMutationTools(
             success: `Submitted ${stars}-star rating.${photoNote}`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not submit rating." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not submit rating." };
         }
       },
     }),
@@ -789,7 +811,7 @@ export function buildMutationTools(
         try {
           const existing = await convex.query(api.wishlist.list);
           return {
-            existingWishes: existing.slice(0, 20).map((w: any) => ({
+            existingWishes: existing.slice(0, 20).map((w) => ({
               wishId: w._id,
               text: w.text,
               votes: w.votes?.length ?? 0,
@@ -831,8 +853,8 @@ export function buildMutationTools(
             success: `Added to wishlist: "${text}".${photoNote} Neighbors can see it and might share!`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not add to wishlist." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not add to wishlist." };
         }
       },
     }),
@@ -858,8 +880,8 @@ export function buildMutationTools(
             success: `Vote toggled on "${wishText ?? "wish"}". Check the wishlist to see the updated count!`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not vote on this wish." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not vote on this wish." };
         }
       },
     }),
@@ -894,8 +916,8 @@ export function buildMutationTools(
             success: `Updated wish: "${text}".${photoNote}`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not update this wish." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not update this wish." };
         }
       },
     }),
@@ -933,8 +955,8 @@ export function buildMutationTools(
             success: `Switched "${resolved.itemName}" to ${mode} mode.`,
             nextStep: `Include this markdown link in your response: ${itemMdLink("View item", resolved.itemId, locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not switch item mode." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not switch item mode." };
         }
       },
     }),
@@ -973,8 +995,8 @@ export function buildMutationTools(
             success: `Blocked ${startDate} to ${endDate}.${note ? ` Reason: ${note}` : ""}`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not block dates." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not block dates." };
         }
       },
     }),
@@ -1000,9 +1022,9 @@ export function buildMutationTools(
               "Removed the blocked dates. Your items are available again for that period.",
             nextStep: `Include this markdown link in your response: ${pageMdLink("My Items", "my-items", locale)}`,
           };
-        } catch (e: any) {
+        } catch (e: unknown) {
           return {
-            error: e.message ?? "Could not remove blocked dates.",
+            error: errorMessage(e) ?? "Could not remove blocked dates.",
           };
         }
       },
@@ -1061,8 +1083,8 @@ export function buildMutationTools(
             success: "Profile updated.",
             nextStep: `Include this markdown link in your response: ${pageMdLink("Profile", "profile", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not update profile." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not update profile." };
         }
       },
     }),
@@ -1082,9 +1104,9 @@ export function buildMutationTools(
             success: "All notifications marked as read.",
             nextStep: `Include this markdown link in your response: ${pageMdLink("Notifications", "notifications", locale)}`,
           };
-        } catch (e: any) {
+        } catch (e: unknown) {
           return {
-            error: e.message ?? "Could not mark notifications as read.",
+            error: errorMessage(e) ?? "Could not mark notifications as read.",
           };
         }
       },
@@ -1112,9 +1134,10 @@ export function buildMutationTools(
               ? "You'll be notified when this item becomes available."
               : "Availability alerts turned off for this item.",
           };
-        } catch (e: any) {
+        } catch (e: unknown) {
           return {
-            error: e.message ?? "Could not update availability subscription.",
+            error:
+              errorMessage(e) ?? "Could not update availability subscription.",
           };
         }
       },
@@ -1141,8 +1164,8 @@ export function buildMutationTools(
             success: `Deleted wish: "${wishText ?? "wish"}". It's been removed from the wishlist.`,
             nextStep: `Include this markdown link in your response: ${pageMdLink("Wishlist", "wishlist", locale)}`,
           };
-        } catch (e: any) {
-          return { error: e.message ?? "Could not delete this wish." };
+        } catch (e: unknown) {
+          return { error: errorMessage(e) ?? "Could not delete this wish." };
         }
       },
     }),

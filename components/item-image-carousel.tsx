@@ -34,9 +34,12 @@ export function ItemImageCarousel({
   const validUrls = imageUrls.filter(isCloudinaryImageUrl);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
-  const openLightbox = useCallback((index: number) => {
-    setLightboxIndex(index);
-  }, []);
+  const openLightbox = useCallback(
+    (index: number) => {
+      setLightboxIndex(index);
+    },
+    [setLightboxIndex],
+  );
 
   if (validUrls.length === 0) return null;
 

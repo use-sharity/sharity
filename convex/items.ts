@@ -243,38 +243,63 @@ function isRangeActiveNow(range: {
   return range.startDate <= now && now <= range.endDate;
 }
 
+function getPendingClaimExpiresAt(range: {
+  startDate: number;
+  endDate: number;
+}): number {
+  const duration = range.endDate - range.startDate;
+  const isHourAligned =
+    range.startDate % ONE_HOUR_MS === 0 && range.endDate % ONE_HOUR_MS === 0;
+  const isIntraday = duration < ONE_DAY_MS && isHourAligned;
+
+  return isIntraday ? range.endDate : range.startDate + ONE_DAY_MS;
+}
+
 function assertHourAligned(windowStartAt: number): void {
   if (windowStartAt % ONE_HOUR_MS !== 0) {
     throw new Error("Time must be aligned to the hour");
   }
 }
 
-function assertOnDay(
-  windowStartAt: number,
-  referenceAt: number,
-  label: string,
-): void {
-  // Compare UTC day components directly, allowing ±1 day tolerance
-  // to handle timezone differences when claim.startDate was stored as local midnight
-  const refDate = new Date(referenceAt);
-  const refYear = refDate.getUTCFullYear();
-  const refMonth = refDate.getUTCMonth();
-  const refDay = refDate.getUTCDate();
+function asValidItemId(id: string): Id<"items"> | null {
+  return /^j[0-9a-z]{31}$/.test(id) ? (id as Id<"items">) : null;
+}
 
-  const windowDate = new Date(windowStartAt);
-  const windowYear = windowDate.getUTCFullYear();
-  const windowMonth = windowDate.getUTCMonth();
-  const windowDay = windowDate.getUTCDate();
-
-  // Check if same year/month/day, or adjacent day (to handle timezone differences)
-  const sameDay =
-    windowYear === refYear &&
-    windowMonth === refMonth &&
-    Math.abs(windowDay - refDay) <= 1;
-
-  if (!sameDay) {
-    throw new Error(`Time must be on the ${label} day`);
+function cleanOptionalText(
+  value: string | undefined,
+  maxLength: number,
+): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > maxLength) {
+    throw new Error("Meetup details are too long");
   }
+  return trimmed;
+}
+
+function formatMeetupSystemBody(args: {
+  type: "Pickup" | "Return";
+  action: "proposed" | "approved" | "requested";
+  meetingAt?: number;
+  place?: string;
+  note?: string;
+}): string {
+  const details = [
+    args.meetingAt ? `time ${new Date(args.meetingAt).toLocaleString()}` : null,
+    args.place ? `at ${args.place}` : null,
+    args.note ? `Note: ${args.note}` : null,
+  ].filter(Boolean);
+
+  return details.length > 0
+    ? `${args.type} plan ${args.action}: ${details.join("; ")}`
+    : `${args.type} plan ${args.action}.`;
+}
+
+function getLatestEvent(
+  events: Doc<"lease_activity">[],
+  type: Doc<"lease_activity">["type"],
+): Doc<"lease_activity"> | undefined {
+  return events.find((event) => event.type === type);
 }
 
 // Seed function for testing (no auth required)
@@ -606,10 +631,13 @@ export const searchDiscovery = query({
 });
 
 export const getById = query({
-  args: { id: v.id("items") },
+  args: { id: v.string() },
   handler: async (ctx, args) => {
+    const itemId = asValidItemId(args.id);
+    if (!itemId) return null;
+
     const identity = await ctx.auth.getUserIdentity();
-    const item = await ctx.db.get(args.id);
+    const item = await ctx.db.get(itemId);
 
     if (!item) return null;
 
@@ -625,7 +653,7 @@ export const getById = query({
     if (isOwner) {
       requests = await ctx.db
         .query("claims")
-        .withIndex("by_item", (q) => q.eq("itemId", args.id))
+        .withIndex("by_item", (q) => q.eq("itemId", itemId))
         .collect();
     }
 
@@ -635,7 +663,7 @@ export const getById = query({
       .withIndex("by_claimer", (q) =>
         q.eq("claimerId", identity?.subject ?? ""),
       )
-      .filter((q) => q.eq(q.field("itemId"), args.id))
+      .filter((q) => q.eq(q.field("itemId"), itemId))
       .collect();
 
     return {
@@ -1230,9 +1258,10 @@ export const requestItem = mutation({
       systemEvent: "claim_requested",
     });
 
-    // Schedule auto-expiry at the start date
+    // Date-based requests store the selected local day at local midnight.
+    // Expiring exactly at startDate would immediately expire same-day requests.
     await ctx.scheduler.runAt(
-      args.startDate,
+      getPendingClaimExpiresAt(args),
       internal.items.expirePendingClaim,
       { claimId },
     );
@@ -1389,25 +1418,20 @@ export const proposePickupWindow = mutation({
   args: {
     itemId: v.id("items"),
     claimId: v.id("claims"),
-    windowStartAt: v.number(),
+    windowStartAt: v.optional(v.number()),
+    place: v.optional(v.string()),
+    note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
 
     const now = Date.now();
-    const windowEndAt = args.windowStartAt + ONE_HOUR_MS;
-    // Allow proposing a window that has already started but is still active,
-    // as long as it isn't too far in the past. This supports cases like
-    // proposing 21:00–22:00 at 21:05 local time.
-    if (
-      windowEndAt <= now ||
-      args.windowStartAt < now - MAX_PAST_WINDOW_TOLERANCE_MS
-    ) {
-      throw new Error("The pickup window must be in the future");
+    const place = cleanOptionalText(args.place, 160);
+    const note = cleanOptionalText(args.note, 240);
+    if (args.windowStartAt === undefined) {
+      throw new Error("Pickup date and time are required");
     }
-
-    assertHourAligned(args.windowStartAt);
 
     const claim = await ctx.db.get(args.claimId);
     if (!claim) throw new Error("Claim not found");
@@ -1423,7 +1447,19 @@ export const proposePickupWindow = mutation({
     if (claim.missingAt)
       throw new Error("Cannot propose pickup for a missing item");
 
-    assertOnDay(args.windowStartAt, claim.startDate, "start");
+    const windowEndAt =
+      args.windowStartAt !== undefined
+        ? args.windowStartAt + ONE_HOUR_MS
+        : undefined;
+    if (args.windowStartAt !== undefined) {
+      if (
+        !windowEndAt ||
+        windowEndAt <= now ||
+        args.windowStartAt < now - MAX_PAST_WINDOW_TOLERANCE_MS
+      ) {
+        throw new Error("The pickup window must be in the future");
+      }
+    }
 
     const item = await ctx.db.get(args.itemId);
     if (!item) throw new Error("Item not found");
@@ -1457,6 +1493,8 @@ export const proposePickupWindow = mutation({
       type: "lease_pickup_proposed",
       actorId: userId,
       createdAt: now,
+      note,
+      place,
       proposalId,
       windowStartAt: args.windowStartAt,
       windowEndAt,
@@ -1479,33 +1517,27 @@ export const proposePickupWindow = mutation({
       createdAt: now,
     });
 
-    // Email counterparty: pickup proposed
-    const recipient = await resolveUserEmail(
-      ctx,
-      pickupRecipientId,
-      "proposePickupWindow",
+    const pickupConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
     );
-    const proposerProfile = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
-      .first();
-    if (recipient) {
-      await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupProposed, {
-        claimId: args.claimId,
-        meetupType: "pickup",
-        recipientEmail: recipient.email,
-        locale: recipient.profile.locale,
-        data: {
-          recipientName: recipient.name,
-          proposerName: proposerProfile?.name ?? "The other party",
-          itemName: item.name,
-          windowStartAt: args.windowStartAt,
-          windowEndAt,
-          itemId: args.itemId,
-          meetupType: "pickup",
-        },
-      });
-    }
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: pickupConvId,
+      body: formatMeetupSystemBody({
+        type: "Pickup",
+        action: "proposed",
+        meetingAt: args.windowStartAt,
+        place,
+        note,
+      }),
+      systemEvent: "pickup_proposed",
+      systemWindowStartAt: args.windowStartAt,
+      systemWindowEndAt: windowEndAt,
+      systemPlace: place,
+      systemNote: note,
+    });
+
+    // Keep email quiet: pickup proposals live in chat/in-app notifications only.
   },
 });
 
@@ -1513,24 +1545,17 @@ export const proposeReturnWindow = mutation({
   args: {
     itemId: v.id("items"),
     claimId: v.id("claims"),
-    windowStartAt: v.number(),
+    windowStartAt: v.optional(v.number()),
+    place: v.optional(v.string()),
+    note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
 
     const now = Date.now();
-    const windowEndAt = args.windowStartAt + ONE_HOUR_MS;
-    // Allow proposing a window that has already started but is still active,
-    // similar to pickup windows.
-    if (
-      windowEndAt <= now ||
-      args.windowStartAt < now - MAX_PAST_WINDOW_TOLERANCE_MS
-    ) {
-      throw new Error("The return window must be in the future");
-    }
-
-    assertHourAligned(args.windowStartAt);
+    const place = cleanOptionalText(args.place, 160);
+    const note = cleanOptionalText(args.note, 240);
 
     const claim = await ctx.db.get(args.claimId);
     if (!claim) throw new Error("Claim not found");
@@ -1545,7 +1570,19 @@ export const proposeReturnWindow = mutation({
     if (claim.missingAt)
       throw new Error("Cannot propose return for a missing item");
 
-    assertOnDay(args.windowStartAt, claim.endDate, "end");
+    const windowEndAt =
+      args.windowStartAt !== undefined
+        ? args.windowStartAt + ONE_HOUR_MS
+        : undefined;
+    if (args.windowStartAt !== undefined) {
+      if (
+        !windowEndAt ||
+        windowEndAt <= now ||
+        args.windowStartAt < now - MAX_PAST_WINDOW_TOLERANCE_MS
+      ) {
+        throw new Error("The return window must be in the future");
+      }
+    }
 
     const item = await ctx.db.get(args.itemId);
     if (!item) throw new Error("Item not found");
@@ -1555,7 +1592,7 @@ export const proposeReturnWindow = mutation({
 
     const userId = identity.subject;
     if (userId !== item.ownerId && userId !== claim.claimerId) {
-      throw new Error("Unauthorized");
+      throw new Error("Only lease participants can propose return");
     }
 
     const existing = await ctx.db
@@ -1588,6 +1625,8 @@ export const proposeReturnWindow = mutation({
       type: "lease_return_proposed",
       actorId: userId,
       createdAt: now,
+      note,
+      place,
       proposalId,
       windowStartAt: args.windowStartAt,
       windowEndAt,
@@ -1610,7 +1649,27 @@ export const proposeReturnWindow = mutation({
       createdAt: now,
     });
 
-    // Email counterparty: return proposed
+    const returnConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: returnConvId,
+      body: formatMeetupSystemBody({
+        type: "Return",
+        action: args.windowStartAt === undefined ? "requested" : "proposed",
+        meetingAt: args.windowStartAt,
+        place,
+        note,
+      }),
+      systemEvent: "return_proposed",
+      systemWindowStartAt: args.windowStartAt,
+      systemWindowEndAt: windowEndAt,
+      systemPlace: place,
+      systemNote: note,
+    });
+
+    // Email owner only for the milestone: borrower is ready to return.
     const returnRecipient = await resolveUserEmail(
       ctx,
       returnRecipientId,
@@ -1620,20 +1679,16 @@ export const proposeReturnWindow = mutation({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", userId))
       .first();
-    if (returnRecipient) {
-      await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupProposed, {
+    if (userId === claim.claimerId && returnRecipient) {
+      await ctx.scheduler.runAfter(0, internal.emailSend.sendReturnRequested, {
         claimId: args.claimId,
-        meetupType: "return",
-        recipientEmail: returnRecipient.email,
+        ownerEmail: returnRecipient.email,
         locale: returnRecipient.profile.locale,
         data: {
-          recipientName: returnRecipient.name,
-          proposerName: returnProposerProfile?.name ?? "The other party",
+          ownerName: returnRecipient.name,
+          borrowerName: returnProposerProfile?.name ?? "The borrower",
           itemName: item.name,
-          windowStartAt: args.windowStartAt,
-          windowEndAt,
           itemId: args.itemId,
-          meetupType: "return",
         },
       });
     }
@@ -1678,14 +1733,13 @@ export const approvePickupWindow = mutation({
     const latestProposal = events.find(
       (e) => e.type === "lease_pickup_proposed",
     );
-    if (
-      !latestProposal ||
-      typeof latestProposal.windowStartAt !== "number" ||
-      typeof latestProposal.windowEndAt !== "number"
-    ) {
+    if (!latestProposal) {
       throw new Error("Pickup time must be proposed before it can be approved");
     }
-    if (now > latestProposal.windowEndAt) {
+    if (
+      typeof latestProposal.windowEndAt === "number" &&
+      now > latestProposal.windowEndAt
+    ) {
       throw new Error("Pickup proposal has expired");
     }
     if (latestProposal.actorId === userId) {
@@ -1708,6 +1762,8 @@ export const approvePickupWindow = mutation({
       type: "lease_pickup_approved",
       actorId: userId,
       createdAt: now,
+      note: latestProposal.note,
+      place: latestProposal.place,
       proposalId: latestProposal.proposalId,
       windowStartAt: latestProposal.windowStartAt,
       windowEndAt: latestProposal.windowEndAt,
@@ -1724,6 +1780,26 @@ export const approvePickupWindow = mutation({
       createdAt: now,
     });
 
+    const pickupConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: pickupConvId,
+      body: formatMeetupSystemBody({
+        type: "Pickup",
+        action: "approved",
+        meetingAt: latestProposal.windowStartAt,
+        place: latestProposal.place,
+        note: latestProposal.note,
+      }),
+      systemEvent: "pickup_approved",
+      systemWindowStartAt: latestProposal.windowStartAt,
+      systemWindowEndAt: latestProposal.windowEndAt,
+      systemPlace: latestProposal.place,
+      systemNote: latestProposal.note,
+    });
+
     // Email both parties: pickup meetup confirmed
     const [proposer, approver] = await Promise.all([
       resolveUserEmail(
@@ -1733,7 +1809,12 @@ export const approvePickupWindow = mutation({
       ),
       resolveUserEmail(ctx, userId, "approvePickupWindow/approver"),
     ]);
-    if (proposer && approver) {
+    if (
+      proposer &&
+      approver &&
+      typeof latestProposal.windowStartAt === "number" &&
+      typeof latestProposal.windowEndAt === "number"
+    ) {
       await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupConfirmed, {
         claimId: args.claimId,
         meetupType: "pickup",
@@ -1797,7 +1878,7 @@ export const approveReturnWindow = mutation({
 
     const userId = identity.subject;
     if (userId !== item.ownerId && userId !== claim.claimerId) {
-      throw new Error("Unauthorized");
+      throw new Error("Only lease participants can approve return time");
     }
 
     const events = await ctx.db
@@ -1816,14 +1897,16 @@ export const approveReturnWindow = mutation({
     const latestProposal = events.find(
       (e) => e.type === "lease_return_proposed",
     );
-    if (
-      !latestProposal ||
-      typeof latestProposal.windowStartAt !== "number" ||
-      typeof latestProposal.windowEndAt !== "number"
-    ) {
+    if (!latestProposal) {
       throw new Error("Return time must be proposed before it can be approved");
     }
-    if (now > latestProposal.windowEndAt) {
+    if (typeof latestProposal.windowStartAt !== "number") {
+      throw new Error("Return meeting time must be set before approval");
+    }
+    if (
+      typeof latestProposal.windowEndAt === "number" &&
+      now > latestProposal.windowEndAt
+    ) {
       throw new Error("Return proposal has expired");
     }
     if (latestProposal.actorId === userId) {
@@ -1846,6 +1929,8 @@ export const approveReturnWindow = mutation({
       type: "lease_return_approved",
       actorId: userId,
       createdAt: now,
+      note: latestProposal.note,
+      place: latestProposal.place,
       proposalId: latestProposal.proposalId,
       windowStartAt: latestProposal.windowStartAt,
       windowEndAt: latestProposal.windowEndAt,
@@ -1862,6 +1947,26 @@ export const approveReturnWindow = mutation({
       createdAt: now,
     });
 
+    const returnConvId = await ctx.runMutation(
+      internal.messaging.ensureConversationForClaim,
+      { claimId: args.claimId },
+    );
+    await ctx.runMutation(internal.messaging.sendSystemMessage, {
+      conversationId: returnConvId,
+      body: formatMeetupSystemBody({
+        type: "Return",
+        action: "approved",
+        meetingAt: latestProposal.windowStartAt,
+        place: latestProposal.place,
+        note: latestProposal.note,
+      }),
+      systemEvent: "return_approved",
+      systemWindowStartAt: latestProposal.windowStartAt,
+      systemWindowEndAt: latestProposal.windowEndAt,
+      systemPlace: latestProposal.place,
+      systemNote: latestProposal.note,
+    });
+
     // Email both parties: return meetup confirmed
     const [proposer, approver] = await Promise.all([
       resolveUserEmail(
@@ -1871,7 +1976,12 @@ export const approveReturnWindow = mutation({
       ),
       resolveUserEmail(ctx, userId, "approveReturnWindow/approver"),
     ]);
-    if (proposer && approver) {
+    if (
+      proposer &&
+      approver &&
+      typeof latestProposal.windowStartAt === "number" &&
+      typeof latestProposal.windowEndAt === "number"
+    ) {
       await ctx.scheduler.runAfter(0, internal.emailSend.sendMeetupConfirmed, {
         claimId: args.claimId,
         meetupType: "return",
@@ -1940,10 +2050,6 @@ export const markPickedUp = mutation({
     const itemOwnerIdAtPickup = item.ownerId;
 
     const userId = identity.subject;
-    if (userId !== item.ownerId && userId !== claim.claimerId) {
-      throw new Error("Unauthorized");
-    }
-
     const existing = await ctx.db
       .query("lease_activity")
       .withIndex("by_claim_createdAt", (q) => q.eq("claimId", args.claimId))
@@ -1960,37 +2066,30 @@ export const markPickedUp = mutation({
       throw new Error("Cannot confirm pickup for a rejected lease");
     }
 
-    const latestProposal = existing.find(
-      (e) => e.type === "lease_pickup_proposed",
-    );
-    if (
-      !latestProposal ||
-      typeof latestProposal.windowStartAt !== "number" ||
-      typeof latestProposal.windowEndAt !== "number"
-    ) {
-      throw new Error(
-        "Pickup time must be proposed before it can be confirmed",
-      );
-    }
-    if (createdAt > latestProposal.windowEndAt) {
-      throw new Error("Pickup proposal has expired");
-    }
-    if (createdAt < latestProposal.windowStartAt) {
-      throw new Error(
-        "Pickup can only be confirmed during the proposed window",
-      );
-    }
+    const latestProposal = getLatestEvent(existing, "lease_pickup_proposed");
+    const latestApproval = getLatestEvent(existing, "lease_pickup_approved");
+    const confirmedPlan =
+      latestApproval?.proposalId &&
+      latestApproval.proposalId === latestProposal?.proposalId
+        ? latestApproval
+        : latestProposal;
 
-    const latestApproval = existing.find(
-      (e) => e.type === "lease_pickup_approved",
-    );
-    if (
-      !latestApproval ||
-      latestApproval.proposalId !== latestProposal.proposalId
-    ) {
-      throw new Error(
-        "Pickup time must be approved before it can be confirmed",
-      );
+    if (userId !== claim.claimerId) {
+      throw new Error("Only the borrower can confirm receiving the item");
+    }
+    if (createdAt < claim.startDate) {
+      const hasApprovedEarlyPickup =
+        latestProposal &&
+        latestApproval?.proposalId &&
+        latestApproval.proposalId === latestProposal.proposalId &&
+        latestProposal.windowStartAt !== undefined &&
+        latestProposal.windowEndAt !== undefined &&
+        createdAt >= latestProposal.windowStartAt &&
+        createdAt <= latestProposal.windowEndAt;
+
+      if (!hasApprovedEarlyPickup) {
+        throw new Error("Cannot confirm pickup before the scheduled start");
+      }
     }
 
     await ctx.db.insert("lease_activity", {
@@ -2002,9 +2101,9 @@ export const markPickedUp = mutation({
       note: args.note,
       photoStorageIds: undefined,
       photoCloudinary: args.photoCloudinary,
-      proposalId: latestProposal.proposalId,
-      windowStartAt: latestProposal.windowStartAt,
-      windowEndAt: latestProposal.windowEndAt,
+      proposalId: confirmedPlan?.proposalId,
+      windowStartAt: confirmedPlan?.windowStartAt,
+      windowEndAt: confirmedPlan?.windowEndAt,
     });
 
     await ctx.db.insert("item_activity", {
@@ -2028,9 +2127,9 @@ export const markPickedUp = mutation({
         note: args.note,
         photoStorageIds: undefined,
         photoCloudinary: args.photoCloudinary,
-        proposalId: latestProposal.proposalId,
-        windowStartAt: latestProposal.windowStartAt,
-        windowEndAt: latestProposal.windowEndAt,
+        proposalId: confirmedPlan?.proposalId,
+        windowStartAt: confirmedPlan?.windowStartAt,
+        windowEndAt: confirmedPlan?.windowEndAt,
       });
 
       await ctx.db.patch(args.claimId, { transferredAt: createdAt });
@@ -2078,9 +2177,33 @@ export const markPickedUp = mutation({
     );
     await ctx.runMutation(internal.messaging.sendSystemMessage, {
       conversationId: pickupConvId,
-      body: "Item picked up.",
+      body: "Item received. The borrower is now responsible for it.",
       systemEvent: "picked_up",
     });
+
+    const owner = await resolveUserEmail(
+      ctx,
+      itemOwnerIdAtPickup,
+      "markPickedUp",
+    );
+    const borrowerProfile = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", claim.claimerId))
+      .first();
+    if (owner && !item.giveaway) {
+      await ctx.scheduler.runAfter(0, internal.emailSend.sendItemReceived, {
+        claimId: args.claimId,
+        ownerEmail: owner.email,
+        locale: owner.profile.locale,
+        data: {
+          ownerName: owner.name,
+          borrowerName: borrowerProfile?.name ?? "The borrower",
+          itemName: item.name,
+          expectedReturnAt: claim.endDate,
+          itemId: args.itemId,
+        },
+      });
+    }
   },
 });
 
@@ -2113,10 +2236,6 @@ export const markReturned = mutation({
     if (claim.expiredAt) {
       throw new Error("Cannot confirm return for an expired lease");
     }
-    if (claim.missingAt) {
-      throw new Error("Cannot confirm return for a missing item");
-    }
-
     const item = await ctx.db.get(args.itemId);
     if (!item) throw new Error("Item not found");
     if (item.giveaway) {
@@ -2124,8 +2243,8 @@ export const markReturned = mutation({
     }
 
     const userId = identity.subject;
-    if (userId !== item.ownerId && userId !== claim.claimerId) {
-      throw new Error("Unauthorized");
+    if (userId !== item.ownerId) {
+      throw new Error("Only the owner can confirm the item was returned");
     }
 
     const existing = await ctx.db
@@ -2144,45 +2263,20 @@ export const markReturned = mutation({
     if (!hasPickup) {
       throw new Error("Cannot mark returned before pickup is recorded");
     }
-    if (existing.some((e) => e.type === "lease_missing")) {
-      throw new Error("Cannot confirm return for a missing item");
-    }
     if (existing.some((e) => e.type === "lease_rejected")) {
       throw new Error("Cannot confirm return for a rejected lease");
     }
 
-    const latestProposal = existing.find(
-      (e) => e.type === "lease_return_proposed",
-    );
-    if (
-      !latestProposal ||
-      typeof latestProposal.windowStartAt !== "number" ||
-      typeof latestProposal.windowEndAt !== "number"
-    ) {
-      throw new Error(
-        "Return time must be proposed before it can be confirmed",
-      );
+    const latestProposal = getLatestEvent(existing, "lease_return_proposed");
+    if (!latestProposal) {
+      throw new Error("Borrower must request return before owner confirms it");
     }
-    if (createdAt > latestProposal.windowEndAt) {
-      throw new Error("Return proposal has expired");
-    }
-    if (createdAt < latestProposal.windowStartAt) {
-      throw new Error(
-        "Return can only be confirmed during the proposed window",
-      );
-    }
-
-    const latestApproval = existing.find(
-      (e) => e.type === "lease_return_approved",
-    );
-    if (
-      !latestApproval ||
-      latestApproval.proposalId !== latestProposal.proposalId
-    ) {
-      throw new Error(
-        "Return time must be approved before it can be confirmed",
-      );
-    }
+    const latestApproval = getLatestEvent(existing, "lease_return_approved");
+    const confirmedPlan =
+      latestApproval?.proposalId &&
+      latestApproval.proposalId === latestProposal?.proposalId
+        ? latestApproval
+        : latestProposal;
 
     await ctx.db.insert("lease_activity", {
       itemId: args.itemId,
@@ -2193,9 +2287,9 @@ export const markReturned = mutation({
       note: args.note,
       photoStorageIds: undefined,
       photoCloudinary: args.photoCloudinary,
-      proposalId: latestProposal.proposalId,
-      windowStartAt: latestProposal.windowStartAt,
-      windowEndAt: latestProposal.windowEndAt,
+      proposalId: confirmedPlan?.proposalId,
+      windowStartAt: confirmedPlan?.windowStartAt,
+      windowEndAt: confirmedPlan?.windowEndAt,
     });
 
     await ctx.db.insert("item_activity", {
@@ -2248,9 +2342,68 @@ export const markReturned = mutation({
     );
     await ctx.runMutation(internal.messaging.sendSystemMessage, {
       conversationId: returnConvId,
-      body: "Item returned.",
+      body: "Item returned. Responsibility is back with the owner.",
       systemEvent: "returned",
     });
+
+    const borrower = await resolveUserEmail(
+      ctx,
+      claim.claimerId,
+      "markReturned/borrower",
+    );
+    if (borrower) {
+      await ctx.scheduler.runAfter(0, internal.emailSend.sendItemReturned, {
+        claimId: args.claimId,
+        borrowerEmail: borrower.email,
+        locale: borrower.profile.locale,
+        data: {
+          borrowerName: borrower.name,
+          itemName: item.name,
+          itemId: args.itemId,
+        },
+      });
+    }
+
+    const subscriptions = await ctx.db
+      .query("availability_alerts")
+      .withIndex("by_item", (q) => q.eq("itemId", args.itemId))
+      .collect();
+
+    for (const sub of subscriptions) {
+      if (sub.userId === item.ownerId || sub.userId === claim.claimerId) {
+        await ctx.db.delete(sub._id);
+        continue;
+      }
+
+      await ctx.db.insert("notifications", {
+        recipientId: sub.userId,
+        type: "item_available",
+        itemId: args.itemId,
+        isRead: false,
+        createdAt,
+      });
+
+      const subscriber = await resolveUserEmail(
+        ctx,
+        sub.userId,
+        "markReturned/itemAvailable",
+      );
+      if (subscriber) {
+        await ctx.scheduler.runAfter(0, internal.emailSend.sendItemAvailable, {
+          itemId: args.itemId,
+          recipientClerkId: sub.userId,
+          recipientEmail: subscriber.email,
+          locale: subscriber.profile.locale,
+          data: {
+            recipientName: subscriber.name,
+            itemName: item.name,
+            itemId: args.itemId,
+          },
+        });
+      }
+
+      await ctx.db.delete(sub._id);
+    }
   },
 });
 
@@ -2589,14 +2742,17 @@ export const cancelClaim = mutation({
 });
 
 export const getAvailability = query({
-  args: { id: v.id("items") },
+  args: { id: v.string() },
   handler: async (ctx, args) => {
-    const item = await ctx.db.get(args.id);
-    if (!item) throw new Error("Item not found");
+    const itemId = asValidItemId(args.id);
+    if (!itemId) return [];
+
+    const item = await ctx.db.get(itemId);
+    if (!item) return [];
 
     const claims = await ctx.db
       .query("claims")
-      .withIndex("by_item", (q) => q.eq("itemId", args.id))
+      .withIndex("by_item", (q) => q.eq("itemId", itemId))
       .filter((q) => q.eq(q.field("status"), "approved"))
       .collect();
 
@@ -2613,35 +2769,43 @@ export const getAvailability = query({
       ...activeClaims.map((c) => ({
         startDate: c.startDate,
         endDate: c.endDate,
+        kind: c.missingAt ? "missing" : "booking",
       })),
       ...ownerBlocks.map((b) => ({
         startDate: b.startDate,
         endDate: b.endDate,
+        kind: "owner_unavailable",
       })),
     ];
   },
 });
 
 export const getMyRequests = query({
-  args: { itemId: v.id("items") },
+  args: { itemId: v.string() },
   handler: async (ctx, args) => {
+    const itemId = asValidItemId(args.itemId);
+    if (!itemId) return [];
+
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
 
     return await ctx.db
       .query("claims")
       .withIndex("by_claimer", (q) => q.eq("claimerId", identity.subject))
-      .filter((q) => q.eq(q.field("itemId"), args.itemId))
+      .filter((q) => q.eq(q.field("itemId"), itemId))
       .collect();
   },
 });
 
 export const getItemActivity = query({
-  args: { itemId: v.id("items") },
+  args: { itemId: v.string() },
   handler: async (ctx, args) => {
+    const itemId = asValidItemId(args.itemId);
+    if (!itemId) return [];
+
     const events = await ctx.db
       .query("item_activity")
-      .withIndex("by_item_createdAt", (q) => q.eq("itemId", args.itemId))
+      .withIndex("by_item_createdAt", (q) => q.eq("itemId", itemId))
       .order("desc")
       .take(50);
 
@@ -2657,6 +2821,14 @@ export const expirePendingClaim = internalMutation({
     if (claim.status !== "pending" || claim.expiredAt) return;
 
     const now = Date.now();
+    const expiresAt = getPendingClaimExpiresAt(claim);
+    if (now < expiresAt) {
+      await ctx.scheduler.runAt(expiresAt, internal.items.expirePendingClaim, {
+        claimId: args.claimId,
+      });
+      return;
+    }
+
     await ctx.db.patch(args.claimId, { status: "expired", expiredAt: now });
 
     await ctx.db.insert("lease_activity", {
@@ -3110,7 +3282,7 @@ function resolveNeedsAction(args: {
   userId: string;
   now: number;
 }): NeedsAction {
-  const { claim, events, isOwner, userId, now } = args;
+  const { claim, isOwner } = args;
 
   // Terminal states — no action needed
   if (
@@ -3123,31 +3295,6 @@ function resolveNeedsAction(args: {
   }
 
   const hasPickedUp = !!claim.pickedUpAt;
-  const pickupProposal = [...events]
-    .reverse()
-    .find((e) => e.type === "lease_pickup_proposed");
-  const hasPickupProposed = !!pickupProposal;
-  const hasPickupApproved = events.some(
-    (e) => e.type === "lease_pickup_approved",
-  );
-  const returnProposal = [...events]
-    .reverse()
-    .find((e) => e.type === "lease_return_proposed");
-  const hasReturnProposed = !!returnProposal;
-  const hasReturnApproved = events.some(
-    (e) => e.type === "lease_return_approved",
-  );
-
-  // Check if a confirmed window has started (within last approved proposal)
-  const isWindowReady = (type: string): boolean => {
-    const approved = [...events].reverse().find((e) => e.type === type);
-    if (!approved?.windowStartAt) return true; // no window info, assume ready
-    return approved.windowStartAt <= now;
-  };
-
-  // Did the counterpart propose (i.e. current user needs to respond)?
-  const counterpartProposed = (proposal: LeaseActivityDoc | undefined) =>
-    proposal != null && proposal.actorId !== userId;
 
   if (claim.status === "pending") {
     return isOwner ? "respond_request" : null;
@@ -3155,25 +3302,11 @@ function resolveNeedsAction(args: {
 
   if (claim.status === "approved") {
     if (!hasPickedUp) {
-      if (!hasPickupProposed) return "schedule_pickup";
-      if (hasPickupProposed && !hasPickupApproved) {
-        return counterpartProposed(pickupProposal) ? "respond_pickup" : null;
-      }
-      // Pickup approved but not picked up — only actionable when window arrives
-      if (hasPickupApproved) {
-        return isWindowReady("lease_pickup_approved") ? "confirm_pickup" : null;
-      }
+      return isOwner ? null : "confirm_pickup";
     }
 
     // Already picked up
-    if (!hasReturnProposed) return "schedule_return";
-    if (hasReturnProposed && !hasReturnApproved) {
-      return counterpartProposed(returnProposal) ? "respond_return" : null;
-    }
-    // Return approved but not returned — only actionable when window arrives
-    if (hasReturnApproved) {
-      return isWindowReady("lease_return_approved") ? "confirm_return" : null;
-    }
+    return isOwner ? "confirm_return" : "schedule_return";
   }
 
   return null;

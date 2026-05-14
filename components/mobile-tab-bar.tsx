@@ -3,13 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import { SignedIn } from "@clerk/nextjs";
-import {
-  ArrowLeftRight,
-  CalendarDays,
-  Heart,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ArrowLeftRight, CalendarDays, Heart, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { ShareItemSheet } from "@/components/share-item-sheet";
@@ -31,6 +25,7 @@ export function MobileTabBar() {
 
   // Strip locale prefix for matching (e.g., /en/calendar → /calendar)
   const cleanPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
+  if (cleanPath.startsWith("/chat")) return null;
 
   const renderTab = ({
     href,
@@ -66,8 +61,8 @@ export function MobileTabBar() {
 
   return (
     <SignedIn>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center justify-around px-2 pb-4">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-sm md:hidden">
+        <div className="flex items-center justify-around px-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {NAV_TABS.map(renderTab)}
           <ShareItemSheet variant="tab" />
           {NAV_TABS_RIGHT.map(renderTab)}

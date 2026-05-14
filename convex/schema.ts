@@ -81,6 +81,7 @@ export default defineSchema({
     proposalId: v.optional(v.string()),
     windowStartAt: v.optional(v.number()),
     windowEndAt: v.optional(v.number()),
+    place: v.optional(v.string()),
   })
     .index("by_claim_createdAt", ["claimId", "createdAt"])
     .index("by_item_createdAt", ["itemId", "createdAt"])
@@ -247,10 +248,18 @@ export default defineSchema({
         v.literal("claim_requested"),
         v.literal("claim_approved"),
         v.literal("claim_rejected"),
+        v.literal("pickup_proposed"),
+        v.literal("pickup_approved"),
+        v.literal("return_proposed"),
+        v.literal("return_approved"),
         v.literal("picked_up"),
         v.literal("returned"),
       ),
     ),
+    systemWindowStartAt: v.optional(v.number()),
+    systemWindowEndAt: v.optional(v.number()),
+    systemPlace: v.optional(v.string()),
+    systemNote: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_conversation", ["conversationId", "createdAt"]),
 

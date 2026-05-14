@@ -6,6 +6,7 @@ import {
   mutation,
   query,
 } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { buildItemSearchText, buildUserPublicSearchText } from "./searchText";
 
@@ -550,8 +551,8 @@ export const nuclearReset = mutation({
       },
     ];
 
-    const createdItemsA: string[] = [];
-    const createdItemsB: string[] = [];
+    const createdItemsA: Id<"items">[] = [];
+    const createdItemsB: Id<"items">[] = [];
 
     // Create User A's items
     for (const item of userAItems) {
@@ -599,15 +600,15 @@ export const nuclearReset = mutation({
 
     // CREATE CLAIMS: User B borrows from User A
     const claimsCreated: string[] = [];
-    const claimsBBorrowsFromA: string[] = []; // Store claim IDs for ratings
-    const claimsABorrowsFromB: string[] = []; // Store claim IDs for ratings
+    const claimsBBorrowsFromA: Id<"claims">[] = []; // Store claim IDs for ratings
+    const claimsABorrowsFromB: Id<"claims">[] = []; // Store claim IDs for ratings
 
     for (let i = 0; i < 3; i++) {
       const itemId = createdItemsA[i];
       const daysAgo = 7 + i * 5; // 7, 12, 17 days ago
 
       const claimId = await ctx.db.insert("claims", {
-        itemId: itemId as any,
+        itemId,
         claimerId: USER_B,
         status: "approved",
         startDate: now - (daysAgo + 7) * ONE_DAY_MS,
@@ -619,14 +620,14 @@ export const nuclearReset = mutation({
       claimsBBorrowsFromA.push(claimId);
 
       await ctx.db.insert("lease_activity", {
-        itemId: itemId as any,
+        itemId,
         claimId,
         type: "lease_requested",
         actorId: USER_B,
         createdAt: now - (daysAgo + 10) * ONE_DAY_MS,
       });
       await ctx.db.insert("lease_activity", {
-        itemId: itemId as any,
+        itemId,
         claimId,
         type: "lease_approved",
         actorId: USER_A,
@@ -642,7 +643,7 @@ export const nuclearReset = mutation({
       const daysAgo = 5 + i * 4; // 5, 9, 13 days ago
 
       const claimId = await ctx.db.insert("claims", {
-        itemId: itemId as any,
+        itemId,
         claimerId: USER_A,
         status: "approved",
         startDate: now - (daysAgo + 5) * ONE_DAY_MS,
@@ -654,14 +655,14 @@ export const nuclearReset = mutation({
       claimsABorrowsFromB.push(claimId);
 
       await ctx.db.insert("lease_activity", {
-        itemId: itemId as any,
+        itemId,
         claimId,
         type: "lease_requested",
         actorId: USER_A,
         createdAt: now - (daysAgo + 8) * ONE_DAY_MS,
       });
       await ctx.db.insert("lease_activity", {
-        itemId: itemId as any,
+        itemId,
         claimId,
         type: "lease_approved",
         actorId: USER_B,
@@ -676,7 +677,7 @@ export const nuclearReset = mutation({
 
     // Rating 1: User A rates User B as borrower (for first claim where B borrowed from A)
     await ctx.db.insert("ratings", {
-      claimId: claimsBBorrowsFromA[0] as any,
+      claimId: claimsBBorrowsFromA[0],
       fromUserId: USER_A,
       toUserId: USER_B,
       role: "borrower",
@@ -688,7 +689,7 @@ export const nuclearReset = mutation({
 
     // Rating 2: User B rates User A as lender (for first claim where B borrowed from A)
     await ctx.db.insert("ratings", {
-      claimId: claimsBBorrowsFromA[0] as any,
+      claimId: claimsBBorrowsFromA[0],
       fromUserId: USER_B,
       toUserId: USER_A,
       role: "lender",
@@ -700,7 +701,7 @@ export const nuclearReset = mutation({
 
     // Rating 3: User B rates User A as borrower (for first claim where A borrowed from B)
     await ctx.db.insert("ratings", {
-      claimId: claimsABorrowsFromB[0] as any,
+      claimId: claimsABorrowsFromB[0],
       fromUserId: USER_B,
       toUserId: USER_A,
       role: "borrower",
@@ -712,7 +713,7 @@ export const nuclearReset = mutation({
 
     // Rating 4: User A rates User B as lender (for first claim where A borrowed from B)
     await ctx.db.insert("ratings", {
-      claimId: claimsABorrowsFromB[0] as any,
+      claimId: claimsABorrowsFromB[0],
       fromUserId: USER_A,
       toUserId: USER_B,
       role: "lender",
@@ -2156,6 +2157,108 @@ export const setupBorrowedItemForTesting = mutation({
   },
 });
 
+export const setupSimplifiedLifecycleTest = mutation({
+  args: { startOffsetMs: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const name = `Simplified Lifecycle ${now}`;
+    const startDate = now + (args.startOffsetMs ?? ONE_DAY_MS);
+    const endDate = startDate + 3 * ONE_DAY_MS;
+
+    const itemId = await ctx.db.insert("items", {
+      name,
+      description: "E2E fixture for the minimal received / returned lifecycle.",
+      searchText: buildItemSearchText({
+        name,
+        description:
+          "E2E fixture for the minimal received / returned lifecycle.",
+      }),
+      ownerId: USER_A,
+      giveaway: false,
+      category: "other",
+      location: {
+        lat: 11.94,
+        lng: 108.45,
+        ward: "Da Lat",
+        address: "Sharity test handoff spot",
+      },
+    });
+
+    await ctx.db.insert("item_activity", {
+      itemId,
+      type: "item_created",
+      actorId: USER_A,
+      createdAt: now,
+    });
+
+    const claimId = await ctx.db.insert("claims", {
+      itemId,
+      claimerId: USER_B,
+      status: "approved",
+      startDate,
+      endDate,
+      requestedAt: now - 2 * ONE_DAY_MS,
+      approvedAt: now - ONE_DAY_MS,
+    });
+
+    await ctx.db.insert("item_activity", {
+      itemId,
+      type: "loan_started",
+      actorId: USER_A,
+      createdAt: now - ONE_DAY_MS,
+      claimId,
+      borrowerId: USER_B,
+      startDate,
+      endDate,
+    });
+
+    await ctx.db.insert("lease_activity", {
+      itemId,
+      claimId,
+      type: "lease_approved",
+      actorId: USER_A,
+      createdAt: now - ONE_DAY_MS,
+    });
+
+    await ctx.db.insert("notifications", {
+      recipientId: USER_B,
+      type: "request_approved",
+      itemId,
+      requestId: claimId,
+      isRead: false,
+      createdAt: now - ONE_DAY_MS,
+    });
+
+    const conversationId = await ctx.db.insert("conversations", {
+      participantIds: [USER_A, USER_B].sort(),
+      itemId,
+      claimId,
+      lastMessageAt: now,
+      lastMessagePreview: "Request approved.",
+      lastMessageSenderId: "system",
+      createdAt: now,
+    });
+
+    await ctx.db.insert("conversation_messages", {
+      conversationId,
+      senderId: "system",
+      body: "Request approved.",
+      type: "system",
+      systemEvent: "claim_approved",
+      createdAt: now,
+    });
+
+    return {
+      itemId,
+      claimId,
+      conversationId,
+      itemName: name,
+      owner: USER_A,
+      borrower: USER_B,
+    };
+  },
+});
+
 /**
  * Setup journey test scenarios: 11 items at different lifecycle stages.
  * @internal use initPreview for preview deployments
@@ -2168,14 +2271,12 @@ export const setupJourneyTestScenarios = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    const TWO_DAYS = 2 * ONE_DAY_MS;
     const ONE_HOUR = 60 * 60 * 1000;
     const TEST_PREFIX = "[TEST] Journey:";
 
     // ===== CLEANUP: delete existing test items, their claims and activities =====
     const allItems = await ctx.db.query("items").collect();
     const testItems = allItems.filter((i) => i.name.startsWith(TEST_PREFIX));
-    const testItemIds = new Set(testItems.map((i) => i._id));
 
     for (const item of testItems) {
       // Delete claims for this item

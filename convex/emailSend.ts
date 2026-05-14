@@ -14,6 +14,9 @@ import {
   RequestRejectedEmail,
   MeetupProposedEmail,
   ItemAvailableEmail,
+  ItemReceivedEmail,
+  ReturnRequestedEmail,
+  ItemReturnedEmail,
 } from "./emailTemplates/index";
 import type {
   LeaseApprovedData,
@@ -24,6 +27,9 @@ import type {
   RequestRejectedData,
   MeetupProposedData,
   ItemAvailableData,
+  ItemReceivedData,
+  ReturnRequestedData,
+  ItemReturnedData,
 } from "./emailTemplates/index";
 import * as React from "react";
 import { resend, FROM } from "./resendClient";
@@ -202,11 +208,12 @@ async function sendDigests(
     clerkId: string;
     email: string;
     locale: Locale;
-    data: Omit<DigestData, "locale">;
+    data: Omit<DigestData, "locale" | "generatedAt">;
   }> = await ctx.runQuery(internal.emails.buildDigestPayloads, { mode });
 
   for (const user of usersWithActivity) {
-    const dateKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const generatedAt = Date.now();
+    const dateKey = new Date(generatedAt).toISOString().slice(0, 10); // YYYY-MM-DD
     const key = `digest-${mode}/${user.clerkId}/${dateKey}`;
     const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
       key,
@@ -214,7 +221,7 @@ async function sendDigests(
     if (alreadySent) continue;
 
     const locale = user.locale;
-    const digestData: DigestData = { ...user.data, locale };
+    const digestData: DigestData = { ...user.data, locale, generatedAt };
     await sendMail(
       ctx,
       user.email,
@@ -459,6 +466,101 @@ export const sendItemAvailable = internalAction({
       args.recipientEmail,
       t(locale, "itemAvailable.subject", { itemName: data.itemName }),
       React.createElement(ItemAvailableEmail, data),
+    );
+    await ctx.runMutation(internal.emails.logEmail, { key });
+  },
+});
+
+// ─── 10. Minimal lifecycle milestones ───────────────────────────────────────
+
+export const sendItemReceived = internalAction({
+  args: {
+    claimId: v.id("claims"),
+    ownerEmail: v.string(),
+    locale: localeValidator,
+    data: v.object({
+      ownerName: v.string(),
+      borrowerName: v.string(),
+      itemName: v.string(),
+      expectedReturnAt: v.number(),
+      itemId: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const key = `item-received/${args.claimId}`;
+    const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+      key,
+    });
+    if (alreadySent) return;
+
+    const locale = resolveLocale(args.locale);
+    const data: ItemReceivedData = { ...args.data, locale };
+    await sendMail(
+      ctx,
+      args.ownerEmail,
+      t(locale, "itemReceived.subject", { itemName: data.itemName }),
+      React.createElement(ItemReceivedEmail, data),
+    );
+    await ctx.runMutation(internal.emails.logEmail, { key });
+  },
+});
+
+export const sendReturnRequested = internalAction({
+  args: {
+    claimId: v.id("claims"),
+    ownerEmail: v.string(),
+    locale: localeValidator,
+    data: v.object({
+      ownerName: v.string(),
+      borrowerName: v.string(),
+      itemName: v.string(),
+      itemId: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const key = `return-requested/${args.claimId}`;
+    const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+      key,
+    });
+    if (alreadySent) return;
+
+    const locale = resolveLocale(args.locale);
+    const data: ReturnRequestedData = { ...args.data, locale };
+    await sendMail(
+      ctx,
+      args.ownerEmail,
+      t(locale, "returnRequested.subject", { itemName: data.itemName }),
+      React.createElement(ReturnRequestedEmail, data),
+    );
+    await ctx.runMutation(internal.emails.logEmail, { key });
+  },
+});
+
+export const sendItemReturned = internalAction({
+  args: {
+    claimId: v.id("claims"),
+    borrowerEmail: v.string(),
+    locale: localeValidator,
+    data: v.object({
+      borrowerName: v.string(),
+      itemName: v.string(),
+      itemId: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const key = `item-returned/${args.claimId}`;
+    const alreadySent = await ctx.runQuery(internal.emails.hasEmailBeenSent, {
+      key,
+    });
+    if (alreadySent) return;
+
+    const locale = resolveLocale(args.locale);
+    const data: ItemReturnedData = { ...args.data, locale };
+    await sendMail(
+      ctx,
+      args.borrowerEmail,
+      t(locale, "itemReturned.subject", { itemName: data.itemName }),
+      React.createElement(ItemReturnedEmail, data),
     );
     await ctx.runMutation(internal.emails.logEmail, { key });
   },

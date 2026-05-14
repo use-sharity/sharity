@@ -4,28 +4,44 @@ import { useState } from "react";
 
 const HIGH_RISK_TOOLS = new Set(["deleteItem", "markMissing"]);
 
-const TOOL_SUMMARIES: Record<string, (input: any) => string> = {
-  createItem: (i) => `Create item "${i.name}"`,
-  updateItem: (i) => `Update "${i.itemName}"`,
-  deleteItem: (i) => `Delete "${i.itemName}" permanently`,
-  approveClaim: (i) => `Approve request on "${i.itemName}"`,
-  rejectClaim: (i) => `Reject request on "${i.itemName}"`,
-  requestItem: (i) => `Request to borrow (${i.startDate} – ${i.endDate})`,
-  cancelMyClaim: (i) => `Cancel your request on "${i.itemName}"`,
-  proposePickupWindow: (i) => `Propose pickup: ${i.dateTime}`,
-  approvePickupWindow: (i) => `Approve pickup for "${i.itemName}"`,
-  proposeReturnWindow: (i) => `Propose return: ${i.dateTime}`,
-  approveReturnWindow: (i) => `Approve return for "${i.itemName}"`,
-  markPickedUp: (i) => `Confirm pickup of "${i.itemName}"`,
-  markReturned: (i) => `Confirm return of "${i.itemName}"`,
-  markMissing: (i) => `Report "${i.itemName}" as missing`,
-  createRating: (i) => `Submit ${i.stars}-star rating`,
-  createWishlistItem: (i) => `Add wish: "${i.text}"`,
-  updateWishlistItem: (i) => `Update wish: "${i.text}"`,
-  voteWishlistItem: (i) => `Vote on wish: "${i.wishText ?? "item"}"`,
-  deleteWishlistItem: (i) => `Delete wish: "${i.wishText ?? "item"}"`,
+type ToolInput = Record<string, unknown>;
+
+function asToolInput(input: unknown): ToolInput {
+  return typeof input === "object" && input !== null
+    ? (input as ToolInput)
+    : {};
+}
+
+function value(input: ToolInput, key: string, fallback = "") {
+  const raw = input[key];
+  return typeof raw === "string" || typeof raw === "number"
+    ? String(raw)
+    : fallback;
+}
+
+const TOOL_SUMMARIES: Record<string, (input: ToolInput) => string> = {
+  createItem: (i) => `Create item "${value(i, "name")}"`,
+  updateItem: (i) => `Update "${value(i, "itemName")}"`,
+  deleteItem: (i) => `Delete "${value(i, "itemName")}" permanently`,
+  approveClaim: (i) => `Approve request on "${value(i, "itemName")}"`,
+  rejectClaim: (i) => `Reject request on "${value(i, "itemName")}"`,
+  requestItem: (i) =>
+    `Request to borrow (${value(i, "startDate")} – ${value(i, "endDate")})`,
+  cancelMyClaim: (i) => `Cancel your request on "${value(i, "itemName")}"`,
+  proposePickupWindow: (i) => `Propose pickup: ${value(i, "dateTime")}`,
+  approvePickupWindow: (i) => `Approve pickup for "${value(i, "itemName")}"`,
+  proposeReturnWindow: (i) => `Propose return: ${value(i, "dateTime")}`,
+  approveReturnWindow: (i) => `Approve return for "${value(i, "itemName")}"`,
+  markPickedUp: (i) => `Confirm pickup of "${value(i, "itemName")}"`,
+  markReturned: (i) => `Confirm return of "${value(i, "itemName")}"`,
+  markMissing: (i) => `Report "${value(i, "itemName")}" as missing`,
+  createRating: (i) => `Submit ${value(i, "stars")}-star rating`,
+  createWishlistItem: (i) => `Add wish: "${value(i, "text")}"`,
+  updateWishlistItem: (i) => `Update wish: "${value(i, "text")}"`,
+  voteWishlistItem: (i) => `Vote on wish: "${value(i, "wishText", "item")}"`,
+  deleteWishlistItem: (i) => `Delete wish: "${value(i, "wishText", "item")}"`,
   switchItemMode: (i) =>
-    `Switch "${i.itemName}" to ${i.giveaway ? "giveaway" : "lending"} mode`,
+    `Switch "${value(i, "itemName")}" to ${i.giveaway ? "giveaway" : "lending"} mode`,
   blockDates: (i) => `Block calendar: ${i.startDate} – ${i.endDate}`,
   unblockDates: () => "Remove blocked dates from your calendar",
   updateProfile: () => "Update your profile",
@@ -52,7 +68,8 @@ export function ToolApprovalCard({
 
   const isHighRisk = HIGH_RISK_TOOLS.has(toolName);
   const summaryFn = TOOL_SUMMARIES[toolName];
-  const summary = summaryFn ? summaryFn(input) : `Run ${toolName}`;
+  const toolInput = asToolInput(input);
+  const summary = summaryFn ? summaryFn(toolInput) : `Run ${toolName}`;
 
   if (decided) {
     return (

@@ -22,3 +22,13 @@ export { MeetupProposedEmail } from "./meetupProposed";
 export type { MeetupProposedData } from "./meetupProposed";
 export { ItemAvailableEmail } from "./itemAvailable";
 export type { ItemAvailableData } from "./itemAvailable";
+export {
+  ItemReceivedEmail,
+  ReturnRequestedEmail,
+  ItemReturnedEmail,
+} from "./milestone";
+export type {
+  ItemReceivedData,
+  ReturnRequestedData,
+  ItemReturnedData,
+} from "./milestone";

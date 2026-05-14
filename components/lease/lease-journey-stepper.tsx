@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { cn } from "@/lib/utils";
@@ -10,7 +11,6 @@ import {
   type ResolvedStep,
   getCanonicalSteps,
   getTerminalError,
-  getTerminalErrorLabel,
   resolveStepStatuses,
 } from "./lease-journey-utils";
 
@@ -87,6 +87,10 @@ function StepConnector({
   );
 }
 
+function stepLabelKey(stepId: ResolvedStep["id"]) {
+  return `steps.${stepId}`;
+}
+
 export function LeaseJourneyStepper(props: LeaseJourneyStepperProps) {
   const {
     flowType,
@@ -96,6 +100,7 @@ export function LeaseJourneyStepper(props: LeaseJourneyStepperProps) {
     events,
     compact = false,
   } = props;
+  const t = useTranslations("LeaseClaim.journey.stepper");
 
   const steps = useMemo(() => getCanonicalSteps(flowType), [flowType]);
 
@@ -132,42 +137,43 @@ export function LeaseJourneyStepper(props: LeaseJourneyStepperProps) {
       </div>
 
       {/* Labels */}
-      {!compact && (
-        <div className="flex items-start w-full mt-1.5">
-          {resolvedSteps.map((step, i) => (
-            <div
-              key={step.id}
+      <div className="flex items-start w-full mt-1.5">
+        {resolvedSteps.map((step, i) => (
+          <div
+            key={step.id}
+            className={cn(
+              "flex items-start justify-center",
+              i === 0 ? "w-10 -ml-2" : "flex-1 ml-0.5",
+            )}
+          >
+            <span
+              data-testid={`lease-step-label-${step.id}`}
               className={cn(
-                "flex items-start justify-center",
-                i === 0 ? "w-6" : "flex-1 ml-0.5",
-              )}
-            >
-              <span
-                className={cn(
-                  "text-[10px] leading-tight text-center",
-                  step.status === "completed"
-                    ? "text-emerald-600 font-medium"
-                    : step.status === "current" ||
-                        step.status === "current_action"
+                "max-w-16 text-center leading-tight",
+                compact ? "text-[9px] sm:text-[10px]" : "text-[10px]",
+                step.status === "completed"
+                  ? "text-emerald-700 font-medium"
+                  : step.status === "current_action"
+                    ? "text-amber-700 font-semibold"
+                    : step.status === "current"
                       ? "text-foreground font-medium"
                       : step.status === "error"
                         ? "text-destructive font-medium"
                         : "text-muted-foreground/60",
-                )}
-              >
-                {step.shortLabel}
-              </span>
-            </div>
-          ))}
-          {terminalError && (
-            <div className="flex items-start justify-center w-6 ml-0.5">
-              <span className="text-[10px] leading-tight text-center text-destructive font-medium">
-                {getTerminalErrorLabel(terminalError.type)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+              )}
+            >
+              {t(stepLabelKey(step.id))}
+            </span>
+          </div>
+        ))}
+        {terminalError && (
+          <div className="flex items-start justify-center w-10 -mr-2 ml-0.5">
+            <span className="text-[10px] leading-tight text-center text-destructive font-medium">
+              {t(`terminal.${terminalError.type}`)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

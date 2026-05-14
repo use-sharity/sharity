@@ -3,11 +3,10 @@
 import { useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, MessageCircle } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-import { api } from "@/convex/_generated/api";
-
 import { Badge } from "@/components/ui/badge";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 
 interface ConversationItem {
@@ -38,10 +37,13 @@ function ConversationSkeleton() {
 function AvatarFallback({ name, src }: { name: string; src?: string | null }) {
   if (src) {
     return (
-      <img
+      <Image
         src={src}
         alt={name}
+        width={40}
+        height={40}
         className="h-10 w-10 shrink-0 rounded-full object-cover"
+        unoptimized
       />
     );
   }
@@ -60,13 +62,12 @@ function AvatarFallback({ name, src }: { name: string; src?: string | null }) {
 
 export default function ChatListPage() {
   const router = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const conversations = useQuery(api.messaging.listMyConversations) as
     | ConversationItem[]
     | undefined;
 
   return (
-    <main className="flex h-dvh flex-col bg-background">
+    <main className="flex h-dvh w-full flex-col overflow-hidden bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 border-b px-4 py-3 safe-area-pt">
         <button

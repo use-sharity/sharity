@@ -1,6 +1,6 @@
 import type { ViewerRole } from "./lease-claim-types";
 
-export type FlowType = "loan" | "giveaway" | "intraday";
+export type FlowType = "loan" | "simplified_loan" | "giveaway" | "intraday";
 
 export type StepId =
   | "requested"
@@ -58,6 +58,13 @@ const LOAN_STEPS: JourneyStep[] = [
   { id: "returned", label: "Returned", shortLabel: "Return" },
 ];
 
+const SIMPLIFIED_LOAN_STEPS: JourneyStep[] = [
+  { id: "requested", label: "Requested", shortLabel: "Request" },
+  { id: "approved", label: "Approved", shortLabel: "Approved" },
+  { id: "picked_up", label: "Received", shortLabel: "Received" },
+  { id: "returned", label: "Returned", shortLabel: "Returned" },
+];
+
 const GIVEAWAY_STEPS: JourneyStep[] = [
   { id: "requested", label: "Requested", shortLabel: "Request" },
   { id: "approved", label: "Approved", shortLabel: "Approve" },
@@ -76,14 +83,18 @@ const INTRADAY_STEPS: JourneyStep[] = [
 export function getFlowType(
   isGiveaway: boolean,
   isIntraday: boolean,
+  isSimplified = false,
 ): FlowType {
   if (isGiveaway) return "giveaway";
   if (isIntraday) return "intraday";
+  if (isSimplified) return "simplified_loan";
   return "loan";
 }
 
 export function getCanonicalSteps(flowType: FlowType): JourneyStep[] {
   switch (flowType) {
+    case "simplified_loan":
+      return SIMPLIFIED_LOAN_STEPS;
     case "giveaway":
       return GIVEAWAY_STEPS;
     case "intraday":
