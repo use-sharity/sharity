@@ -261,8 +261,8 @@ function assertHourAligned(windowStartAt: number): void {
   }
 }
 
-function asValidItemId(id: string): Id<"items"> | null {
-  return /^j[0-9a-z]{31}$/.test(id) ? (id as Id<"items">) : null;
+function normalizeItemId(ctx: QueryCtx, id: string): Id<"items"> | null {
+  return ctx.db.normalizeId("items", id);
 }
 
 function cleanOptionalText(
@@ -633,7 +633,7 @@ export const searchDiscovery = query({
 export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    const itemId = asValidItemId(args.id);
+    const itemId = normalizeItemId(ctx, args.id);
     if (!itemId) return null;
 
     const identity = await ctx.auth.getUserIdentity();
@@ -2744,7 +2744,7 @@ export const cancelClaim = mutation({
 export const getAvailability = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    const itemId = asValidItemId(args.id);
+    const itemId = normalizeItemId(ctx, args.id);
     if (!itemId) return [];
 
     const item = await ctx.db.get(itemId);
@@ -2783,7 +2783,7 @@ export const getAvailability = query({
 export const getMyRequests = query({
   args: { itemId: v.string() },
   handler: async (ctx, args) => {
-    const itemId = asValidItemId(args.itemId);
+    const itemId = normalizeItemId(ctx, args.itemId);
     if (!itemId) return [];
 
     const identity = await ctx.auth.getUserIdentity();
@@ -2800,7 +2800,7 @@ export const getMyRequests = query({
 export const getItemActivity = query({
   args: { itemId: v.string() },
   handler: async (ctx, args) => {
-    const itemId = asValidItemId(args.itemId);
+    const itemId = normalizeItemId(ctx, args.itemId);
     if (!itemId) return [];
 
     const events = await ctx.db
