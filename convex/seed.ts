@@ -33,99 +33,151 @@ const PREVIEW_IMAGE_FIXTURES: Array<{
   publicId: string;
   secureUrl: string;
 }> = [
-  // Uses Cloudinary's public demo cloud — valid Cloudinary URLs, no upload needed.
-  // Covers item names produced by fullResetAndSeed and seedCalendarTestData.
+  {
+    name: "Playing Cards",
+    publicId: "sharity/demo-video-20260604/playing-cards",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565482/sharity/demo-video-20260604/playing-cards.png",
+  },
   {
     name: "Camping Tent",
-    publicId: "cld-sample",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+    publicId: "sharity/demo-video-20260604/camping-tent",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565484/sharity/demo-video-20260604/camping-tent.png",
   },
   {
     name: "Camping Tent (2-person)",
-    publicId: "cld-sample",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+    publicId: "sharity/demo-video-20260604/camping-tent",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565484/sharity/demo-video-20260604/camping-tent.png",
   },
   {
     name: "Electric Drill",
-    publicId: "cld-sample-2",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
-  },
-  {
-    name: "Yoga Mat",
-    publicId: "cld-sample-3",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+    publicId: "sharity/demo-video-20260604/electric-drill",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565485/sharity/demo-video-20260604/electric-drill.png",
   },
   {
     name: "Instant Pot",
-    publicId: "cld-sample-4",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+    publicId: "sharity/demo-video-20260604/instant-pot",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565486/sharity/demo-video-20260604/instant-pot.png",
+  },
+  {
+    name: "Mosquito Killer",
+    publicId: "sharity/demo-video-20260604/mosquito-killer",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565487/sharity/demo-video-20260604/mosquito-killer.png",
   },
   {
     name: "Mountain Bike",
-    publicId: "cld-sample-5",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+    publicId: "sharity/demo-video-20260604/mountain-bike",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565488/sharity/demo-video-20260604/mountain-bike.png",
   },
   {
     name: "DSLR Camera",
-    publicId: "sample",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-  },
-  {
-    name: "Portable Projector",
-    publicId: "cld-sample-2",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+    publicId: "sharity/demo-video-20260604/dslr-camera",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565489/sharity/demo-video-20260604/dslr-camera.png",
   },
   {
     name: "Stand Mixer",
-    publicId: "cld-sample-3",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+    publicId: "sharity/demo-video-20260604/stand-mixer",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565490/sharity/demo-video-20260604/stand-mixer.png",
   },
-  // Calendar test items
   {
     name: "[CAL] Camping Tent",
-    publicId: "cld-sample",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample.jpg",
+    publicId: "sharity/demo-video-20260604/camping-tent",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565484/sharity/demo-video-20260604/camping-tent.png",
   },
   {
     name: "[CAL] Electric Drill",
-    publicId: "cld-sample-2",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+    publicId: "sharity/demo-video-20260604/electric-drill",
+    secureUrl:
+      "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565485/sharity/demo-video-20260604/electric-drill.png",
+  },
+];
+
+const PREVIEW_DEMO_CATALOG: Array<{
+  name: string;
+  description: string;
+  ownerId: string;
+  category: "kitchen" | "electronics" | "sports" | "other";
+  image: { publicId: string; secureUrl: string };
+}> = [
+  {
+    name: "Camping Tent",
+    description:
+      "Two-person lightweight tent, waterproof and ready for a weekend in the hills.",
+    ownerId: USER_A,
+    category: "sports",
+    image: PREVIEW_IMAGE_FIXTURES[1],
   },
   {
-    name: "[CAL] Stand-Up Paddleboard",
-    publicId: "cld-sample-4",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+    name: "Electric Drill",
+    description:
+      "Cordless drill kit with charger and bits for quick home repairs.",
+    ownerId: USER_A,
+    category: "other",
+    image: PREVIEW_IMAGE_FIXTURES[3],
   },
   {
-    name: "[CAL] Projector",
-    publicId: "cld-sample-5",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+    name: "DSLR Camera",
+    description:
+      "Beginner-friendly DSLR camera for portraits, trips, and product photos.",
+    ownerId: USER_A,
+    category: "electronics",
+    image: PREVIEW_IMAGE_FIXTURES[7],
   },
   {
-    name: "[CAL] Bike Rack",
-    publicId: "cld-sample-3",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-3.jpg",
+    name: "Stand Mixer",
+    description:
+      "Countertop stand mixer with bowl and whisk attachment for baking days.",
+    ownerId: USER_A,
+    category: "kitchen",
+    image: PREVIEW_IMAGE_FIXTURES[8],
   },
   {
-    name: "[CAL] Pressure Washer",
-    publicId: "sample",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+    name: "Playing Cards",
+    description: "Classic deck of cards, great for game nights.",
+    ownerId: USER_B,
+    category: "other",
+    image: PREVIEW_IMAGE_FIXTURES[0],
   },
   {
-    name: "[CAL] Sewing Machine",
-    publicId: "cld-sample-2",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-2.jpg",
+    name: "Instant Pot",
+    description:
+      "Multi-cooker for soups, rice, and quick shared dinners.",
+    ownerId: USER_B,
+    category: "kitchen",
+    image: PREVIEW_IMAGE_FIXTURES[4],
   },
   {
-    name: "[CAL] Telescope",
-    publicId: "cld-sample-4",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-4.jpg",
+    name: "Mosquito Killer",
+    description:
+      "Compact indoor mosquito trap for evenings on the balcony.",
+    ownerId: USER_B,
+    category: "electronics",
+    image: PREVIEW_IMAGE_FIXTURES[5],
   },
   {
-    name: "[CAL] Waffle Iron",
-    publicId: "cld-sample-5",
-    secureUrl: "https://res.cloudinary.com/demo/image/upload/cld-sample-5.jpg",
+    name: "Mountain Bike",
+    description:
+      "Trail-ready mountain bike for short rides around Da Lat.",
+    ownerId: USER_B,
+    category: "sports",
+    image: PREVIEW_IMAGE_FIXTURES[6],
   },
+];
+
+const PREVIEW_CATALOG_STALE_ITEM_PREFIXES = [
+  "[TEST] Journey:",
+  "Simplified Lifecycle",
+  "Weekend Camping Tent",
+  "Electric Drill Kit",
 ];
 
 // Bumping this version string forces existing preview deployments to re-seed
@@ -1875,6 +1927,14 @@ async function deleteItemFixture(
   ctx: MutationCtx,
   itemId: Id<"items">,
 ) {
+  const alerts = await ctx.db
+    .query("availability_alerts")
+    .withIndex("by_item", (q) => q.eq("itemId", itemId))
+    .collect();
+  for (const alert of alerts) {
+    await ctx.db.delete(alert._id);
+  }
+
   const claims = await ctx.db
     .query("claims")
     .withIndex("by_item", (q) => q.eq("itemId", itemId))
@@ -1889,6 +1949,14 @@ async function deleteItemFixture(
   }
 
   for (const claim of claims) {
+    const ratings = await ctx.db
+      .query("ratings")
+      .withIndex("by_claim", (q) => q.eq("claimId", claim._id))
+      .collect();
+    for (const rating of ratings) {
+      await ctx.db.delete(rating._id);
+    }
+
     const claimNotifications = await ctx.db
       .query("notifications")
       .filter((q) => q.eq(q.field("requestId"), claim._id))
@@ -1943,6 +2011,140 @@ async function deleteItemFixture(
 
   await ctx.db.delete(itemId);
 }
+
+function itemHasDisplayImage(item: {
+  imageStorageIds?: Id<"_storage">[];
+  imageCloudinary?: { publicId: string; secureUrl: string }[];
+}) {
+  return (
+    (item.imageCloudinary?.length ?? 0) > 0 ||
+    (item.imageStorageIds?.length ?? 0) > 0
+  );
+}
+
+function hasGeneratedDemoCloudinary(item: {
+  imageCloudinary?: { publicId: string; secureUrl: string }[];
+}) {
+  return (item.imageCloudinary ?? []).some(
+    (image) =>
+      image.publicId.startsWith("sharity/demo-video-20260604/") &&
+      image.secureUrl.includes("res.cloudinary.com") &&
+      image.secureUrl.includes("/image/upload/"),
+  );
+}
+
+export const auditPreviewCatalog = query({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("items").collect();
+    const withoutImages = items.filter((item) => !itemHasDisplayImage(item));
+    const generatedCatalogNames = new Set(
+      PREVIEW_DEMO_CATALOG.map((item) => item.name),
+    );
+    const generatedCatalogItems = items.filter(
+      (item) =>
+        generatedCatalogNames.has(item.name) && hasGeneratedDemoCloudinary(item),
+    );
+
+    return {
+      itemCount: items.length,
+      withoutImageCount: withoutImages.length,
+      withoutImageNames: withoutImages.map((item) => item.name).sort(),
+      generatedCatalogCount: generatedCatalogItems.length,
+      generatedCatalogNames: generatedCatalogItems
+        .map((item) => `${item.name}:${item.ownerId}`)
+        .sort(),
+      generatedCatalogOk:
+        withoutImages.length === 0 &&
+        generatedCatalogItems.length === PREVIEW_DEMO_CATALOG.length,
+    };
+  },
+});
+
+export const polishPreviewCatalog = mutation({
+  args: {
+    confirm: v.literal("polish-dev-preview-items"),
+  },
+  handler: async (ctx) => {
+    const now = Date.now();
+    const deletedWithoutImages: string[] = [];
+    const replacedCatalogItems: string[] = [];
+    const createdCatalogItems: string[] = [];
+
+    const allItems = await ctx.db.query("items").collect();
+    const catalogNames = new Set(PREVIEW_DEMO_CATALOG.map((item) => item.name));
+
+    for (const item of allItems) {
+      const isStaleDemoItem = PREVIEW_CATALOG_STALE_ITEM_PREFIXES.some(
+        (prefix) => item.name.startsWith(prefix),
+      );
+      if (
+        !itemHasDisplayImage(item) ||
+        catalogNames.has(item.name) ||
+        isStaleDemoItem
+      ) {
+        if (!itemHasDisplayImage(item)) {
+          deletedWithoutImages.push(item.name);
+        } else {
+          replacedCatalogItems.push(item.name);
+        }
+        await deleteItemFixture(ctx, item._id);
+      }
+    }
+
+    for (const item of PREVIEW_DEMO_CATALOG) {
+      const itemId = await ctx.db.insert("items", {
+        name: item.name,
+        description: item.description,
+        searchText: buildItemSearchText({
+          name: item.name,
+          description: item.description,
+        }),
+        ownerId: item.ownerId,
+        giveaway: false,
+        category: item.category,
+        imageCloudinary: [
+          {
+            publicId: item.image.publicId,
+            secureUrl: item.image.secureUrl,
+          },
+        ],
+        location: {
+          lat: 11.94,
+          lng: 108.45,
+          ward: "Da Lat",
+          address: "Dalat Market area",
+        },
+      });
+
+      await ctx.db.insert("item_activity", {
+        itemId,
+        type: "item_created",
+        actorId: item.ownerId,
+        createdAt: now,
+      });
+      createdCatalogItems.push(item.name);
+    }
+
+    const afterItems = await ctx.db.query("items").collect();
+    const afterWithoutImages = afterItems.filter(
+      (item) => !itemHasDisplayImage(item),
+    );
+
+    return {
+      success: true,
+      deletedWithoutImageCount: deletedWithoutImages.length,
+      deletedWithoutImages: deletedWithoutImages.sort(),
+      replacedCatalogCount: replacedCatalogItems.length,
+      replacedCatalogItems: [...new Set(replacedCatalogItems)].sort(),
+      createdCatalogItems,
+      afterItemCount: afterItems.length,
+      afterWithoutImageCount: afterWithoutImages.length,
+      ownerA: USER_A,
+      ownerB: USER_B,
+    };
+  },
+});
 
 export const setupManualSuccessDemo = mutation({
   args: {},
