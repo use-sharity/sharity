@@ -175,6 +175,7 @@ const PREVIEW_DEMO_CATALOG: Array<{
 
 const PREVIEW_CATALOG_STALE_ITEM_PREFIXES = [
   "[TEST] Journey:",
+  "[CAL]",
   "Simplified Lifecycle",
   "Weekend Camping Tent",
   "Electric Drill Kit",
@@ -182,7 +183,7 @@ const PREVIEW_CATALOG_STALE_ITEM_PREFIXES = [
 
 // Bumping this version string forces existing preview deployments to re-seed
 // on the next --preview-run invocation.
-const SEED_MARKER_KEY = "seed:preview-init:v1";
+const SEED_MARKER_KEY = "seed:preview-init:v2";
 
 /**
  * Idempotency guard — returns true when the seed marker row exists,
@@ -261,6 +262,7 @@ export const initPreview = internalAction({
     await ctx.runMutation(internal.seed.setupJourneyTestScenarios, {});
     await ctx.runMutation(internal.seed.seedCalendarTestData, {});
     await ctx.runMutation(internal.seed.patchCloudinaryImages, {});
+    await ctx.runMutation(internal.seed.polishPreviewCatalogInternal, {});
     await ctx.runMutation(internal.seed.writeSeedMarker, {});
     return { seeded: true };
   },
@@ -2061,88 +2063,98 @@ export const auditPreviewCatalog = query({
   },
 });
 
+async function polishPreviewCatalogForCtx(ctx: MutationCtx) {
+  const now = Date.now();
+  const deletedWithoutImages: string[] = [];
+  const replacedCatalogItems: string[] = [];
+  const deletedOtherItems: string[] = [];
+  const createdCatalogItems: string[] = [];
+
+  const allItems = await ctx.db.query("items").collect();
+  const catalogNames = new Set(PREVIEW_DEMO_CATALOG.map((item) => item.name));
+
+  for (const item of allItems) {
+    const isStaleDemoItem = PREVIEW_CATALOG_STALE_ITEM_PREFIXES.some((prefix) =>
+      item.name.startsWith(prefix),
+    );
+    if (!itemHasDisplayImage(item)) {
+      deletedWithoutImages.push(item.name);
+    } else if (catalogNames.has(item.name) || isStaleDemoItem) {
+      replacedCatalogItems.push(item.name);
+    } else {
+      deletedOtherItems.push(item.name);
+    }
+    await deleteItemFixture(ctx, item._id);
+  }
+
+  for (const item of PREVIEW_DEMO_CATALOG) {
+    const itemId = await ctx.db.insert("items", {
+      name: item.name,
+      description: item.description,
+      searchText: buildItemSearchText({
+        name: item.name,
+        description: item.description,
+      }),
+      ownerId: item.ownerId,
+      giveaway: false,
+      category: item.category,
+      imageCloudinary: [
+        {
+          publicId: item.image.publicId,
+          secureUrl: item.image.secureUrl,
+        },
+      ],
+      location: {
+        lat: 11.94,
+        lng: 108.45,
+        ward: "Da Lat",
+        address: "Dalat Market area",
+      },
+    });
+
+    await ctx.db.insert("item_activity", {
+      itemId,
+      type: "item_created",
+      actorId: item.ownerId,
+      createdAt: now,
+    });
+    createdCatalogItems.push(item.name);
+  }
+
+  const afterItems = await ctx.db.query("items").collect();
+  const afterWithoutImages = afterItems.filter(
+    (item) => !itemHasDisplayImage(item),
+  );
+
+  return {
+    success: true,
+    deletedWithoutImageCount: deletedWithoutImages.length,
+    deletedWithoutImages: deletedWithoutImages.sort(),
+    deletedOtherCount: deletedOtherItems.length,
+    deletedOtherItems: deletedOtherItems.sort(),
+    replacedCatalogCount: replacedCatalogItems.length,
+    replacedCatalogItems: [...new Set(replacedCatalogItems)].sort(),
+    createdCatalogItems,
+    afterItemCount: afterItems.length,
+    afterWithoutImageCount: afterWithoutImages.length,
+    ownerA: USER_A,
+    ownerB: USER_B,
+  };
+}
+
+export const polishPreviewCatalogInternal = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    return await polishPreviewCatalogForCtx(ctx);
+  },
+});
+
 export const polishPreviewCatalog = mutation({
   args: {
     confirm: v.literal("polish-dev-preview-items"),
   },
   handler: async (ctx) => {
-    const now = Date.now();
-    const deletedWithoutImages: string[] = [];
-    const replacedCatalogItems: string[] = [];
-    const createdCatalogItems: string[] = [];
-
-    const allItems = await ctx.db.query("items").collect();
-    const catalogNames = new Set(PREVIEW_DEMO_CATALOG.map((item) => item.name));
-
-    for (const item of allItems) {
-      const isStaleDemoItem = PREVIEW_CATALOG_STALE_ITEM_PREFIXES.some(
-        (prefix) => item.name.startsWith(prefix),
-      );
-      if (
-        !itemHasDisplayImage(item) ||
-        catalogNames.has(item.name) ||
-        isStaleDemoItem
-      ) {
-        if (!itemHasDisplayImage(item)) {
-          deletedWithoutImages.push(item.name);
-        } else {
-          replacedCatalogItems.push(item.name);
-        }
-        await deleteItemFixture(ctx, item._id);
-      }
-    }
-
-    for (const item of PREVIEW_DEMO_CATALOG) {
-      const itemId = await ctx.db.insert("items", {
-        name: item.name,
-        description: item.description,
-        searchText: buildItemSearchText({
-          name: item.name,
-          description: item.description,
-        }),
-        ownerId: item.ownerId,
-        giveaway: false,
-        category: item.category,
-        imageCloudinary: [
-          {
-            publicId: item.image.publicId,
-            secureUrl: item.image.secureUrl,
-          },
-        ],
-        location: {
-          lat: 11.94,
-          lng: 108.45,
-          ward: "Da Lat",
-          address: "Dalat Market area",
-        },
-      });
-
-      await ctx.db.insert("item_activity", {
-        itemId,
-        type: "item_created",
-        actorId: item.ownerId,
-        createdAt: now,
-      });
-      createdCatalogItems.push(item.name);
-    }
-
-    const afterItems = await ctx.db.query("items").collect();
-    const afterWithoutImages = afterItems.filter(
-      (item) => !itemHasDisplayImage(item),
-    );
-
-    return {
-      success: true,
-      deletedWithoutImageCount: deletedWithoutImages.length,
-      deletedWithoutImages: deletedWithoutImages.sort(),
-      replacedCatalogCount: replacedCatalogItems.length,
-      replacedCatalogItems: [...new Set(replacedCatalogItems)].sort(),
-      createdCatalogItems,
-      afterItemCount: afterItems.length,
-      afterWithoutImageCount: afterWithoutImages.length,
-      ownerA: USER_A,
-      ownerB: USER_B,
-    };
+    return await polishPreviewCatalogForCtx(ctx);
   },
 });
 
