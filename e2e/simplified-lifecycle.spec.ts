@@ -90,10 +90,10 @@ test.describe("Simplified received / returned lifecycle", () => {
     await dismissProfilePrompt(page);
 
     await expect(page.getByTestId("lease-next-action").first()).toContainText(
-      "Next: your action",
+      "Next",
     );
     await expect(page.getByTestId("lease-next-action").first()).toContainText(
-      "Pickup time can be agreed below.",
+      "propose a pickup time below.",
     );
     await expect(
       page.getByRole("button", { name: "I received the item" }),
@@ -200,7 +200,7 @@ test.describe("Simplified received / returned lifecycle", () => {
     await expect(borrowerPage.getByText("Return proposed:")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(borrowerPage.getByText("Meeting time:")).toBeVisible();
+    await expect(borrowerPage.getByText("Meeting time:").first()).toBeVisible();
     await expect(
       borrowerPage.getByTestId("lease-next-action").first(),
     ).toContainText("Owner: approve your proposed return details");
@@ -213,7 +213,7 @@ test.describe("Simplified received / returned lifecycle", () => {
     await expect(
       ownerPage.getByTestId("lease-next-action").first(),
     ).toContainText("review the proposed return details");
-    await expect(ownerPage.getByText("Meeting time:")).toBeVisible();
+    await expect(ownerPage.getByText("Meeting time:").first()).toBeVisible();
     await ownerPage
       .getByRole("button", { name: "Approve return details" })
       .click();

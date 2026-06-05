@@ -567,10 +567,8 @@ export function LeaseClaimCard(props: {
           now < pickupProposal.windowStartAt
         ) {
           return {
-            tone: isOwner ? "waiting" : "action",
-            title: isOwner
-              ? t("nextAction.title.waiting")
-              : t("nextAction.title.action"),
+            tone: "next",
+            title: t("nextAction.title.next"),
             body: isOwner
               ? t("nextAction.owner.approvedBeforeStart", {
                   time: format(
@@ -592,10 +590,8 @@ export function LeaseClaimCard(props: {
 
       if (isBeforeScheduledPickup) {
         return {
-          tone: isOwner ? "waiting" : "action",
-          title: isOwner
-            ? t("nextAction.title.waiting")
-            : t("nextAction.title.action"),
+          tone: "next",
+          title: t("nextAction.title.next"),
           body: isOwner
             ? t("nextAction.owner.approvedBeforeStartWithReschedule", {
                 time,

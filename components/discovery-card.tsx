@@ -107,10 +107,13 @@ export function DiscoveryCard({ item }: DiscoveryCardProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleMessageOwner}
-                className="gap-1"
+                className="size-9 rounded-full p-0 md:size-auto md:h-8 md:rounded-md md:px-3 md:gap-1.5"
+                aria-label={t("messageOwner")}
               >
-                <MessageCircle className="h-3.5 w-3.5" />
-                {t("messageOwner")}
+                <MessageCircle className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                <span className="sr-only md:not-sr-only">
+                  {t("messageOwner")}
+                </span>
               </Button>
             )}
             <Button

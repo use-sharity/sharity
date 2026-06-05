@@ -243,6 +243,64 @@ function isRangeActiveNow(range: {
   return range.startDate <= now && now <= range.endDate;
 }
 
+async function assertItemCanStartEarlyPickup(args: {
+  ctx: MutationCtx;
+  itemId: Id<"items">;
+  claimId: Id<"claims">;
+  ownerId: string;
+  fromAt: number;
+  scheduledStartAt: number;
+}) {
+  if (args.fromAt >= args.scheduledStartAt) return;
+
+  const earlyWindow = {
+    startDate: args.fromAt,
+    endDate: args.scheduledStartAt,
+  };
+
+  const approvedClaims = await args.ctx.db
+    .query("claims")
+    .withIndex("by_item", (q) => q.eq("itemId", args.itemId))
+    .filter((q) => q.eq(q.field("status"), "approved"))
+    .collect();
+
+  const hasClaimConflict = approvedClaims.some(
+    (otherClaim) =>
+      otherClaim._id !== args.claimId &&
+      !otherClaim.expiredAt &&
+      !otherClaim.returnedAt &&
+      !otherClaim.transferredAt &&
+      hasDateOverlap(earlyWindow, {
+        startDate: otherClaim.startDate,
+        endDate: otherClaim.endDate,
+      }),
+  );
+
+  if (hasClaimConflict) {
+    throw new Error(
+      "Cannot confirm early pickup while the item is reserved for another approved request",
+    );
+  }
+
+  const ownerBlocks = await args.ctx.db
+    .query("owner_unavailability")
+    .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
+    .collect();
+
+  const hasOwnerBlockConflict = ownerBlocks.some((block) =>
+    hasDateOverlap(earlyWindow, {
+      startDate: block.startDate,
+      endDate: block.endDate,
+    }),
+  );
+
+  if (hasOwnerBlockConflict) {
+    throw new Error(
+      "Cannot confirm early pickup while the owner marked the item unavailable",
+    );
+  }
+}
+
 function getPendingClaimExpiresAt(range: {
   startDate: number;
   endDate: number;
@@ -2077,20 +2135,15 @@ export const markPickedUp = mutation({
     if (userId !== claim.claimerId) {
       throw new Error("Only the borrower can confirm receiving the item");
     }
-    if (createdAt < claim.startDate) {
-      const hasApprovedEarlyPickup =
-        latestProposal &&
-        latestApproval?.proposalId &&
-        latestApproval.proposalId === latestProposal.proposalId &&
-        latestProposal.windowStartAt !== undefined &&
-        latestProposal.windowEndAt !== undefined &&
-        createdAt >= latestProposal.windowStartAt &&
-        createdAt <= latestProposal.windowEndAt;
 
-      if (!hasApprovedEarlyPickup) {
-        throw new Error("Cannot confirm pickup before the scheduled start");
-      }
-    }
+    await assertItemCanStartEarlyPickup({
+      ctx,
+      itemId: args.itemId,
+      claimId: args.claimId,
+      ownerId: item.ownerId,
+      fromAt: createdAt,
+      scheduledStartAt: claim.startDate,
+    });
 
     await ctx.db.insert("lease_activity", {
       itemId: args.itemId,

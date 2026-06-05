@@ -330,7 +330,9 @@ function ChatWidgetInner() {
     if (isOpen) {
       // Use instant scroll + slight delay to ensure messages are rendered
       setTimeout(() => scrollToBottom(true), 50);
-      inputRef.current?.focus();
+      if (window.matchMedia("(min-width: 640px)").matches) {
+        inputRef.current?.focus();
+      }
     }
   }, [isOpen, scrollToBottom]);
 
@@ -342,8 +344,23 @@ function ChatWidgetInner() {
     const onResize = () => {
       // Only apply on mobile (sm breakpoint = 640px)
       if (window.innerWidth >= 640) return;
-      panel.style.height = `${vv.height}px`;
-      panel.style.top = `${vv.offsetTop}px`;
+      const keyboardInset = Math.max(
+        0,
+        window.innerHeight - (vv.offsetTop + vv.height),
+      );
+      const hasKeyboard = keyboardInset > 80;
+      const restingBottom = 84;
+      const bottom = hasKeyboard ? keyboardInset + 8 : restingBottom;
+      const availableHeight = hasKeyboard
+        ? vv.height - 16
+        : window.innerHeight - bottom - 16;
+      const height = Math.max(320, Math.min(620, availableHeight));
+      panel.style.setProperty("--sharry-panel-bottom", `${bottom}px`);
+      panel.style.setProperty("--sharry-panel-height", `${height}px`);
+      panel.style.setProperty(
+        "--sharry-panel-top",
+        hasKeyboard ? `${vv.offsetTop + 8}px` : "auto",
+      );
       // Scroll to bottom after keyboard resize so latest message is visible
       setTimeout(() => scrollToBottom(true), 50);
     };
@@ -353,8 +370,9 @@ function ChatWidgetInner() {
     return () => {
       vv.removeEventListener("resize", onResize);
       vv.removeEventListener("scroll", onResize);
-      panel.style.height = "";
-      panel.style.top = "";
+      panel.style.removeProperty("--sharry-panel-bottom");
+      panel.style.removeProperty("--sharry-panel-height");
+      panel.style.removeProperty("--sharry-panel-top");
     };
   }, [isOpen, scrollToBottom]);
 
@@ -595,7 +613,7 @@ function ChatWidgetInner() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed right-6 bottom-6 z-50 hidden h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 md:flex"
+          className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110 md:right-6 md:bottom-6"
           style={{ backgroundColor: "var(--primary)" }}
           aria-label="Open chat with Sharry"
         >
@@ -615,9 +633,9 @@ function ChatWidgetInner() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           ref={panelRef}
-          className="fixed inset-0 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:rounded-xl sm:border sm:shadow-lg"
+          className="fixed right-3 left-3 top-[var(--sharry-panel-top,auto)] bottom-[var(--sharry-panel-bottom,calc(env(safe-area-inset-bottom)+5.25rem))] z-50 flex h-[var(--sharry-panel-height,min(620px,calc(100dvh-8.5rem)))] min-h-[320px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border shadow-2xl sm:inset-auto sm:right-6 sm:bottom-6 sm:h-[520px] sm:w-[400px] sm:max-w-none sm:rounded-xl sm:shadow-lg"
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.97)",
+            backgroundColor: "rgba(250, 248, 244, 0.98)",
             backdropFilter: "blur(12px)",
             borderColor: "var(--border)",
             WebkitTapHighlightColor: "transparent",
@@ -641,65 +659,69 @@ function ChatWidgetInner() {
 
           {/* Header */}
           <div
-            className="flex items-center justify-between px-4 py-3"
+            className="shrink-0 bg-background/95 px-3.5 py-3"
             style={{ borderBottom: "1px solid var(--border)" }}
           >
-            <div className="flex items-center gap-2">
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold sm:h-7 sm:w-7 sm:text-xs"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }}
-              >
-                S
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold shadow-sm sm:h-7 sm:w-7 sm:text-xs"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                  }}
+                >
+                  S
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className="truncate text-base font-semibold leading-tight sm:text-base"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    Sharry
+                  </p>
+                </div>
               </div>
-              <span
-                className="text-lg font-semibold sm:text-base"
-                style={{ color: "var(--foreground)" }}
-              >
-                Sharry
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={handleClearChat}
-                    aria-label="New chat"
-                    className="rounded-md p-2.5 transition-colors hover:bg-black/5 sm:p-1"
-                  >
-                    <RotateCcw
-                      className="h-4 w-4 sm:h-3.5 sm:w-3.5"
-                      style={{ color: "var(--muted-foreground)" }}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">New chat</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    aria-label="Close chat"
-                    className="rounded-md p-2.5 transition-colors hover:bg-black/5 sm:p-1"
-                  >
-                    <X
-                      className="h-5 w-5 sm:h-4 sm:w-4"
-                      style={{ color: "var(--muted-foreground)" }}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Close</TooltipContent>
-              </Tooltip>
+              <div className="flex shrink-0 items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleClearChat}
+                      aria-label="New chat"
+                      className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-black/5 sm:h-7 sm:w-7"
+                    >
+                      <RotateCcw
+                        className="h-4 w-4 sm:h-3.5 sm:w-3.5"
+                        style={{ color: "var(--muted-foreground)" }}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">New chat</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen(false)}
+                      aria-label="Close chat"
+                      className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-black/5 sm:h-7 sm:w-7"
+                    >
+                      <X
+                        className="h-5 w-5 sm:h-4 sm:w-4"
+                        style={{ color: "var(--muted-foreground)" }}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Close</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </div>
 
           {/* Messages */}
           <div
-            className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-4 sm:px-4"
             aria-live="polite"
           >
             {messages.length === 0 && (
@@ -962,7 +984,7 @@ function ChatWidgetInner() {
           {/* Input */}
           <form
             onSubmit={handleSubmit}
-            className="px-4 py-3"
+            className="shrink-0 bg-background/95 px-3.5 py-3 sm:px-4"
             style={{ borderTop: "1px solid var(--border)" }}
           >
             {/* Image preview strip */}
@@ -1004,7 +1026,7 @@ function ChatWidgetInner() {
               onChange={handleFileSelect}
             />
 
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2 rounded-[1.65rem] border bg-card px-2 py-2 shadow-sm">
               {isSignedIn && (
                 <button
                   type="button"
@@ -1026,9 +1048,8 @@ function ChatWidgetInner() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Sharry anything..."
                 disabled={isLoading}
-                className="h-10 flex-1 rounded-full px-4 text-base outline-none sm:h-9 sm:text-sm"
+                className="h-10 min-w-0 flex-1 bg-transparent px-1 text-base outline-none sm:h-9 sm:text-sm"
                 style={{
-                  backgroundColor: "var(--primary-foreground)",
                   color: "var(--foreground)",
                 }}
               />
@@ -1039,8 +1060,9 @@ function ChatWidgetInner() {
                   isLoading ||
                   isUploading
                 }
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-40 sm:h-9 sm:w-9"
                 style={{ backgroundColor: "var(--primary)" }}
+                aria-label="Send message"
               >
                 <Send
                   className="h-4 w-4"
@@ -1050,7 +1072,7 @@ function ChatWidgetInner() {
             </div>
           </form>
           <div
-            className="px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs sm:pb-2 sm:text-[10px]"
+            className="hidden px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-xs sm:block sm:pb-2 sm:text-[10px]"
             style={{ color: "var(--muted-foreground)" }}
           >
             <p>{disclaimerText}</p>

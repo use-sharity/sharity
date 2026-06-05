@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { buildItemSearchText, buildUserPublicSearchText } from "./searchText";
 
@@ -1860,6 +1861,294 @@ export const updateItemImages = mutation({
     }
 
     return results;
+  },
+});
+
+const MANUAL_DEMO_CLEANUP_PREFIXES = [
+  "[TEST] Journey:",
+  "Simplified Lifecycle",
+  "Weekend Camping Tent",
+  "Electric Drill Kit",
+];
+
+async function deleteItemFixture(
+  ctx: MutationCtx,
+  itemId: Id<"items">,
+) {
+  const claims = await ctx.db
+    .query("claims")
+    .withIndex("by_item", (q) => q.eq("itemId", itemId))
+    .collect();
+
+  const itemNotifications = await ctx.db
+    .query("notifications")
+    .filter((q) => q.eq(q.field("itemId"), itemId))
+    .collect();
+  for (const notification of itemNotifications) {
+    await ctx.db.delete(notification._id);
+  }
+
+  for (const claim of claims) {
+    const claimNotifications = await ctx.db
+      .query("notifications")
+      .filter((q) => q.eq(q.field("requestId"), claim._id))
+      .collect();
+    for (const notification of claimNotifications) {
+      await ctx.db.delete(notification._id);
+    }
+
+    const leaseActivities = await ctx.db
+      .query("lease_activity")
+      .withIndex("by_claim_createdAt", (q) => q.eq("claimId", claim._id))
+      .collect();
+    for (const activity of leaseActivities) {
+      await ctx.db.delete(activity._id);
+    }
+    await ctx.db.delete(claim._id);
+  }
+
+  const itemActivities = await ctx.db
+    .query("item_activity")
+    .withIndex("by_item", (q) => q.eq("itemId", itemId))
+    .collect();
+  for (const activity of itemActivities) {
+    await ctx.db.delete(activity._id);
+  }
+
+  const conversations = await ctx.db
+    .query("conversations")
+    .withIndex("by_item", (q) => q.eq("itemId", itemId))
+    .collect();
+  for (const conversation of conversations) {
+    const messages = await ctx.db
+      .query("conversation_messages")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", conversation._id),
+      )
+      .collect();
+    for (const message of messages) {
+      await ctx.db.delete(message._id);
+    }
+
+    const reads = await ctx.db
+      .query("conversation_reads")
+      .filter((q) => q.eq(q.field("conversationId"), conversation._id))
+      .collect();
+    for (const read of reads) {
+      await ctx.db.delete(read._id);
+    }
+
+    await ctx.db.delete(conversation._id);
+  }
+
+  await ctx.db.delete(itemId);
+}
+
+export const setupManualSuccessDemo = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const startDate = now - 30 * 60 * 1000;
+    const endDate = now + 3 * ONE_DAY_MS;
+
+    const allItems = await ctx.db.query("items").collect();
+    const cleanupItems = allItems.filter((item) =>
+      MANUAL_DEMO_CLEANUP_PREFIXES.some((prefix) =>
+        item.name.startsWith(prefix),
+      ),
+    );
+
+    for (const item of cleanupItems) {
+      await deleteItemFixture(ctx, item._id);
+    }
+
+    const fixtures = [
+      {
+        key: "noTime",
+        name: "Weekend Camping Tent",
+        description:
+          "Two-person lightweight tent, ready for a simple pickup and return demo.",
+        category: "sports" as const,
+        imageCloudinary: [
+          {
+            publicId: "sharity/demo-video-20260604/camping-tent",
+            secureUrl:
+              "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565484/sharity/demo-video-20260604/camping-tent.png",
+          },
+        ],
+        withPickupPlan: false,
+      },
+      {
+        key: "withTime",
+        name: "Electric Drill Kit",
+        description:
+          "Cordless drill with bits, staged for a successful pickup-time branch.",
+        category: "other" as const,
+        imageCloudinary: [
+          {
+            publicId: "sharity/demo-video-20260604/electric-drill",
+            secureUrl:
+              "https://res.cloudinary.com/dw8tuxky5/image/upload/v1780565485/sharity/demo-video-20260604/electric-drill.png",
+          },
+        ],
+        withPickupPlan: true,
+      },
+    ];
+
+    const created: Record<
+      string,
+      {
+        itemId: Id<"items">;
+        claimId: Id<"claims">;
+        conversationId: Id<"conversations">;
+        itemName: string;
+        path: string;
+      }
+    > = {};
+
+    for (const fixture of fixtures) {
+      const itemId = await ctx.db.insert("items", {
+        name: fixture.name,
+        description: fixture.description,
+        searchText: buildItemSearchText({
+          name: fixture.name,
+          description: fixture.description,
+        }),
+        ownerId: USER_A,
+        giveaway: false,
+        category: fixture.category,
+        imageCloudinary: fixture.imageCloudinary,
+        location: {
+          lat: 11.94,
+          lng: 108.45,
+          ward: "Da Lat",
+          address: "Dalat Market entrance",
+        },
+      });
+
+      await ctx.db.insert("item_activity", {
+        itemId,
+        type: "item_created",
+        actorId: USER_A,
+        createdAt: now - 2 * ONE_DAY_MS,
+      });
+
+      const claimId = await ctx.db.insert("claims", {
+        itemId,
+        claimerId: USER_B,
+        status: "approved",
+        startDate,
+        endDate,
+        requestedAt: now - 2 * ONE_DAY_MS,
+        approvedAt: now - ONE_DAY_MS,
+      });
+
+      await ctx.db.insert("item_activity", {
+        itemId,
+        type: "loan_started",
+        actorId: USER_A,
+        createdAt: now - ONE_DAY_MS,
+        claimId,
+        borrowerId: USER_B,
+        startDate,
+        endDate,
+      });
+
+      await ctx.db.insert("lease_activity", {
+        itemId,
+        claimId,
+        type: "lease_requested",
+        actorId: USER_B,
+        createdAt: now - 2 * ONE_DAY_MS,
+      });
+      await ctx.db.insert("lease_activity", {
+        itemId,
+        claimId,
+        type: "lease_approved",
+        actorId: USER_A,
+        createdAt: now - ONE_DAY_MS,
+      });
+
+      if (fixture.withPickupPlan) {
+        const proposalId = crypto.randomUUID();
+        const windowStartAt = now + 90 * 60 * 1000;
+        const windowEndAt = windowStartAt + ONE_HOUR_MS;
+        await ctx.db.insert("lease_activity", {
+          itemId,
+          claimId,
+          type: "lease_pickup_proposed",
+          actorId: USER_B,
+          createdAt: now - 45 * 60 * 1000,
+          proposalId,
+          windowStartAt,
+          windowEndAt,
+          place: "Dalat Market entrance",
+          note: "Quick pickup after lunch.",
+        });
+        await ctx.db.insert("lease_activity", {
+          itemId,
+          claimId,
+          type: "lease_pickup_approved",
+          actorId: USER_A,
+          createdAt: now - 30 * 60 * 1000,
+          proposalId,
+          windowStartAt,
+          windowEndAt,
+          place: "Dalat Market entrance",
+          note: "Quick pickup after lunch.",
+        });
+      }
+
+      await ctx.db.insert("notifications", {
+        recipientId: USER_B,
+        type: "request_approved",
+        itemId,
+        requestId: claimId,
+        isRead: false,
+        createdAt: now - ONE_DAY_MS,
+      });
+
+      const conversationId = await ctx.db.insert("conversations", {
+        participantIds: [USER_A, USER_B].sort(),
+        itemId,
+        claimId,
+        lastMessageAt: now,
+        lastMessagePreview: "Request approved. Ready for pickup.",
+        lastMessageSenderId: "system",
+        createdAt: now,
+      });
+
+      await ctx.db.insert("conversation_messages", {
+        conversationId,
+        senderId: "system",
+        body: "Request approved. Ready for pickup.",
+        type: "system",
+        systemEvent: "claim_approved",
+        createdAt: now,
+      });
+
+      created[fixture.key] = {
+        itemId,
+        claimId,
+        conversationId,
+        itemName: fixture.name,
+        path: `/en/item/${itemId}`,
+      };
+    }
+
+    return {
+      success: true,
+      deletedPresentationFixtures: cleanupItems.map((item) => item.name),
+      created,
+      owner: USER_A,
+      borrower: USER_B,
+      manualFlow: [
+        "Open borrower window on Weekend Camping Tent: I received it → Request return → owner confirms returned.",
+        "Open borrower window on Electric Drill Kit: show approved pickup time branch, then I received it.",
+        "Missing journey intentionally not seeded for this manual demo.",
+      ],
+    };
   },
 });
 

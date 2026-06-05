@@ -472,6 +472,11 @@
   z-index: 9999 !important;
 }
 
+/* Hide the Next.js devtools portal in local mobile demos; it overlays chat input. */
+nextjs-portal {
+  display: none !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

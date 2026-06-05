@@ -2,15 +2,17 @@
 
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, MessageCircle, Send } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CoordinationCard } from "@/components/chat/coordination-card";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
+import { Link } from "@/i18n/routing";
 import type { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +24,7 @@ function AvatarFallback({ name, src }: { name: string; src?: string | null }) {
         alt={name}
         width={32}
         height={32}
-        className="h-8 w-8 shrink-0 rounded-full object-cover"
+        className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border/60"
         unoptimized
       />
     );
@@ -34,7 +36,7 @@ function AvatarFallback({ name, src }: { name: string; src?: string | null }) {
     .join("")
     .toUpperCase();
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-border/60">
       {initials || "?"}
     </div>
   );
@@ -49,12 +51,15 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
   const conversationId = id as Id<"conversations">;
 
   const router = useRouter();
+  const t = useTranslations("ChatThread");
   const { isSignedIn } = useAuth();
   const { user } = useUser();
 
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isNearBottomRef = useRef(true);
 
@@ -119,6 +124,64 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
     resizeTextarea();
   }, [resizeTextarea]);
 
+  useEffect(() => {
+    const composer = composerRef.current;
+    const page = pageRef.current;
+    const textarea = textareaRef.current;
+    if (!composer || !page || !textarea) return;
+
+    const syncComposer = () => {
+      const viewport = window.visualViewport;
+      const isComposerFocused = document.activeElement === textarea;
+      const layoutHeight = document.documentElement.clientHeight;
+      const rawShift = viewport
+        ? viewport.offsetTop + viewport.height - layoutHeight
+        : 0;
+      const maxKeyboardShift = -(layoutHeight * 0.65);
+      const shiftY = isComposerFocused
+        ? Math.min(0, Math.max(maxKeyboardShift, rawShift))
+        : 0;
+      const composerHeight = composer.getBoundingClientRect().height;
+
+      composer.style.setProperty("--chat-composer-shift-y", `${shiftY}px`);
+      page.style.setProperty(
+        "--chat-composer-clearance",
+        `${composerHeight + Math.abs(shiftY)}px`,
+      );
+      page.style.setProperty(
+        "--chat-composer-height",
+        `${composerHeight}px`,
+      );
+
+      if (isComposerFocused && isNearBottomRef.current) {
+        requestAnimationFrame(() => scrollToBottom(true));
+      }
+    };
+
+    syncComposer();
+    const resizeObserver = new ResizeObserver(syncComposer);
+    resizeObserver.observe(composer);
+    textarea.addEventListener("focus", syncComposer);
+    textarea.addEventListener("blur", syncComposer);
+    window.visualViewport?.addEventListener("resize", syncComposer);
+    window.visualViewport?.addEventListener("scroll", syncComposer);
+    window.visualViewport?.addEventListener("scrollend", syncComposer);
+    window.addEventListener("resize", syncComposer);
+
+    return () => {
+      resizeObserver.disconnect();
+      textarea.removeEventListener("focus", syncComposer);
+      textarea.removeEventListener("blur", syncComposer);
+      window.visualViewport?.removeEventListener("resize", syncComposer);
+      window.visualViewport?.removeEventListener("scroll", syncComposer);
+      window.visualViewport?.removeEventListener("scrollend", syncComposer);
+      window.removeEventListener("resize", syncComposer);
+      composer.style.removeProperty("--chat-composer-shift-y");
+      page.style.removeProperty("--chat-composer-clearance");
+      page.style.removeProperty("--chat-composer-height");
+    };
+  }, [scrollToBottom]);
+
   const handleBodyChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
       setBody(event.target.value);
@@ -159,6 +222,14 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
     [handleSend],
   );
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  }, [router]);
+
   // Messages are returned newest-first from Convex; reverse for display
   const orderedMessages = useMemo(
     () => (messages ? [...messages].reverse() : []),
@@ -177,20 +248,20 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
 
   return (
     <main
-      className="grid w-full overflow-hidden bg-gray-50/50"
+      ref={pageRef}
+      className="grid h-dvh max-h-dvh w-full overflow-hidden bg-muted/20"
       style={{
-        height: "100vh",
-        gridTemplateRows: "auto auto minmax(0, 1fr) auto",
+        gridTemplateRows: "auto auto minmax(0, 1fr) var(--chat-composer-clearance,90px)",
       }}
     >
       {/* Header */}
-      <div className="shrink-0 border-b bg-background safe-area-pt">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-2.5 md:px-8">
+      <div className="shrink-0 border-b bg-background/95 safe-area-pt shadow-xs backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex max-w-2xl items-center gap-2 px-3 py-2.5 md:px-8">
           <button
             type="button"
-            onClick={() => router.back()}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
-            aria-label="Go back"
+            onClick={handleBack}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={t("goBack")}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -201,27 +272,39 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
                 name={headerData.otherUser?.name ?? "Unknown"}
                 src={headerData.otherUser?.avatar}
               />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-[15px] font-semibold text-foreground">
                   {headerData.otherUser?.name ?? "Unknown"}
                 </p>
                 {headerData.item && (
                   <button
                     type="button"
-                    className="truncate text-left text-xs text-muted-foreground hover:underline"
+                    className="mt-1 inline-flex max-w-full items-center rounded-full bg-muted/70 px-2.5 py-1 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
                     onClick={() => router.push(`/item/${headerData.item?._id}`)}
                   >
-                    {headerData.item.name}
+                    <span className="truncate">{headerData.item.name}</span>
                   </button>
                 )}
               </div>
             </>
           ) : (
             <>
-              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+              <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-5 w-44 max-w-full animate-pulse rounded-full bg-muted" />
+              </div>
             </>
           )}
+
+          <Link
+            href="/chat"
+            className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-colors hover:bg-muted"
+            aria-label={t("allChats")}
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{t("allChats")}</span>
+          </Link>
         </div>
       </div>
 
@@ -235,10 +318,12 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
         onScroll={handleScroll}
         aria-live="polite"
       >
-        <div className="mx-auto max-w-2xl px-4 py-3 md:px-8">
+        <div className="mx-auto max-w-2xl px-3 py-3 md:px-8">
           {status === "LoadingFirstPage" && (
-            <div className="flex justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="space-y-3 py-2">
+              <div className="h-9 w-2/3 animate-pulse rounded-2xl rounded-tl-sm bg-muted" />
+              <div className="ml-auto h-9 w-1/2 animate-pulse rounded-2xl rounded-tr-sm bg-primary/15" />
+              <div className="h-16 w-4/5 animate-pulse rounded-2xl rounded-tl-sm bg-muted" />
             </div>
           )}
 
@@ -258,24 +343,31 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
               />
             </div>
           ))}
-
           <div ref={messagesEndRef} />
         </div>
       </div>
 
+      <div aria-hidden="true" />
+
       {/* Composer */}
-      <div className="shrink-0 pb-[calc(env(safe-area-inset-bottom)+0.875rem)]">
-        <div className="mx-auto flex max-w-2xl items-end gap-2 px-4 md:px-8">
+      <div
+        ref={composerRef}
+        className="fixed inset-x-0 bottom-0 z-30 shrink-0 translate-y-[var(--chat-composer-shift-y,0px)] border-t bg-background/95 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-8px_24px_rgba(0,0,0,0.04)] backdrop-blur will-change-transform"
+      >
+        <div
+          className="mx-auto flex w-full max-w-[calc(100vw-1.5rem)] min-w-0 items-end gap-2 overflow-hidden rounded-full border bg-card px-2 py-2 shadow-sm md:max-w-2xl"
+          style={{ borderRadius: "9999px" }}
+        >
           <Textarea
             ref={textareaRef}
             value={body}
             onChange={handleBodyChange}
             onKeyDown={handleKeyDown}
-            placeholder="Message..."
+            placeholder={t("messagePlaceholder")}
             rows={1}
             className={cn(
-              "max-h-[100px] min-h-[40px] flex-1 resize-none overflow-hidden rounded-2xl border bg-background px-3.5 py-2.5 text-sm shadow-sm",
-              "focus-visible:ring-2 focus-visible:ring-primary/30",
+              "max-h-[104px] min-h-10 min-w-0 flex-1 resize-none overflow-hidden rounded-full border-0 bg-transparent px-2 py-2.5 text-base leading-5 shadow-none outline-none",
+              "focus-visible:ring-0 focus-visible:ring-offset-0 md:text-sm",
             )}
           />
           <Button
@@ -284,7 +376,7 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
             className="h-10 w-10 shrink-0 rounded-full"
             disabled={!body.trim() || isSending}
             onClick={handleSend}
-            aria-label="Send message"
+            aria-label={t("sendMessage")}
           >
             <Send className="h-4 w-4" />
           </Button>

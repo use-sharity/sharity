@@ -186,16 +186,18 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
   };
 
   return (
-    <section className="shrink-0 border-b bg-background">
-      <div className="mx-auto max-w-2xl px-4 py-2 md:px-8">
-        <div className="rounded-md border bg-card px-3 py-2 shadow-xs">
-          <div className="flex items-start justify-between gap-3">
+    <section className="shrink-0 border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto max-w-2xl px-3 py-2 md:px-8">
+        <div className="rounded-2xl border bg-card/95 px-3 py-2.5 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold">{title}</h2>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                </span>
+                <h2 className="truncate text-sm font-semibold">{title}</h2>
               </div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 {timeLabel ? (
                   <span className="inline-flex items-center gap-1.5">
                     <Clock3 className="h-3.5 w-3.5" />
@@ -213,13 +215,16 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
                 ) : null}
               </div>
             </div>
-            <Badge variant={isApproved ? "default" : "outline"}>
+            <Badge
+              variant={isApproved ? "default" : "outline"}
+              className="shrink-0 rounded-full px-2 py-1 text-[11px] leading-none"
+            >
               {isApproved ? <CheckCircle2 className="mr-1 h-3 w-3" /> : null}
               {statusLabel}
             </Badge>
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {canSavePlan ? (
               <LeaseProposeWindowDialog
                 title={title}
@@ -228,7 +233,7 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
                 triggerIcon={CalendarClock}
                 triggerVariant="outline"
                 triggerSize="sm"
-                triggerClassName="h-8 flex-1 min-w-[10rem]"
+                triggerClassName="h-9 flex-1 basis-[9rem] min-w-0 rounded-full"
                 confirmLabel={savePlanLabel}
                 cancelLabel={t("actions.cancel")}
                 fixedDate={new Date(defaultWindowStartAt)}
@@ -246,7 +251,7 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
                 size="sm"
                 onClick={handleApprovePlan}
                 disabled={isSaving || isMilestoneBusy}
-                className="h-8 flex-1 min-w-[9rem]"
+                className="h-9 flex-1 basis-[9rem] min-w-0 rounded-full"
               >
                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                 {isSaving ? t("actions.approving") : approvePlanLabel}
@@ -261,7 +266,7 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
                 variant="outline"
                 onClick={handleMilestone}
                 disabled={isSaving || isMilestoneBusy}
-                className="h-8 flex-1 min-w-[9rem]"
+                className="h-9 flex-1 basis-[9rem] min-w-0 rounded-full"
               >
                 <PackageCheck className="mr-1.5 h-3.5 w-3.5" />
                 {isMilestoneBusy ? t("actions.saving") : milestoneLabel}
