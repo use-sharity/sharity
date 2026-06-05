@@ -181,9 +181,14 @@ const PREVIEW_CATALOG_STALE_ITEM_PREFIXES = [
   "Electric Drill Kit",
 ];
 
+const PREVIEW_USER_PROFILES = [
+  { clerkId: USER_A, name: "Minh Nguyen" },
+  { clerkId: USER_B, name: "Linh Tran" },
+];
+
 // Bumping this version string forces existing preview deployments to re-seed
 // on the next --preview-run invocation.
-const SEED_MARKER_KEY = "seed:preview-init:v2";
+const SEED_MARKER_KEY = "seed:preview-init:v3";
 
 /**
  * Idempotency guard — returns true when the seed marker row exists,
@@ -2072,6 +2077,30 @@ async function polishPreviewCatalogForCtx(ctx: MutationCtx) {
 
   const allItems = await ctx.db.query("items").collect();
   const catalogNames = new Set(PREVIEW_DEMO_CATALOG.map((item) => item.name));
+
+  for (const profile of PREVIEW_USER_PROFILES) {
+    const existingProfile = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", profile.clerkId))
+      .first();
+    if (existingProfile) {
+      await ctx.db.patch(existingProfile._id, {
+        name: existingProfile.name ?? profile.name,
+        publicSearchText:
+          existingProfile.publicSearchText ??
+          buildUserPublicSearchText({ name: profile.name }),
+        updatedAt: now,
+      });
+    } else {
+      await ctx.db.insert("users", {
+        clerkId: profile.clerkId,
+        name: profile.name,
+        publicSearchText: buildUserPublicSearchText({ name: profile.name }),
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
 
   for (const item of allItems) {
     const isStaleDemoItem = PREVIEW_CATALOG_STALE_ITEM_PREFIXES.some((prefix) =>

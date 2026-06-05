@@ -40,6 +40,11 @@ const ONE_DAY_MS = 24 * ONE_HOUR_MS;
 // that have just started, e.g., proposing 21:00–22:00 at 21:05)
 const MAX_PAST_WINDOW_TOLERANCE_MS = ONE_HOUR_MS;
 const cloudinary = new CloudinaryClient(components.cloudinary);
+const INTERNAL_TEST_ITEM_PREFIXES = [
+  "[CAL]",
+  "[TEST]",
+  "Simplified Lifecycle",
+];
 
 type MediaImage =
   | { source: "cloudinary"; publicId: string; url: string }
@@ -61,6 +66,12 @@ type OwnerSummary = {
 type PublicDiscoveryItem = PublicItem & {
   owner: OwnerSummary;
 };
+
+function isInternalTestItem(item: Doc<"items">): boolean {
+  return INTERNAL_TEST_ITEM_PREFIXES.some((prefix) =>
+    item.name.startsWith(prefix),
+  );
+}
 
 async function resolveImages(args: {
   ctx: { storage: { getUrl: (id: Id<"_storage">) => Promise<string | null> } };
@@ -573,6 +584,7 @@ function itemMatchesFilters(args: {
   viewerId?: string;
   activeUnavailableOwners: Set<string>;
 }): boolean {
+  if (isInternalTestItem(args.item)) return false;
   if (args.activeUnavailableOwners.has(args.item.ownerId)) return false;
   if (args.hideMyItems && args.viewerId === args.item.ownerId) return false;
   if (args.giveawayOnly && !args.item.giveaway) return false;
