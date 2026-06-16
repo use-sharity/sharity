@@ -21,12 +21,14 @@ interface ContactInfoProps {
   availableContacts?: AvailableContacts;
   contacts?: FullContacts | null;
   showValues?: boolean;
+  compact?: boolean;
 }
 
 export function ContactInfo({
   availableContacts,
   contacts,
   showValues = false,
+  compact = false,
 }: ContactInfoProps) {
   const t = useTranslations("ContactInfo");
 
@@ -43,13 +45,14 @@ export function ContactInfo({
     }
 
     return (
-      <div className="flex flex-col gap-2">
+      <div className={compact ? "flex flex-wrap gap-2" : "flex flex-col gap-2"}>
         {contacts.telegram && (
           <ContactRow
             icon={<MessageCircle className="h-4 w-4 text-blue-500" />}
             label={t("labels.telegram")}
             value={contacts.telegram}
             link={`https://t.me/${contacts.telegram.replace("@", "")}`}
+            compact={compact}
           />
         )}
         {contacts.whatsapp && (
@@ -58,6 +61,7 @@ export function ContactInfo({
             label={t("labels.whatsapp")}
             value={contacts.whatsapp}
             link={`https://wa.me/${contacts.whatsapp.replace(/[^0-9]/g, "")}`}
+            compact={compact}
           />
         )}
         {contacts.facebook && (
@@ -70,6 +74,7 @@ export function ContactInfo({
                 ? contacts.facebook
                 : `https://facebook.com/${contacts.facebook}`
             }
+            compact={compact}
           />
         )}
         {contacts.phone && (
@@ -78,6 +83,7 @@ export function ContactInfo({
             label={t("labels.phone")}
             value={contacts.phone}
             link={`tel:${contacts.phone}`}
+            compact={compact}
           />
         )}
       </div>
@@ -96,7 +102,11 @@ export function ContactInfo({
 
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{t("availableMethods")}</p>
+        {!compact ? (
+          <p className="text-sm text-muted-foreground">
+            {t("availableMethods")}
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {availableContacts.telegram && (
             <ContactBadge
@@ -139,17 +149,21 @@ function ContactRow({
   label,
   value,
   link,
+  compact,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   link?: string;
+  compact?: boolean;
 }) {
   const content = (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       {icon}
-      <span className="text-sm text-muted-foreground">{label}:</span>
-      <span className="text-sm font-medium">{value}</span>
+      <span className={compact ? "sr-only" : "text-sm text-muted-foreground"}>
+        {label}:
+      </span>
+      <span className="truncate text-sm font-medium">{value}</span>
     </div>
   );
 
@@ -159,7 +173,11 @@ function ContactRow({
         href={link}
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bg-gray-50 rounded p-1 -m-1 transition-colors"
+        className={
+          compact
+            ? "min-w-0 rounded-full border bg-background px-2.5 py-1 text-xs transition-colors hover:bg-muted"
+            : "hover:bg-gray-50 rounded p-1 -m-1 transition-colors"
+        }
       >
         {content}
       </a>

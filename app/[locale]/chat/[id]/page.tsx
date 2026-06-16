@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CoordinationCard } from "@/components/chat/coordination-card";
 import { MessageBubble } from "@/components/chat/message-bubble";
+import { CommunicationOptions } from "@/components/communication-options";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
@@ -148,10 +149,7 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
         "--chat-composer-clearance",
         `${composerHeight + Math.abs(shiftY)}px`,
       );
-      page.style.setProperty(
-        "--chat-composer-height",
-        `${composerHeight}px`,
-      );
+      page.style.setProperty("--chat-composer-height", `${composerHeight}px`);
 
       if (isComposerFocused && isNearBottomRef.current) {
         requestAnimationFrame(() => scrollToBottom(true));
@@ -251,7 +249,8 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
       ref={pageRef}
       className="grid h-dvh max-h-dvh w-full overflow-hidden bg-muted/20"
       style={{
-        gridTemplateRows: "auto auto minmax(0, 1fr) var(--chat-composer-clearance,90px)",
+        gridTemplateRows:
+          "auto auto auto minmax(0, 1fr) var(--chat-composer-clearance,90px)",
       }}
     >
       {/* Header */}
@@ -307,6 +306,21 @@ export default function ChatThreadPage({ params }: ThreadPageProps) {
           </Link>
         </div>
       </div>
+
+      {conversation?.otherUser?.clerkId ? (
+        <div className="shrink-0 border-b bg-background/95 backdrop-blur">
+          <div className="mx-auto max-w-2xl px-3 py-2 md:px-8">
+            <CommunicationOptions
+              otherUserId={conversation.otherUser.clerkId}
+              onChat={() => undefined}
+              canShowContactValues={Boolean(conversation.conversation.claimId)}
+              showChatButton={false}
+            />
+          </div>
+        </div>
+      ) : (
+        <div />
+      )}
 
       <div className="shrink-0">
         <CoordinationCard conversationId={conversationId} />

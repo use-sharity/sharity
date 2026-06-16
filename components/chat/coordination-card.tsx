@@ -114,7 +114,6 @@ export function CoordinationCard({ conversationId }: CoordinationCardProps) {
     (mode === "pickup"
       ? coordination.claim.startDate
       : coordination.claim.endDate);
-
   const handleSavePlan = async (nextPlan: {
     windowStartAt: number;
     place?: string;

@@ -822,6 +822,14 @@
       "phone": "Điện thoại"
     }
   },
+  "CommunicationOptions": {
+    "title": "Liên hệ",
+    "approvedHint": "Dùng chat Sharity hoặc tiếp tục trong ứng dụng nhắn tin.",
+    "lockedHint": "Liên hệ ngoài sẽ hiện sau khi duyệt.",
+    "sharityChat": "Chat Sharity",
+    "chatFallback": "Giữ ngữ cảnh món đồ ở đây",
+    "unread": "Mới"
+  },
   "LocationPicker": {
     "title": "Chọn vị trí",
     "description": "Chạm lên bản đồ để chọn, hoặc kéo ghim để chỉnh.",

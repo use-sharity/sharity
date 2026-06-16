@@ -822,6 +822,14 @@
       "phone": "Phone"
     }
   },
+  "CommunicationOptions": {
+    "title": "Coordinate",
+    "approvedHint": "Use Sharity chat or continue in a messenger.",
+    "lockedHint": "External contacts unlock after approval.",
+    "sharityChat": "Sharity chat",
+    "chatFallback": "Keep the item context here",
+    "unread": "Unread"
+  },
   "LocationPicker": {
     "title": "Pick Location",
     "description": "Click on the map to select a location, or drag the marker to adjust.",

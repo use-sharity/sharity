@@ -470,6 +470,7 @@ export const getConversationCoordination = query({
         _id: item._id,
         name: item.name,
         giveaway: item.giveaway,
+        ownerId: item.ownerId,
         address: item.location?.address,
       },
       claim: {

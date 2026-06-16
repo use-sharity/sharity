@@ -822,6 +822,14 @@
       "phone": "Телефон"
     }
   },
+  "CommunicationOptions": {
+    "title": "Связь",
+    "approvedHint": "Можно писать в Sharity или перейти в мессенджер.",
+    "lockedHint": "Внешние контакты откроются после одобрения.",
+    "sharityChat": "Чат Sharity",
+    "chatFallback": "Контекст вещи останется здесь",
+    "unread": "Новое"
+  },
   "LocationPicker": {
     "title": "Выбери место",
     "description": "Нажми на карту или перетащи маркер.",

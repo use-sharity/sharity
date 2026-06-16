@@ -7,7 +7,6 @@ import {
   BellRing,
   Check,
   Clock,
-  MessageCircle,
   Package,
   PackageCheck,
   X,
@@ -15,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { CommunicationOptions } from "@/components/communication-options";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -991,28 +991,14 @@ export function LeaseClaimCard(props: {
         {(isOwner || viewerRole === "borrower") &&
         claim.status !== "rejected" ? (
           <div className="pb-3">
-            <button
-              type="button"
-              onClick={handleMessage}
-              className="flex w-full items-start gap-2 rounded-md border border-primary/45 bg-primary/5 p-2.5 text-left text-xs shadow-xs transition-colors hover:border-primary/70 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-            >
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
-                <MessageCircle className="h-3.5 w-3.5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 font-semibold text-primary">
-                  {t("chat.title")}
-                  {conversationSummary?.hasUnread ? (
-                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] leading-none text-primary-foreground">
-                      {t("chat.unread")}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="mt-0.5 block truncate text-foreground/75">
-                  {conversationSummary?.lastMessagePreview || t("chat.empty")}
-                </span>
-              </span>
-            </button>
+            <CommunicationOptions
+              otherUserId={isOwner ? claim.claimerId : (ownerId ?? "")}
+              onChat={handleMessage}
+              disabled={isOwner ? false : !ownerId}
+              canShowContactValues={claim.status === "approved"}
+              hasUnread={conversationSummary?.hasUnread}
+              lastMessagePreview={conversationSummary?.lastMessagePreview}
+            />
           </div>
         ) : null}
 
