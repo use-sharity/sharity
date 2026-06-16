@@ -444,7 +444,7 @@
           "pickup_proposed": "Kế hoạch nhận",
           "pickup_approved": "Nhận OK",
           "picked_up": "Đã nhận",
-          "return_proposed": "Kế hoạch trả",
+          "return_proposed": "Yêu cầu trả",
           "return_approved": "Trả OK",
           "returned": "Đã trả",
           "transferred": "Đã giao"
@@ -491,7 +491,7 @@
       },
       "next": {
         "label": "Tiếp theo:",
-        "suggestPickup": "Lưu chi tiết nhận đã thống nhất.",
+        "suggestPickup": "Đề xuất chi tiết nhận đồ.",
         "suggestReturn": "Chọn giờ gặp để trả đồ và gửi cho chủ đồ.",
         "waitingForApproval": "Đang chờ bên kia duyệt các chi tiết này.",
         "approveWindow": "Duyệt chi tiết này hoặc đề xuất kế hoạch khác.",
@@ -500,9 +500,9 @@
         "confirmPickup": "Xác nhận nhận đồ bây giờ.",
         "confirmReturn": "Xác nhận trả đồ bây giờ."
       },
-      "detailsSaved": "Đã lưu chi tiết",
+      "detailsSaved": "Đã gửi chi tiết",
       "suggestAnother": "Đề xuất giờ khác",
-      "suggestPickupTime": "Lưu chi tiết nhận",
+      "suggestPickupTime": "Đề xuất chi tiết nhận",
       "suggestReturnTime": "Yêu cầu trả đồ"
     },
     "rejectDialog": {
@@ -536,7 +536,7 @@
       "pendingApproval": "Chờ duyệt.",
       "propose": "Đề xuất chi tiết nhận",
       "change": "Thay đổi chi tiết nhận",
-      "sentToast": "Đã lưu chi tiết nhận trong chat.",
+      "sentToast": "Đã gửi chi tiết nhận trong chat.",
       "confirmTitle": "Xác nhận nhận đồ",
       "confirmDesc": "Xác nhận đã nhận. Có thể chụp ảnh để lưu tình trạng.",
       "confirmAction": "Xác nhận nhận",
@@ -1089,7 +1089,7 @@
   },
   "ChatCoordination": {
     "pickupTitle": "Kế hoạch nhận đồ",
-    "returnTitle": "Kế hoạch trả đồ",
+    "returnTitle": "Yêu cầu trả đồ",
     "pickupFallback": "Giờ nhận là tuỳ chọn. Cả hai bên có thể đề xuất giờ ở đây hoặc tiếp tục thống nhất trong chat.",
     "returnFallback": "Chọn ngày, giờ và địa điểm trả đồ tại đây. Sharity sẽ ghi lại kế hoạch trong chat.",
     "dateLabel": "Ngày",
@@ -1104,9 +1104,9 @@
       "approved": "Đã duyệt"
     },
     "actions": {
-      "savePickup": "Lưu kế hoạch nhận",
-      "saveReturn": "Lưu kế hoạch trả",
-      "saving": "Đang lưu...",
+      "savePickup": "Đề xuất chi tiết nhận",
+      "saveReturn": "Gửi yêu cầu trả",
+      "saving": "Đang gửi...",
       "cancel": "Hủy",
       "approvePickup": "Duyệt nhận đồ",
       "approveReturn": "Duyệt trả đồ",
@@ -1116,11 +1116,11 @@
       "markReturned": "Đồ đã được trả"
     },
     "hint": {
-      "canApprove": "Người kia đã đề xuất. Bạn có thể duyệt tại đây hoặc lưu kế hoạch khác.",
-      "saveToChange": "Lưu kế hoạch mới sẽ cập nhật checklist và thêm thẻ hệ thống vào chat này."
+      "canApprove": "Người kia đã đề xuất. Bạn có thể duyệt tại đây hoặc đề xuất chi tiết khác.",
+      "saveToChange": "Chi tiết mới sẽ cập nhật checklist và thêm thẻ hệ thống vào chat này."
     },
     "toast": {
-      "saved": "Đã lưu kế hoạch trong chat",
+      "saved": "Đã gửi chi tiết trong chat",
       "approved": "Đã duyệt kế hoạch",
       "milestoneSaved": "Đã cập nhật"
     }

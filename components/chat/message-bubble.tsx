@@ -63,9 +63,9 @@ export function MessageBubble({
         case "pickup_approved":
           return "Pickup plan approved";
         case "return_proposed":
-          return "Return plan proposed";
+          return "Return request sent";
         case "return_approved":
-          return "Return plan approved";
+          return "Return details approved";
         default:
           return body;
       }

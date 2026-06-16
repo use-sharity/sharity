@@ -444,7 +444,7 @@
           "pickup_proposed": "Pickup plan",
           "pickup_approved": "Pickup ok",
           "picked_up": "Received",
-          "return_proposed": "Return plan",
+          "return_proposed": "Return request",
           "return_approved": "Return ok",
           "returned": "Returned",
           "transferred": "Transferred"
@@ -491,7 +491,7 @@
       },
       "next": {
         "label": "Next:",
-        "suggestPickup": "Save the agreed pickup details.",
+        "suggestPickup": "Suggest pickup details.",
         "suggestReturn": "Choose a return meeting time and send it to the owner.",
         "waitingForApproval": "Waiting for the other person to approve these details.",
         "approveWindow": "Approve these details or suggest another plan.",
@@ -500,9 +500,9 @@
         "confirmPickup": "Confirm pickup now.",
         "confirmReturn": "Confirm return now."
       },
-      "detailsSaved": "Details saved",
+      "detailsSaved": "Details sent",
       "suggestAnother": "Suggest another",
-      "suggestPickupTime": "Save pickup details",
+      "suggestPickupTime": "Suggest pickup details",
       "suggestReturnTime": "Request return"
     },
     "rejectDialog": {
@@ -536,7 +536,7 @@
       "pendingApproval": "Pending approval.",
       "propose": "Propose pickup details",
       "change": "Change pickup details",
-      "sentToast": "Pickup details saved in chat.",
+      "sentToast": "Pickup details sent in chat.",
       "confirmTitle": "Confirm item pickup",
       "confirmDesc": "Record that the item has been picked up. Photos help document the item's condition.",
       "confirmAction": "Confirm pickup",
@@ -645,7 +645,7 @@
     "placePlaceholder": "Lobby, gate, cafe, or exact address",
     "detailsLabel": "Note",
     "detailsPlaceholder": "Optional context for the handoff",
-    "detailsHint": "Date, time, and place are saved as structured fields and logged in chat.",
+    "detailsHint": "Date, time, and place are logged in chat as structured fields.",
     "hourWindow": "Hour window",
     "selectHour": "Select an hour",
     "proposed": "Proposed: {date} {window}",
@@ -1089,7 +1089,7 @@
   },
   "ChatCoordination": {
     "pickupTitle": "Pickup plan",
-    "returnTitle": "Return plan",
+    "returnTitle": "Return request",
     "pickupFallback": "Pickup time is optional. Either person can propose a time here, or you can keep coordinating freely in chat.",
     "returnFallback": "Pick a return date, time, and place here. Sharity will log the plan in chat.",
     "dateLabel": "Date",
@@ -1104,9 +1104,9 @@
       "approved": "Approved"
     },
     "actions": {
-      "savePickup": "Save pickup plan",
-      "saveReturn": "Save return plan",
-      "saving": "Saving...",
+      "savePickup": "Suggest pickup details",
+      "saveReturn": "Send return request",
+      "saving": "Sending...",
       "cancel": "Cancel",
       "approvePickup": "Approve pickup",
       "approveReturn": "Approve return",
@@ -1116,11 +1116,11 @@
       "markReturned": "Item returned"
     },
     "hint": {
-      "canApprove": "This was suggested by the other person. Approve it here or save a different plan.",
-      "saveToChange": "Saving a new plan updates the checklist and adds a system card to this chat."
+      "canApprove": "This was suggested by the other person. Approve it here or suggest different details.",
+      "saveToChange": "Sending new details updates the checklist and adds a system card to this chat."
     },
     "toast": {
-      "saved": "Plan saved in chat",
+      "saved": "Details sent in chat",
       "approved": "Plan approved",
       "milestoneSaved": "Updated"
     }
