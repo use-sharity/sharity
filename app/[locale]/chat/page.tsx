@@ -1,11 +1,14 @@
 "use client";
 
+import { SignInButton, useAuth } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 
@@ -62,9 +65,13 @@ function AvatarFallback({ name, src }: { name: string; src?: string | null }) {
 
 export default function ChatListPage() {
   const router = useRouter();
-  const conversations = useQuery(api.messaging.listMyConversations) as
-    | ConversationItem[]
-    | undefined;
+  const locale = useLocale();
+  const { isLoaded, isSignedIn } = useAuth();
+  const conversations = useQuery(
+    api.messaging.listMyConversations,
+    isSignedIn ? {} : "skip",
+  ) as ConversationItem[] | undefined;
+  const conversationList = conversations ?? [];
 
   return (
     <main className="flex h-dvh w-full flex-col overflow-hidden bg-background">
@@ -83,13 +90,25 @@ export default function ChatListPage() {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {conversations === undefined ? (
+        {!isLoaded || (isSignedIn && conversations === undefined) ? (
           <>
             <ConversationSkeleton />
             <ConversationSkeleton />
             <ConversationSkeleton />
           </>
-        ) : conversations.length === 0 ? (
+        ) : !isSignedIn ? (
+          <div className="flex flex-col items-center justify-center gap-4 px-8 py-20 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <MessageCircle className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Please sign in to view your messages.
+            </p>
+            <SignInButton mode="modal">
+              <Button variant="outline">Sign In</Button>
+            </SignInButton>
+          </div>
+        ) : conversationList.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
               <MessageCircle className="h-8 w-8 text-muted-foreground" />
@@ -101,7 +120,7 @@ export default function ChatListPage() {
           </div>
         ) : (
           <ul>
-            {conversations.map((conv) => (
+            {conversationList.map((conv) => (
               <li key={conv._id}>
                 <button
                   type="button"
@@ -109,7 +128,7 @@ export default function ChatListPage() {
                     "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 active:bg-muted",
                     conv.hasUnread && "bg-primary/5",
                   )}
-                  onClick={() => router.push(`/chat/${conv._id}`)}
+                  onClick={() => router.push(`/${locale}/chat/${conv._id}`)}
                 >
                   <AvatarFallback
                     name={conv.otherUser.name}
